@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sub2API Claude Code 请求头对齐记录</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --bg: #f6f7f9;
+      --panel: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --line: #d9dee7;
+      --accent: #0f766e;
+      --accent-soft: #e6f4f1;
+      --warn: #9a3412;
+      --code: #111827;
+      --code-bg: #eef2f7;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
+    }
+
+    main {
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 32px 24px 56px;
+    }
+
+    header {
+      margin-bottom: 24px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 28px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 28px 0 12px;
+      font-size: 18px;
+      line-height: 1.3;
+      letter-spacing: 0;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    .meta {
+      color: var(--muted);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 18px;
+      margin: 16px 0;
+    }
+
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .metric {
+      background: var(--accent-soft);
+      border: 1px solid #b8ddd6;
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 13px;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .metric span {
+      font-size: 18px;
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+    }
+
+    th,
+    td {
+      border-bottom: 1px solid var(--line);
+      padding: 10px 12px;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eef2f7;
+      font-weight: 700;
+      color: #374151;
+      white-space: nowrap;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    code,
+    pre {
+      font-family: "Cascadia Code", Consolas, "Liberation Mono", monospace;
+      color: var(--code);
+      background: var(--code-bg);
+      border-radius: 6px;
+    }
+
+    code {
+      padding: 2px 5px;
+      font-size: 12px;
+    }
+
+    pre {
+      margin: 10px 0 0;
+      padding: 12px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      font-size: 12px;
+      line-height: 1.45;
+    }
+
+    .changed {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .note {
+      border-left: 4px solid var(--warn);
+      padding: 10px 12px;
+      background: #fff7ed;
+      color: #7c2d12;
+      border-radius: 6px;
+    }
+
+    ul {
+      margin: 8px 0 0 20px;
+      padding: 0;
+    }
+
+    li {
+      margin: 4px 0;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        padding: 22px 14px 42px;
+      }
+
+      .summary {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Sub2API Claude Code 请求头对齐记录</h1>
+      <p class="meta">生成时间：2026-05-07 18:55 Asia/Shanghai</p>
+      <p>本报告记录本地 Claude Code 2.1.132 抓包结果，以及 Sub2API 代码中为对齐这些请求头所做的改动。</p>
+    </header>
+
+    <section class="summary">
+      <div class="metric">
+        <strong>本地 Claude Code</strong>
+        <span>2.1.132</span>
+      </div>
+      <div class="metric">
+        <strong>真实 SDK/Stainless</strong>
+        <span>0.81.0</span>
+      </div>
+      <div class="metric">
+        <strong>请求入口</strong>
+        <span>sdk-cli</span>
+      </div>
+    </section>
+
+    <section>
+      <h2>抓包来源</h2>
+      <div class="panel">
+        <p>抓包请求：</p>
+        <pre>POST https://frogclaw.com/v1/messages?beta=true</pre>
+        <p>抓包文件：</p>
+        <ul>
+          <li><code>captures/claude-code-headers/latest_headers.redacted.json</code></li>
+          <li><code>captures/claude-code-headers/latest_request.redacted.json</code></li>
+          <li><code>captures/claude-code-headers/requests.redacted.jsonl</code></li>
+        </ul>
+        <p class="note">认证信息已脱敏保存，例如 <code>x-api-key</code> 被写成 <code>&lt;redacted:51 chars&gt;</code>。</p>
+      </div>
+    </section>
+
+    <section>
+      <h2>请求头差异</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>字段</th>
+            <th>原 Sub2API 默认值</th>
+            <th>本地抓包真实值</th>
+            <th>处理</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>User-Agent</code></td>
+            <td><code>claude-cli/2.1.92 (external, cli)</code>，中间曾改为 <code>claude-cli/2.1.132 (external, cli)</code></td>
+            <td><code>claude-cli/2.1.132 (external, sdk-cli)</code></td>
+            <td class="changed">已改为抓包值</td>
+          </tr>
+          <tr>
+            <td><code>X-Stainless-Package-Version</code></td>
+            <td><code>0.70.0</code>，中间曾改为 <code>0.95.0</code></td>
+            <td><code>0.81.0</code></td>
+            <td class="changed">已改为抓包值</td>
+          </tr>
+          <tr>
+            <td><code>X-Stainless-OS</code></td>
+            <td><code>Linux</code></td>
+            <td><code>Windows</code></td>
+            <td class="changed">已改为抓包值</td>
+          </tr>
+          <tr>
+            <td><code>X-Stainless-Arch</code></td>
+            <td><code>arm64</code></td>
+            <td><code>x64</code></td>
+            <td class="changed">已改为抓包值</td>
+          </tr>
+          <tr>
+            <td><code>X-Stainless-Runtime-Version</code></td>
+            <td><code>v24.13.0</code></td>
+            <td><code>v24.3.0</code></td>
+            <td class="changed">已改为抓包值</td>
+          </tr>
+          <tr>
+            <td><code>anthropic-beta</code></td>
+            <td><code>claude-code-20250219,oauth-2025-04-20,interleaved-thinking-2025-05-14,fine-grained-tool-streaming-2025-05-14</code></td>
+            <td><code>claude-code-20250219,interleaved-thinking-2025-05-14,context-management-2025-06-27,prompt-caching-scope-2026-01-05,effort-2025-11-24</code></td>
+            <td class="changed">已改为抓包值，并取消默认强制补 <code>oauth-2025-04-20</code></td>
+          </tr>
+          <tr>
+            <td><code>x-anthropic-billing-header</code></td>
+            <td><code>cc_version=2.1.92.{fp}; cc_entrypoint=cli; cch=00000;</code></td>
+            <td><code>cc_version=2.1.132.74e; cc_entrypoint=sdk-cli; cch=2b4eb;</code></td>
+            <td class="changed">版本和 entrypoint 已对齐；<code>{fp}</code> 与 <code>cch</code> 继续按请求内容动态计算</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>代码改动</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>文件</th>
+            <th>改动摘要</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>backend/internal/pkg/claude/constants.go</code></td>
+            <td>更新 Claude Code 版本、默认请求头、Stainless 指纹、默认 beta 集合、count_tokens beta、API Key beta。</td>
+          </tr>
+          <tr>
+            <td><code>backend/internal/service/identity_service.go</code></td>
+            <td>默认 fingerprint 改为本地抓包值：<code>sdk-cli</code>、<code>0.81.0</code>、<code>Windows</code>、<code>x64</code>、<code>v24.3.0</code>。</td>
+          </tr>
+          <tr>
+            <td><code>backend/internal/service/gateway_billing_block.go</code></td>
+            <td>billing attribution block 改为 <code>cc_entrypoint=sdk-cli</code>。</td>
+          </tr>
+          <tr>
+            <td><code>backend/internal/service/gateway_service.go</code></td>
+            <td>取消 OAuth 链路默认强制补 <code>oauth-2025-04-20</code>，缺省时使用本地抓包对齐的 beta 集合。</td>
+          </tr>
+          <tr>
+            <td><code>backend/internal/service/gateway_prompt_test.go</code></td>
+            <td>测试断言从 <code>cc_entrypoint=cli</code> 更新为 <code>cc_entrypoint=sdk-cli</code>。</td>
+          </tr>
+          <tr>
+            <td><code>backend/internal/service/gateway_anthropic_apikey_passthrough_test.go</code></td>
+            <td>测试断言更新为不再要求 <code>oauth-2025-04-20</code>，并验证默认 beta 集合。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>最终默认请求头</h2>
+      <div class="panel">
+        <pre>User-Agent: claude-cli/2.1.132 (external, sdk-cli)
+X-Stainless-Lang: js
+X-Stainless-Package-Version: 0.81.0
+X-Stainless-OS: Windows
+X-Stainless-Arch: x64
+X-Stainless-Runtime: node
+X-Stainless-Runtime-Version: v24.3.0
+X-Stainless-Retry-Count: 0
+X-Stainless-Timeout: 600
+X-App: cli
+Anthropic-Dangerous-Direct-Browser-Access: true
+anthropic-beta: claude-code-20250219,interleaved-thinking-2025-05-14,context-management-2025-06-27,prompt-caching-scope-2026-01-05,effort-2025-11-24</pre>
+      </div>
+    </section>
+
+    <section>
+      <h2>验证</h2>
+      <div class="panel">
+        <p>已执行并通过：</p>
+        <pre>cd backend
+go test ./internal/pkg/claude ./internal/service -run "Test.*(Billing|Prompt|Identity|ClaudeCode|AccountTest|AnthropicOAuth|Beta)"</pre>
+        <p>结果：</p>
+        <pre>ok github.com/Wei-Shaw/sub2api/internal/service</pre>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

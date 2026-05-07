@@ -413,7 +413,7 @@ func TestRewriteSystemForNonClaudeCode(t *testing.T) {
 			require.Equal(t, "text", billingBlock["type"])
 			require.Contains(t, billingBlock["text"], "x-anthropic-billing-header:")
 			require.Contains(t, billingBlock["text"], "cc_version=")
-			require.Contains(t, billingBlock["text"], "cc_entrypoint=cli")
+			require.Contains(t, billingBlock["text"], "cc_entrypoint=sdk-cli")
 			require.Contains(t, billingBlock["text"], "cch=00000")
 
 			systemBlock, ok := systemArr[1].(map[string]any)
