@@ -836,6 +836,8 @@ export default {
     path: 'Path',
     inboundEndpoint: 'Inbound Endpoint',
     upstreamEndpoint: 'Upstream Endpoint',
+    error: 'Error',
+    failed: 'Failed',
     type: 'Type',
     tokens: 'Tokens',
     cost: 'Cost',

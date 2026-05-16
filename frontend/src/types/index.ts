@@ -1166,6 +1166,8 @@ export interface UsageLog {
   reasoning_effort?: string | null
   inbound_endpoint?: string | null
   upstream_endpoint?: string | null
+  error_status?: string | null
+  error_message?: string | null
 
   group_id: number | null
   subscription_id: number | null

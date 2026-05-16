@@ -3,6 +3,7 @@ package handler
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"strconv"
 	"strings"
@@ -254,6 +255,7 @@ func (h *OpenAIGatewayHandler) Images(c *gin.Context) {
 				}
 				h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, false, nil)
 				wroteFallback := h.ensureForwardErrorResponse(c, streamStarted)
+				h.recordOpenAIImageFailedUsage(c, apiKey, subscription, account, parsed, channelMapping, forwardDurationMs, err)
 				fields := []zap.Field{
 					zap.Int64("account_id", account.ID),
 					zap.Bool("fallback_error_response_written", wroteFallback),
@@ -321,6 +323,69 @@ func (h *OpenAIGatewayHandler) Images(c *gin.Context) {
 		)
 		return
 	}
+}
+
+func (h *OpenAIGatewayHandler) recordOpenAIImageFailedUsage(
+	c *gin.Context,
+	apiKey *service.APIKey,
+	subscription *service.UserSubscription,
+	account *service.Account,
+	parsed *service.OpenAIImagesRequest,
+	channelMapping service.ChannelMappingResult,
+	forwardDurationMs int64,
+	forwardErr error,
+) {
+	if c == nil || apiKey == nil || apiKey.User == nil || account == nil {
+		return
+	}
+	userAgent := c.GetHeader("User-Agent")
+	clientIP := ip.GetClientIP(c)
+	inboundEndpoint := GetInboundEndpoint(c)
+	upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
+	upstreamModel := strings.TrimSpace(channelMapping.MappedModel)
+	if upstreamModel == "" {
+		upstreamModel = strings.TrimSpace(parsed.Model)
+	}
+	errorMessage := strings.TrimSpace(forwardErr.Error())
+	if v, ok := c.Get(service.OpsUpstreamErrorMessageKey); ok {
+		if msg, ok := v.(string); ok && strings.TrimSpace(msg) != "" {
+			errorMessage = strings.TrimSpace(msg)
+		}
+	}
+	errorStatus := "failed"
+	if statusCode, ok := getContextInt64(c, service.OpsUpstreamStatusCodeKey); ok && statusCode > 0 {
+		errorStatus = fmt.Sprintf("upstream_%d", statusCode)
+	}
+	if errorMessage == "" {
+		errorMessage = "image generation failed"
+	}
+	h.submitMandatoryUsageRecordTask(func(ctx context.Context) {
+		if err := h.gatewayService.RecordFailedUsage(ctx, &service.OpenAIRecordFailedUsageInput{
+			APIKey:             apiKey,
+			User:               apiKey.User,
+			Account:            account,
+			Subscription:       subscription,
+			Model:              parsed.Model,
+			UpstreamModel:      upstreamModel,
+			InboundEndpoint:    inboundEndpoint,
+			UpstreamEndpoint:   upstreamEndpoint,
+			UserAgent:          userAgent,
+			IPAddress:          clientIP,
+			ErrorStatus:        errorStatus,
+			ErrorMessage:       errorMessage,
+			Duration:           time.Duration(forwardDurationMs) * time.Millisecond,
+			ChannelUsageFields: channelMapping.ToUsageFields(parsed.Model, upstreamModel),
+		}); err != nil {
+			logger.L().With(
+				zap.String("component", "handler.openai_gateway.images"),
+				zap.Int64("user_id", apiKey.User.ID),
+				zap.Int64("api_key_id", apiKey.ID),
+				zap.Any("group_id", apiKey.GroupID),
+				zap.String("model", parsed.Model),
+				zap.Int64("account_id", account.ID),
+			).Error("openai.images.record_failed_usage_failed", zap.Error(err))
+		}
+	})
 }
 
 func isMultipartImagesContentType(contentType string) bool {

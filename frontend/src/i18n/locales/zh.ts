@@ -840,6 +840,8 @@ export default {
     path: '路径',
     inboundEndpoint: '入站端点',
     upstreamEndpoint: '上游端点',
+    error: '错误',
+    failed: '失败',
     type: '类型',
     tokens: 'Token',
     cost: '费用',

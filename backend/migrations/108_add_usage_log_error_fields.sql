@@ -1,0 +1,2 @@
+ALTER TABLE usage_logs ADD COLUMN IF NOT EXISTS error_status VARCHAR(32);
+ALTER TABLE usage_logs ADD COLUMN IF NOT EXISTS error_message VARCHAR(1024);

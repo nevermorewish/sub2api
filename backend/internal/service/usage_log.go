@@ -122,6 +122,10 @@ type UsageLog struct {
 	InboundEndpoint *string
 	// UpstreamEndpoint is the normalized upstream endpoint path, e.g. /v1/responses.
 	UpstreamEndpoint *string
+	// ErrorStatus marks failed requests that were recorded for visibility only.
+	ErrorStatus *string
+	// ErrorMessage stores the sanitized upstream/client-facing failure message.
+	ErrorMessage *string
 
 	GroupID        *int64
 	SubscriptionID *int64

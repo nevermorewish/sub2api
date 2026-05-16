@@ -72,6 +72,18 @@
           </div>
         </template>
 
+        <template #cell-error="{ row }">
+          <div v-if="row.error_message" class="max-w-[360px] space-y-1 text-xs">
+            <span class="inline-flex items-center rounded bg-red-100 px-2 py-0.5 font-medium text-red-700 dark:bg-red-900/40 dark:text-red-200">
+              {{ row.error_status || t('usage.failed') }}
+            </span>
+            <div class="break-words text-red-700 dark:text-red-300" :title="row.error_message">
+              {{ row.error_message }}
+            </div>
+          </div>
+          <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
+        </template>
+
         <template #cell-group="{ row }">
           <span v-if="row.group" class="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium bg-indigo-100 text-indigo-800 dark:bg-indigo-900 dark:text-indigo-200">
             {{ row.group.name }}

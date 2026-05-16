@@ -34257,6 +34257,8 @@ type UsageLogMutation struct {
 	addfirst_token_ms           *int
 	user_agent                  *string
 	ip_address                  *string
+	error_status                *string
+	error_message               *string
 	image_count                 *int
 	addimage_count              *int
 	image_size                  *string
@@ -36097,6 +36099,104 @@ func (m *UsageLogMutation) ResetIPAddress() {
 	delete(m.clearedFields, usagelog.FieldIPAddress)
 }
 
+// SetErrorStatus sets the "error_status" field.
+func (m *UsageLogMutation) SetErrorStatus(s string) {
+	m.error_status = &s
+}
+
+// ErrorStatus returns the value of the "error_status" field in the mutation.
+func (m *UsageLogMutation) ErrorStatus() (r string, exists bool) {
+	v := m.error_status
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldErrorStatus returns the old "error_status" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldErrorStatus(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldErrorStatus is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldErrorStatus requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldErrorStatus: %w", err)
+	}
+	return oldValue.ErrorStatus, nil
+}
+
+// ClearErrorStatus clears the value of the "error_status" field.
+func (m *UsageLogMutation) ClearErrorStatus() {
+	m.error_status = nil
+	m.clearedFields[usagelog.FieldErrorStatus] = struct{}{}
+}
+
+// ErrorStatusCleared returns if the "error_status" field was cleared in this mutation.
+func (m *UsageLogMutation) ErrorStatusCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldErrorStatus]
+	return ok
+}
+
+// ResetErrorStatus resets all changes to the "error_status" field.
+func (m *UsageLogMutation) ResetErrorStatus() {
+	m.error_status = nil
+	delete(m.clearedFields, usagelog.FieldErrorStatus)
+}
+
+// SetErrorMessage sets the "error_message" field.
+func (m *UsageLogMutation) SetErrorMessage(s string) {
+	m.error_message = &s
+}
+
+// ErrorMessage returns the value of the "error_message" field in the mutation.
+func (m *UsageLogMutation) ErrorMessage() (r string, exists bool) {
+	v := m.error_message
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldErrorMessage returns the old "error_message" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldErrorMessage(ctx context.Context) (v *string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldErrorMessage is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldErrorMessage requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldErrorMessage: %w", err)
+	}
+	return oldValue.ErrorMessage, nil
+}
+
+// ClearErrorMessage clears the value of the "error_message" field.
+func (m *UsageLogMutation) ClearErrorMessage() {
+	m.error_message = nil
+	m.clearedFields[usagelog.FieldErrorMessage] = struct{}{}
+}
+
+// ErrorMessageCleared returns if the "error_message" field was cleared in this mutation.
+func (m *UsageLogMutation) ErrorMessageCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldErrorMessage]
+	return ok
+}
+
+// ResetErrorMessage resets all changes to the "error_message" field.
+func (m *UsageLogMutation) ResetErrorMessage() {
+	m.error_message = nil
+	delete(m.clearedFields, usagelog.FieldErrorMessage)
+}
+
 // SetImageCount sets the "image_count" field.
 func (m *UsageLogMutation) SetImageCount(i int) {
 	m.image_count = &i
@@ -36443,7 +36543,7 @@ func (m *UsageLogMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UsageLogMutation) Fields() []string {
-	fields := make([]string, 0, 37)
+	fields := make([]string, 0, 39)
 	if m.user != nil {
 		fields = append(fields, usagelog.FieldUserID)
 	}
@@ -36543,6 +36643,12 @@ func (m *UsageLogMutation) Fields() []string {
 	if m.ip_address != nil {
 		fields = append(fields, usagelog.FieldIPAddress)
 	}
+	if m.error_status != nil {
+		fields = append(fields, usagelog.FieldErrorStatus)
+	}
+	if m.error_message != nil {
+		fields = append(fields, usagelog.FieldErrorMessage)
+	}
 	if m.image_count != nil {
 		fields = append(fields, usagelog.FieldImageCount)
 	}
@@ -36629,6 +36735,10 @@ func (m *UsageLogMutation) Field(name string) (ent.Value, bool) {
 		return m.UserAgent()
 	case usagelog.FieldIPAddress:
 		return m.IPAddress()
+	case usagelog.FieldErrorStatus:
+		return m.ErrorStatus()
+	case usagelog.FieldErrorMessage:
+		return m.ErrorMessage()
 	case usagelog.FieldImageCount:
 		return m.ImageCount()
 	case usagelog.FieldImageSize:
@@ -36712,6 +36822,10 @@ func (m *UsageLogMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldUserAgent(ctx)
 	case usagelog.FieldIPAddress:
 		return m.OldIPAddress(ctx)
+	case usagelog.FieldErrorStatus:
+		return m.OldErrorStatus(ctx)
+	case usagelog.FieldErrorMessage:
+		return m.OldErrorMessage(ctx)
 	case usagelog.FieldImageCount:
 		return m.OldImageCount(ctx)
 	case usagelog.FieldImageSize:
@@ -36959,6 +37073,20 @@ func (m *UsageLogMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetIPAddress(v)
+		return nil
+	case usagelog.FieldErrorStatus:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetErrorStatus(v)
+		return nil
+	case usagelog.FieldErrorMessage:
+		v, ok := value.(string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetErrorMessage(v)
 		return nil
 	case usagelog.FieldImageCount:
 		v, ok := value.(int)
@@ -37288,6 +37416,12 @@ func (m *UsageLogMutation) ClearedFields() []string {
 	if m.FieldCleared(usagelog.FieldIPAddress) {
 		fields = append(fields, usagelog.FieldIPAddress)
 	}
+	if m.FieldCleared(usagelog.FieldErrorStatus) {
+		fields = append(fields, usagelog.FieldErrorStatus)
+	}
+	if m.FieldCleared(usagelog.FieldErrorMessage) {
+		fields = append(fields, usagelog.FieldErrorMessage)
+	}
 	if m.FieldCleared(usagelog.FieldImageSize) {
 		fields = append(fields, usagelog.FieldImageSize)
 	}
@@ -37343,6 +37477,12 @@ func (m *UsageLogMutation) ClearField(name string) error {
 		return nil
 	case usagelog.FieldIPAddress:
 		m.ClearIPAddress()
+		return nil
+	case usagelog.FieldErrorStatus:
+		m.ClearErrorStatus()
+		return nil
+	case usagelog.FieldErrorMessage:
+		m.ClearErrorMessage()
 		return nil
 	case usagelog.FieldImageSize:
 		m.ClearImageSize()
@@ -37453,6 +37593,12 @@ func (m *UsageLogMutation) ResetField(name string) error {
 		return nil
 	case usagelog.FieldIPAddress:
 		m.ResetIPAddress()
+		return nil
+	case usagelog.FieldErrorStatus:
+		m.ResetErrorStatus()
+		return nil
+	case usagelog.FieldErrorMessage:
+		m.ResetErrorMessage()
 		return nil
 	case usagelog.FieldImageCount:
 		m.ResetImageCount()

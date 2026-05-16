@@ -449,6 +449,34 @@ func (_c *UsageLogCreate) SetNillableIPAddress(v *string) *UsageLogCreate {
 	return _c
 }
 
+// SetErrorStatus sets the "error_status" field.
+func (_c *UsageLogCreate) SetErrorStatus(v string) *UsageLogCreate {
+	_c.mutation.SetErrorStatus(v)
+	return _c
+}
+
+// SetNillableErrorStatus sets the "error_status" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableErrorStatus(v *string) *UsageLogCreate {
+	if v != nil {
+		_c.SetErrorStatus(*v)
+	}
+	return _c
+}
+
+// SetErrorMessage sets the "error_message" field.
+func (_c *UsageLogCreate) SetErrorMessage(v string) *UsageLogCreate {
+	_c.mutation.SetErrorMessage(v)
+	return _c
+}
+
+// SetNillableErrorMessage sets the "error_message" field if the given value is not nil.
+func (_c *UsageLogCreate) SetNillableErrorMessage(v *string) *UsageLogCreate {
+	if v != nil {
+		_c.SetErrorMessage(*v)
+	}
+	return _c
+}
+
 // SetImageCount sets the "image_count" field.
 func (_c *UsageLogCreate) SetImageCount(v int) *UsageLogCreate {
 	_c.mutation.SetImageCount(v)
@@ -746,6 +774,16 @@ func (_c *UsageLogCreate) check() error {
 			return &ValidationError{Name: "ip_address", err: fmt.Errorf(`ent: validator failed for field "UsageLog.ip_address": %w`, err)}
 		}
 	}
+	if v, ok := _c.mutation.ErrorStatus(); ok {
+		if err := usagelog.ErrorStatusValidator(v); err != nil {
+			return &ValidationError{Name: "error_status", err: fmt.Errorf(`ent: validator failed for field "UsageLog.error_status": %w`, err)}
+		}
+	}
+	if v, ok := _c.mutation.ErrorMessage(); ok {
+		if err := usagelog.ErrorMessageValidator(v); err != nil {
+			return &ValidationError{Name: "error_message", err: fmt.Errorf(`ent: validator failed for field "UsageLog.error_message": %w`, err)}
+		}
+	}
 	if _, ok := _c.mutation.ImageCount(); !ok {
 		return &ValidationError{Name: "image_count", err: errors.New(`ent: missing required field "UsageLog.image_count"`)}
 	}
@@ -907,6 +945,14 @@ func (_c *UsageLogCreate) createSpec() (*UsageLog, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.IPAddress(); ok {
 		_spec.SetField(usagelog.FieldIPAddress, field.TypeString, value)
 		_node.IPAddress = &value
+	}
+	if value, ok := _c.mutation.ErrorStatus(); ok {
+		_spec.SetField(usagelog.FieldErrorStatus, field.TypeString, value)
+		_node.ErrorStatus = &value
+	}
+	if value, ok := _c.mutation.ErrorMessage(); ok {
+		_spec.SetField(usagelog.FieldErrorMessage, field.TypeString, value)
+		_node.ErrorMessage = &value
 	}
 	if value, ok := _c.mutation.ImageCount(); ok {
 		_spec.SetField(usagelog.FieldImageCount, field.TypeInt, value)
@@ -1640,6 +1686,42 @@ func (u *UsageLogUpsert) UpdateIPAddress() *UsageLogUpsert {
 // ClearIPAddress clears the value of the "ip_address" field.
 func (u *UsageLogUpsert) ClearIPAddress() *UsageLogUpsert {
 	u.SetNull(usagelog.FieldIPAddress)
+	return u
+}
+
+// SetErrorStatus sets the "error_status" field.
+func (u *UsageLogUpsert) SetErrorStatus(v string) *UsageLogUpsert {
+	u.Set(usagelog.FieldErrorStatus, v)
+	return u
+}
+
+// UpdateErrorStatus sets the "error_status" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateErrorStatus() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldErrorStatus)
+	return u
+}
+
+// ClearErrorStatus clears the value of the "error_status" field.
+func (u *UsageLogUpsert) ClearErrorStatus() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldErrorStatus)
+	return u
+}
+
+// SetErrorMessage sets the "error_message" field.
+func (u *UsageLogUpsert) SetErrorMessage(v string) *UsageLogUpsert {
+	u.Set(usagelog.FieldErrorMessage, v)
+	return u
+}
+
+// UpdateErrorMessage sets the "error_message" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateErrorMessage() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldErrorMessage)
+	return u
+}
+
+// ClearErrorMessage clears the value of the "error_message" field.
+func (u *UsageLogUpsert) ClearErrorMessage() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldErrorMessage)
 	return u
 }
 
@@ -2412,6 +2494,48 @@ func (u *UsageLogUpsertOne) UpdateIPAddress() *UsageLogUpsertOne {
 func (u *UsageLogUpsertOne) ClearIPAddress() *UsageLogUpsertOne {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearIPAddress()
+	})
+}
+
+// SetErrorStatus sets the "error_status" field.
+func (u *UsageLogUpsertOne) SetErrorStatus(v string) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetErrorStatus(v)
+	})
+}
+
+// UpdateErrorStatus sets the "error_status" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateErrorStatus() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateErrorStatus()
+	})
+}
+
+// ClearErrorStatus clears the value of the "error_status" field.
+func (u *UsageLogUpsertOne) ClearErrorStatus() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearErrorStatus()
+	})
+}
+
+// SetErrorMessage sets the "error_message" field.
+func (u *UsageLogUpsertOne) SetErrorMessage(v string) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetErrorMessage(v)
+	})
+}
+
+// UpdateErrorMessage sets the "error_message" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateErrorMessage() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateErrorMessage()
+	})
+}
+
+// ClearErrorMessage clears the value of the "error_message" field.
+func (u *UsageLogUpsertOne) ClearErrorMessage() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearErrorMessage()
 	})
 }
 
@@ -3358,6 +3482,48 @@ func (u *UsageLogUpsertBulk) UpdateIPAddress() *UsageLogUpsertBulk {
 func (u *UsageLogUpsertBulk) ClearIPAddress() *UsageLogUpsertBulk {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearIPAddress()
+	})
+}
+
+// SetErrorStatus sets the "error_status" field.
+func (u *UsageLogUpsertBulk) SetErrorStatus(v string) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetErrorStatus(v)
+	})
+}
+
+// UpdateErrorStatus sets the "error_status" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateErrorStatus() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateErrorStatus()
+	})
+}
+
+// ClearErrorStatus clears the value of the "error_status" field.
+func (u *UsageLogUpsertBulk) ClearErrorStatus() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearErrorStatus()
+	})
+}
+
+// SetErrorMessage sets the "error_message" field.
+func (u *UsageLogUpsertBulk) SetErrorMessage(v string) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetErrorMessage(v)
+	})
+}
+
+// UpdateErrorMessage sets the "error_message" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateErrorMessage() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateErrorMessage()
+	})
+}
+
+// ClearErrorMessage clears the value of the "error_message" field.
+func (u *UsageLogUpsertBulk) ClearErrorMessage() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearErrorMessage()
 	})
 }
 

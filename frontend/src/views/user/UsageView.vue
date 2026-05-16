@@ -180,6 +180,18 @@
             </span>
           </template>
 
+          <template #cell-error="{ row }">
+            <div v-if="row.error_message" class="max-w-[320px] space-y-1 text-xs">
+              <span class="inline-flex items-center rounded bg-red-100 px-2 py-0.5 font-medium text-red-700 dark:bg-red-900/40 dark:text-red-200">
+                {{ row.error_status || t('usage.failed') }}
+              </span>
+              <div class="break-words text-red-700 dark:text-red-300" :title="row.error_message">
+                {{ row.error_message }}
+              </div>
+            </div>
+            <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
+          </template>
+
           <template #cell-stream="{ row }">
             <span
               class="inline-flex items-center rounded px-2 py-0.5 text-xs font-medium"
@@ -563,6 +575,7 @@ const columns = computed<Column[]>(() => [
   { key: 'model', label: t('usage.model'), sortable: true },
   { key: 'reasoning_effort', label: t('usage.reasoningEffort'), sortable: false },
   { key: 'endpoint', label: t('usage.endpoint'), sortable: false },
+  { key: 'error', label: t('usage.error'), sortable: false },
   { key: 'stream', label: t('usage.type'), sortable: false },
   { key: 'billing_mode', label: t('admin.usage.billingMode'), sortable: false },
   { key: 'tokens', label: t('usage.tokens'), sortable: false },

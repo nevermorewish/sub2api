@@ -698,6 +698,46 @@ func (_u *UsageLogUpdate) ClearIPAddress() *UsageLogUpdate {
 	return _u
 }
 
+// SetErrorStatus sets the "error_status" field.
+func (_u *UsageLogUpdate) SetErrorStatus(v string) *UsageLogUpdate {
+	_u.mutation.SetErrorStatus(v)
+	return _u
+}
+
+// SetNillableErrorStatus sets the "error_status" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableErrorStatus(v *string) *UsageLogUpdate {
+	if v != nil {
+		_u.SetErrorStatus(*v)
+	}
+	return _u
+}
+
+// ClearErrorStatus clears the value of the "error_status" field.
+func (_u *UsageLogUpdate) ClearErrorStatus() *UsageLogUpdate {
+	_u.mutation.ClearErrorStatus()
+	return _u
+}
+
+// SetErrorMessage sets the "error_message" field.
+func (_u *UsageLogUpdate) SetErrorMessage(v string) *UsageLogUpdate {
+	_u.mutation.SetErrorMessage(v)
+	return _u
+}
+
+// SetNillableErrorMessage sets the "error_message" field if the given value is not nil.
+func (_u *UsageLogUpdate) SetNillableErrorMessage(v *string) *UsageLogUpdate {
+	if v != nil {
+		_u.SetErrorMessage(*v)
+	}
+	return _u
+}
+
+// ClearErrorMessage clears the value of the "error_message" field.
+func (_u *UsageLogUpdate) ClearErrorMessage() *UsageLogUpdate {
+	_u.mutation.ClearErrorMessage()
+	return _u
+}
+
 // SetImageCount sets the "image_count" field.
 func (_u *UsageLogUpdate) SetImageCount(v int) *UsageLogUpdate {
 	_u.mutation.ResetImageCount()
@@ -885,6 +925,16 @@ func (_u *UsageLogUpdate) check() error {
 	if v, ok := _u.mutation.IPAddress(); ok {
 		if err := usagelog.IPAddressValidator(v); err != nil {
 			return &ValidationError{Name: "ip_address", err: fmt.Errorf(`ent: validator failed for field "UsageLog.ip_address": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ErrorStatus(); ok {
+		if err := usagelog.ErrorStatusValidator(v); err != nil {
+			return &ValidationError{Name: "error_status", err: fmt.Errorf(`ent: validator failed for field "UsageLog.error_status": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ErrorMessage(); ok {
+		if err := usagelog.ErrorMessageValidator(v); err != nil {
+			return &ValidationError{Name: "error_message", err: fmt.Errorf(`ent: validator failed for field "UsageLog.error_message": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.ImageSize(); ok {
@@ -1086,6 +1136,18 @@ func (_u *UsageLogUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.IPAddressCleared() {
 		_spec.ClearField(usagelog.FieldIPAddress, field.TypeString)
+	}
+	if value, ok := _u.mutation.ErrorStatus(); ok {
+		_spec.SetField(usagelog.FieldErrorStatus, field.TypeString, value)
+	}
+	if _u.mutation.ErrorStatusCleared() {
+		_spec.ClearField(usagelog.FieldErrorStatus, field.TypeString)
+	}
+	if value, ok := _u.mutation.ErrorMessage(); ok {
+		_spec.SetField(usagelog.FieldErrorMessage, field.TypeString, value)
+	}
+	if _u.mutation.ErrorMessageCleared() {
+		_spec.ClearField(usagelog.FieldErrorMessage, field.TypeString)
 	}
 	if value, ok := _u.mutation.ImageCount(); ok {
 		_spec.SetField(usagelog.FieldImageCount, field.TypeInt, value)
@@ -1933,6 +1995,46 @@ func (_u *UsageLogUpdateOne) ClearIPAddress() *UsageLogUpdateOne {
 	return _u
 }
 
+// SetErrorStatus sets the "error_status" field.
+func (_u *UsageLogUpdateOne) SetErrorStatus(v string) *UsageLogUpdateOne {
+	_u.mutation.SetErrorStatus(v)
+	return _u
+}
+
+// SetNillableErrorStatus sets the "error_status" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableErrorStatus(v *string) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetErrorStatus(*v)
+	}
+	return _u
+}
+
+// ClearErrorStatus clears the value of the "error_status" field.
+func (_u *UsageLogUpdateOne) ClearErrorStatus() *UsageLogUpdateOne {
+	_u.mutation.ClearErrorStatus()
+	return _u
+}
+
+// SetErrorMessage sets the "error_message" field.
+func (_u *UsageLogUpdateOne) SetErrorMessage(v string) *UsageLogUpdateOne {
+	_u.mutation.SetErrorMessage(v)
+	return _u
+}
+
+// SetNillableErrorMessage sets the "error_message" field if the given value is not nil.
+func (_u *UsageLogUpdateOne) SetNillableErrorMessage(v *string) *UsageLogUpdateOne {
+	if v != nil {
+		_u.SetErrorMessage(*v)
+	}
+	return _u
+}
+
+// ClearErrorMessage clears the value of the "error_message" field.
+func (_u *UsageLogUpdateOne) ClearErrorMessage() *UsageLogUpdateOne {
+	_u.mutation.ClearErrorMessage()
+	return _u
+}
+
 // SetImageCount sets the "image_count" field.
 func (_u *UsageLogUpdateOne) SetImageCount(v int) *UsageLogUpdateOne {
 	_u.mutation.ResetImageCount()
@@ -2133,6 +2235,16 @@ func (_u *UsageLogUpdateOne) check() error {
 	if v, ok := _u.mutation.IPAddress(); ok {
 		if err := usagelog.IPAddressValidator(v); err != nil {
 			return &ValidationError{Name: "ip_address", err: fmt.Errorf(`ent: validator failed for field "UsageLog.ip_address": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ErrorStatus(); ok {
+		if err := usagelog.ErrorStatusValidator(v); err != nil {
+			return &ValidationError{Name: "error_status", err: fmt.Errorf(`ent: validator failed for field "UsageLog.error_status": %w`, err)}
+		}
+	}
+	if v, ok := _u.mutation.ErrorMessage(); ok {
+		if err := usagelog.ErrorMessageValidator(v); err != nil {
+			return &ValidationError{Name: "error_message", err: fmt.Errorf(`ent: validator failed for field "UsageLog.error_message": %w`, err)}
 		}
 	}
 	if v, ok := _u.mutation.ImageSize(); ok {
@@ -2351,6 +2463,18 @@ func (_u *UsageLogUpdateOne) sqlSave(ctx context.Context) (_node *UsageLog, err 
 	}
 	if _u.mutation.IPAddressCleared() {
 		_spec.ClearField(usagelog.FieldIPAddress, field.TypeString)
+	}
+	if value, ok := _u.mutation.ErrorStatus(); ok {
+		_spec.SetField(usagelog.FieldErrorStatus, field.TypeString, value)
+	}
+	if _u.mutation.ErrorStatusCleared() {
+		_spec.ClearField(usagelog.FieldErrorStatus, field.TypeString)
+	}
+	if value, ok := _u.mutation.ErrorMessage(); ok {
+		_spec.SetField(usagelog.FieldErrorMessage, field.TypeString, value)
+	}
+	if _u.mutation.ErrorMessageCleared() {
+		_spec.ClearField(usagelog.FieldErrorMessage, field.TypeString)
 	}
 	if value, ok := _u.mutation.ImageCount(); ok {
 		_spec.SetField(usagelog.FieldImageCount, field.TypeInt, value)

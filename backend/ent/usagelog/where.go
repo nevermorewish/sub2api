@@ -220,6 +220,16 @@ func IPAddress(v string) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldIPAddress, v))
 }
 
+// ErrorStatus applies equality check predicate on the "error_status" field. It's identical to ErrorStatusEQ.
+func ErrorStatus(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldErrorStatus, v))
+}
+
+// ErrorMessage applies equality check predicate on the "error_message" field. It's identical to ErrorMessageEQ.
+func ErrorMessage(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldErrorMessage, v))
+}
+
 // ImageCount applies equality check predicate on the "image_count" field. It's identical to ImageCountEQ.
 func ImageCount(v int) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldImageCount, v))
@@ -1783,6 +1793,156 @@ func IPAddressEqualFold(v string) predicate.UsageLog {
 // IPAddressContainsFold applies the ContainsFold predicate on the "ip_address" field.
 func IPAddressContainsFold(v string) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldContainsFold(FieldIPAddress, v))
+}
+
+// ErrorStatusEQ applies the EQ predicate on the "error_status" field.
+func ErrorStatusEQ(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldErrorStatus, v))
+}
+
+// ErrorStatusNEQ applies the NEQ predicate on the "error_status" field.
+func ErrorStatusNEQ(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldErrorStatus, v))
+}
+
+// ErrorStatusIn applies the In predicate on the "error_status" field.
+func ErrorStatusIn(vs ...string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIn(FieldErrorStatus, vs...))
+}
+
+// ErrorStatusNotIn applies the NotIn predicate on the "error_status" field.
+func ErrorStatusNotIn(vs ...string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotIn(FieldErrorStatus, vs...))
+}
+
+// ErrorStatusGT applies the GT predicate on the "error_status" field.
+func ErrorStatusGT(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGT(FieldErrorStatus, v))
+}
+
+// ErrorStatusGTE applies the GTE predicate on the "error_status" field.
+func ErrorStatusGTE(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGTE(FieldErrorStatus, v))
+}
+
+// ErrorStatusLT applies the LT predicate on the "error_status" field.
+func ErrorStatusLT(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLT(FieldErrorStatus, v))
+}
+
+// ErrorStatusLTE applies the LTE predicate on the "error_status" field.
+func ErrorStatusLTE(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLTE(FieldErrorStatus, v))
+}
+
+// ErrorStatusContains applies the Contains predicate on the "error_status" field.
+func ErrorStatusContains(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldContains(FieldErrorStatus, v))
+}
+
+// ErrorStatusHasPrefix applies the HasPrefix predicate on the "error_status" field.
+func ErrorStatusHasPrefix(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldHasPrefix(FieldErrorStatus, v))
+}
+
+// ErrorStatusHasSuffix applies the HasSuffix predicate on the "error_status" field.
+func ErrorStatusHasSuffix(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldHasSuffix(FieldErrorStatus, v))
+}
+
+// ErrorStatusIsNil applies the IsNil predicate on the "error_status" field.
+func ErrorStatusIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldErrorStatus))
+}
+
+// ErrorStatusNotNil applies the NotNil predicate on the "error_status" field.
+func ErrorStatusNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldErrorStatus))
+}
+
+// ErrorStatusEqualFold applies the EqualFold predicate on the "error_status" field.
+func ErrorStatusEqualFold(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEqualFold(FieldErrorStatus, v))
+}
+
+// ErrorStatusContainsFold applies the ContainsFold predicate on the "error_status" field.
+func ErrorStatusContainsFold(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldContainsFold(FieldErrorStatus, v))
+}
+
+// ErrorMessageEQ applies the EQ predicate on the "error_message" field.
+func ErrorMessageEQ(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEQ(FieldErrorMessage, v))
+}
+
+// ErrorMessageNEQ applies the NEQ predicate on the "error_message" field.
+func ErrorMessageNEQ(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNEQ(FieldErrorMessage, v))
+}
+
+// ErrorMessageIn applies the In predicate on the "error_message" field.
+func ErrorMessageIn(vs ...string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIn(FieldErrorMessage, vs...))
+}
+
+// ErrorMessageNotIn applies the NotIn predicate on the "error_message" field.
+func ErrorMessageNotIn(vs ...string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotIn(FieldErrorMessage, vs...))
+}
+
+// ErrorMessageGT applies the GT predicate on the "error_message" field.
+func ErrorMessageGT(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGT(FieldErrorMessage, v))
+}
+
+// ErrorMessageGTE applies the GTE predicate on the "error_message" field.
+func ErrorMessageGTE(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldGTE(FieldErrorMessage, v))
+}
+
+// ErrorMessageLT applies the LT predicate on the "error_message" field.
+func ErrorMessageLT(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLT(FieldErrorMessage, v))
+}
+
+// ErrorMessageLTE applies the LTE predicate on the "error_message" field.
+func ErrorMessageLTE(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldLTE(FieldErrorMessage, v))
+}
+
+// ErrorMessageContains applies the Contains predicate on the "error_message" field.
+func ErrorMessageContains(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldContains(FieldErrorMessage, v))
+}
+
+// ErrorMessageHasPrefix applies the HasPrefix predicate on the "error_message" field.
+func ErrorMessageHasPrefix(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldHasPrefix(FieldErrorMessage, v))
+}
+
+// ErrorMessageHasSuffix applies the HasSuffix predicate on the "error_message" field.
+func ErrorMessageHasSuffix(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldHasSuffix(FieldErrorMessage, v))
+}
+
+// ErrorMessageIsNil applies the IsNil predicate on the "error_message" field.
+func ErrorMessageIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldErrorMessage))
+}
+
+// ErrorMessageNotNil applies the NotNil predicate on the "error_message" field.
+func ErrorMessageNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldErrorMessage))
+}
+
+// ErrorMessageEqualFold applies the EqualFold predicate on the "error_message" field.
+func ErrorMessageEqualFold(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldEqualFold(FieldErrorMessage, v))
+}
+
+// ErrorMessageContainsFold applies the ContainsFold predicate on the "error_message" field.
+func ErrorMessageContainsFold(v string) predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldContainsFold(FieldErrorMessage, v))
 }
 
 // ImageCountEQ applies the EQ predicate on the "image_count" field.

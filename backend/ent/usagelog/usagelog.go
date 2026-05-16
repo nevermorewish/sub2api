@@ -80,6 +80,10 @@ const (
 	FieldUserAgent = "user_agent"
 	// FieldIPAddress holds the string denoting the ip_address field in the database.
 	FieldIPAddress = "ip_address"
+	// FieldErrorStatus holds the string denoting the error_status field in the database.
+	FieldErrorStatus = "error_status"
+	// FieldErrorMessage holds the string denoting the error_message field in the database.
+	FieldErrorMessage = "error_message"
 	// FieldImageCount holds the string denoting the image_count field in the database.
 	FieldImageCount = "image_count"
 	// FieldImageSize holds the string denoting the image_size field in the database.
@@ -173,6 +177,8 @@ var Columns = []string{
 	FieldFirstTokenMs,
 	FieldUserAgent,
 	FieldIPAddress,
+	FieldErrorStatus,
+	FieldErrorMessage,
 	FieldImageCount,
 	FieldImageSize,
 	FieldCacheTTLOverridden,
@@ -238,6 +244,10 @@ var (
 	UserAgentValidator func(string) error
 	// IPAddressValidator is a validator for the "ip_address" field. It is called by the builders before save.
 	IPAddressValidator func(string) error
+	// ErrorStatusValidator is a validator for the "error_status" field. It is called by the builders before save.
+	ErrorStatusValidator func(string) error
+	// ErrorMessageValidator is a validator for the "error_message" field. It is called by the builders before save.
+	ErrorMessageValidator func(string) error
 	// DefaultImageCount holds the default value on creation for the "image_count" field.
 	DefaultImageCount int
 	// ImageSizeValidator is a validator for the "image_size" field. It is called by the builders before save.
@@ -419,6 +429,16 @@ func ByUserAgent(opts ...sql.OrderTermOption) OrderOption {
 // ByIPAddress orders the results by the ip_address field.
 func ByIPAddress(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIPAddress, opts...).ToFunc()
+}
+
+// ByErrorStatus orders the results by the error_status field.
+func ByErrorStatus(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldErrorStatus, opts...).ToFunc()
+}
+
+// ByErrorMessage orders the results by the error_message field.
+func ByErrorMessage(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldErrorMessage, opts...).ToFunc()
 }
 
 // ByImageCount orders the results by the image_count field.

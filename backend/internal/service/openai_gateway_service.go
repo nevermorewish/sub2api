@@ -5199,6 +5199,94 @@ type OpenAIRecordUsageInput struct {
 	ChannelUsageFields
 }
 
+type OpenAIRecordFailedUsageInput struct {
+	APIKey           *APIKey
+	User             *User
+	Account          *Account
+	Subscription     *UserSubscription
+	Model            string
+	UpstreamModel    string
+	InboundEndpoint  string
+	UpstreamEndpoint string
+	UserAgent        string
+	IPAddress        string
+	ErrorStatus      string
+	ErrorMessage     string
+	Duration         time.Duration
+	ChannelUsageFields
+}
+
+func (s *OpenAIGatewayService) RecordFailedUsage(ctx context.Context, input *OpenAIRecordFailedUsageInput) error {
+	if input == nil {
+		return errors.New("openai failed usage input is nil")
+	}
+	if input.APIKey == nil || input.User == nil || input.Account == nil {
+		return errors.New("openai failed usage input missing required entities")
+	}
+	model := strings.TrimSpace(input.Model)
+	if model == "" {
+		model = strings.TrimSpace(input.UpstreamModel)
+	}
+	if model == "" {
+		return errors.New("openai failed usage model is empty")
+	}
+	requestID := resolveUsageBillingRequestID(ctx, "")
+	durationMs := int(input.Duration.Milliseconds())
+	if durationMs < 0 {
+		durationMs = 0
+	}
+	errorStatus := strings.TrimSpace(input.ErrorStatus)
+	if errorStatus == "" {
+		errorStatus = "failed"
+	}
+	errorMessage := strings.TrimSpace(input.ErrorMessage)
+	if len(errorMessage) > 1024 {
+		errorMessage = errorMessage[:1024]
+	}
+	accountRateMultiplier := input.Account.BillingRateMultiplier()
+	billingMode := string(BillingModeImage)
+	usageLog := &UsageLog{
+		UserID:                input.User.ID,
+		APIKeyID:              input.APIKey.ID,
+		AccountID:             input.Account.ID,
+		RequestID:             requestID,
+		Model:                 model,
+		RequestedModel:        model,
+		UpstreamModel:         optionalNonEqualStringPtr(input.UpstreamModel, model),
+		InboundEndpoint:       optionalTrimmedStringPtr(input.InboundEndpoint),
+		UpstreamEndpoint:      optionalTrimmedStringPtr(input.UpstreamEndpoint),
+		RateMultiplier:        1,
+		AccountRateMultiplier: &accountRateMultiplier,
+		BillingType:           BillingTypeBalance,
+		RequestType:           RequestTypeSync,
+		DurationMs:            &durationMs,
+		ErrorStatus:           optionalTrimmedStringPtr(errorStatus),
+		ErrorMessage:          optionalTrimmedStringPtr(errorMessage),
+		BillingMode:           &billingMode,
+		CreatedAt:             time.Now(),
+		ChannelID:             optionalInt64Ptr(input.ChannelID),
+		ModelMappingChain:     optionalTrimmedStringPtr(input.ModelMappingChain),
+	}
+	if input.OriginalModel != "" {
+		usageLog.RequestedModel = input.OriginalModel
+	}
+	if input.UserAgent != "" {
+		usageLog.UserAgent = &input.UserAgent
+	}
+	if input.IPAddress != "" {
+		usageLog.IPAddress = &input.IPAddress
+	}
+	if input.APIKey.GroupID != nil {
+		usageLog.GroupID = input.APIKey.GroupID
+	}
+	if input.Subscription != nil {
+		usageLog.SubscriptionID = &input.Subscription.ID
+		usageLog.BillingType = BillingTypeSubscription
+	}
+	writeUsageLogBestEffort(ctx, s.usageLogRepo, usageLog, "service.openai_gateway")
+	return nil
+}
+
 // RecordUsage records usage and deducts balance
 func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRecordUsageInput) error {
 	if input == nil {
