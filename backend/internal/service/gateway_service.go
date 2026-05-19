@@ -4261,6 +4261,73 @@ func injectAnthropicCacheControlTTL1h(body []byte) []byte {
 	return forceEphemeralCacheControlTTL(body, cacheTTLTarget1h)
 }
 
+func normalizeAnthropicCacheControlTTLOrder(body []byte) []byte {
+	if !hasAnthropicCacheControlTTLOrderConflict(body) {
+		return body
+	}
+	return forceEphemeralCacheControlTTL(body, cacheTTLTarget1h)
+}
+
+func hasAnthropicCacheControlTTLOrderConflict(body []byte) bool {
+	if len(body) == 0 {
+		return false
+	}
+
+	seen5m := false
+	conflict := false
+	visit := func(value gjson.Result) bool {
+		cc := value.Get("cache_control")
+		if !cc.Exists() || cc.Get("type").String() != "ephemeral" {
+			return true
+		}
+		switch cc.Get("ttl").String() {
+		case cacheTTLTarget5m:
+			seen5m = true
+		case cacheTTLTarget1h:
+			if seen5m {
+				conflict = true
+				return false
+			}
+		}
+		return true
+	}
+
+	tools := gjson.GetBytes(body, "tools")
+	if tools.IsArray() {
+		tools.ForEach(func(_, tool gjson.Result) bool {
+			return visit(tool)
+		})
+		if conflict {
+			return true
+		}
+	}
+
+	system := gjson.GetBytes(body, "system")
+	if system.IsArray() {
+		system.ForEach(func(_, block gjson.Result) bool {
+			return visit(block)
+		})
+		if conflict {
+			return true
+		}
+	}
+
+	messages := gjson.GetBytes(body, "messages")
+	if messages.IsArray() {
+		messages.ForEach(func(_, msg gjson.Result) bool {
+			content := msg.Get("content")
+			if !content.IsArray() {
+				return true
+			}
+			content.ForEach(func(_, block gjson.Result) bool {
+				return visit(block)
+			})
+			return !conflict
+		})
+	}
+	return conflict
+}
+
 func forceEphemeralCacheControlTTL(body []byte, ttl string) []byte {
 	if len(body) == 0 || ttl == "" {
 		return body
@@ -4497,6 +4564,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 	if s.shouldInjectAnthropicCacheTTL1h(ctx, account) {
 		body = injectAnthropicCacheControlTTL1h(body)
 	}
+	body = normalizeAnthropicCacheControlTTLOrder(body)
 
 	// 获取凭证
 	token, tokenType, err := s.GetAccessToken(ctx, account)

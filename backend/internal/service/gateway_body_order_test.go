@@ -180,6 +180,24 @@ func TestInjectAnthropicCacheControlTTL1h_OnlyUpdatesExistingEphemeralCacheContr
 	require.Equal(t, "1h", gjson.GetBytes(result, "tools.0.cache_control.ttl").String())
 }
 
+func TestNormalizeAnthropicCacheControlTTLOrder_PromotesWhen5mPrecedes1h(t *testing.T) {
+	body := []byte(`{"tools":[{"name":"a","input_schema":{},"cache_control":{"type":"ephemeral","ttl":"5m"}}],"system":[{"type":"text","text":"sys","cache_control":{"type":"ephemeral","ttl":"5m"}}],"messages":[{"role":"user","content":[{"type":"text","text":"hi","cache_control":{"type":"ephemeral","ttl":"1h"}}]}]}`)
+
+	result := normalizeAnthropicCacheControlTTLOrder(body)
+
+	require.Equal(t, "1h", gjson.GetBytes(result, "tools.0.cache_control.ttl").String())
+	require.Equal(t, "1h", gjson.GetBytes(result, "system.0.cache_control.ttl").String())
+	require.Equal(t, "1h", gjson.GetBytes(result, "messages.0.content.0.cache_control.ttl").String())
+}
+
+func TestNormalizeAnthropicCacheControlTTLOrder_KeepsValid5mOnlyRequest(t *testing.T) {
+	body := []byte(`{"tools":[{"name":"a","input_schema":{},"cache_control":{"type":"ephemeral","ttl":"5m"}}],"messages":[{"role":"user","content":[{"type":"text","text":"hi","cache_control":{"type":"ephemeral","ttl":"5m"}}]}]}`)
+
+	result := normalizeAnthropicCacheControlTTLOrder(body)
+
+	require.JSONEq(t, string(body), string(result))
+}
+
 func TestGatewayCacheTTLGlobalSetting_TargetResolution(t *testing.T) {
 	repo := &gatewayTTLSettingRepo{data: map[string]string{
 		SettingKeyEnableAnthropicCacheTTL1hInjection: "true",
