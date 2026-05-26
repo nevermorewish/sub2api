@@ -6,10 +6,10 @@
 # Stage 3: Final minimal image
 # =============================================================================
 
-ARG NODE_IMAGE=node:24-alpine
-ARG GOLANG_IMAGE=golang:1.26.3-alpine
-ARG ALPINE_IMAGE=alpine:3.21
-ARG POSTGRES_IMAGE=postgres:18-alpine
+ARG NODE_IMAGE=crpi-dzjyl2rfnlfugj1m.cn-shanghai.personal.cr.aliyuncs.com/frogclaw/base-node:24-alpine
+ARG GOLANG_IMAGE=crpi-dzjyl2rfnlfugj1m.cn-shanghai.personal.cr.aliyuncs.com/frogclaw/base-golang:1.26.3-alpine
+ARG ALPINE_IMAGE=crpi-dzjyl2rfnlfugj1m.cn-shanghai.personal.cr.aliyuncs.com/frogclaw/base-alpine:3.21
+ARG POSTGRES_IMAGE=crpi-dzjyl2rfnlfugj1m.cn-shanghai.personal.cr.aliyuncs.com/frogclaw/base-postgres:18-alpine
 ARG GOPROXY=https://goproxy.cn,direct
 ARG GOSUMDB=sum.golang.google.cn
 

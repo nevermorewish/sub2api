@@ -1,4 +1,4 @@
-FROM golang:1.26.3-alpine
+FROM crpi-dzjyl2rfnlfugj1m.cn-shanghai.personal.cr.aliyuncs.com/frogclaw/base-golang:1.26.3-alpine
 
 WORKDIR /app
 
