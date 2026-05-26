@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <title>sub2api Claude header alignment — 2026-05-26</title>
+  <style>
+    :root {
+      --bg: #fafafa;
+      --fg: #1f2328;
+      --muted: #57606a;
+      --line: #d0d7de;
+      --panel: #ffffff;
+      --accent: #0969da;
+      --added: #1a7f37;
+      --added-bg: #dafbe1;
+      --removed: #cf222e;
+      --removed-bg: #ffebe9;
+      --warn-bg: #fff8c5;
+      --warn-line: #d4a72c;
+      --code-bg: #f6f8fa;
+    }
+    body {
+      font-family: -apple-system, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--fg);
+      margin: 0;
+      padding: 32px 48px 64px;
+      line-height: 1.55;
+    }
+    h1 { margin: 0 0 4px; font-size: 22px; }
+    h2 { margin: 32px 0 12px; font-size: 17px; border-bottom: 1px solid var(--line); padding-bottom: 6px; }
+    h3 { margin: 24px 0 8px; font-size: 15px; }
+    .meta { color: var(--muted); font-size: 13px; margin-bottom: 24px; }
+    code, pre { font-family: ui-monospace, "SF Mono", Consolas, "Cascadia Code", monospace; font-size: 12.5px; }
+    code { background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+    pre {
+      background: var(--code-bg);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px 14px;
+      overflow-x: auto;
+      white-space: pre;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 16px;
+      background: var(--panel);
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+    th { background: #f6f8fa; font-weight: 600; }
+    td.field { white-space: nowrap; font-weight: 600; color: var(--muted); }
+    td.same { color: var(--muted); }
+    td.diff { background: var(--added-bg); color: var(--added); }
+    td.stale { background: var(--removed-bg); color: var(--removed); }
+    td.extra { background: var(--warn-bg); }
+    .legend { font-size: 12px; color: var(--muted); margin: 4px 0 16px; }
+    .legend span { display: inline-block; padding: 1px 8px; border-radius: 4px; margin-right: 8px; }
+    .legend .ok { background: var(--added-bg); color: var(--added); }
+    .legend .bad { background: var(--removed-bg); color: var(--removed); }
+    .legend .warn { background: var(--warn-bg); }
+    .callout {
+      border-left: 3px solid var(--warn-line);
+      background: var(--warn-bg);
+      padding: 10px 14px;
+      margin: 12px 0;
+      font-size: 13px;
+      border-radius: 0 6px 6px 0;
+    }
+    .callout strong { color: #6e4f00; }
+    .small { font-size: 12px; color: var(--muted); }
+    ul { margin: 6px 0 8px 22px; padding: 0; }
+    li { margin: 3px 0; }
+  </style>
+</head>
+<body>
+
+<h1>sub2api Claude header 对齐情况</h1>
+<div class="meta">
+  抓包日期：2026-05-26 &middot; 真实交互式 Claude Code 2.1.132 CLI 流量
+  &middot; 对照来源：<code>captures/claude-code-headers/cli_baseline_2026-05-26.redacted.json</code>
+  &middot; 上游基线：<a href="https://github.com/Wei-Shaw/sub2api">Wei-Shaw/sub2api</a>（基于 2.1.92 抓包）
+</div>
+
+<div class="callout">
+  <strong>核心结论：</strong> 上游 <code>Wei-Shaw/sub2api</code> 的 header 配置取自 Claude Code <code>2.1.92</code> 旧抓包，
+  其中 <code>oauth-2025-04-20</code> / <code>fine-grained-tool-streaming-2025-05-14</code> 在真实 2.1.132 CLI 流量里已被移除；
+  同时真实流量新增了 <code>context-1m</code>、<code>redact-thinking</code>、<code>context-management</code>、<code>prompt-caching-scope</code>、<code>effort</code> 这 5 个 beta，本地代码已经对齐到当下真实抓包。
+</div>
+
+<h2>1. 真实交互 CLI 抓包基线（2.1.132）</h2>
+
+<pre>POST /v1/messages?beta=true HTTP/1.1
+Host: api.huanxing.ai
+User-Agent: claude-cli/2.1.132 (external, cli)
+X-Claude-Code-Session-Id: c042185c-060e-4727-b863-9436f776efd1
+X-Stainless-Lang: js
+X-Stainless-Package-Version: 0.81.0
+X-Stainless-OS: Windows
+X-Stainless-Arch: x64
+X-Stainless-Runtime: node
+X-Stainless-Runtime-Version: v24.3.0
+X-Stainless-Retry-Count: 0
+X-Stainless-Timeout: 3000
+X-App: cli
+anthropic-version: 2023-06-01
+anthropic-dangerous-direct-browser-access: true
+anthropic-beta: claude-code-20250219,context-1m-2025-08-07,interleaved-thinking-2025-05-14,redact-thinking-2026-02-12,context-management-2025-06-27,prompt-caching-scope-2026-01-05,effort-2025-11-24
+
+body.system[0].text:
+  x-anthropic-billing-header: cc_version=2.1.132.c7b; cc_entrypoint=cli; cch=7123f;</pre>
+
+<p class="small">本次抓包通过 mitmdump（端口 8080） + 用户在 PowerShell/Git Bash 里手敲 <code>claude</code> 交互式运行得到；
+debug log 中显示 <code>[API REQUEST] /v1/messages source=cli</code>，与上一次误抓的 <code>source=sdk</code> 形成对比。</p>
+
+<h2>2. 默认请求头对照（本地 vs 上游）</h2>
+
+<div class="legend">
+  <span class="ok">已对齐真实 CLI</span>
+  <span class="bad">上游过期 / 与真实 CLI 不一致</span>
+  <span class="warn">本地策略性扩展（不在真实 CLI 中但保留）</span>
+</div>
+
+<table>
+  <colgroup><col style="width:24%"><col style="width:25%"><col style="width:25%"><col style="width:26%"></colgroup>
+  <thead>
+    <tr>
+      <th>字段</th>
+      <th>真实 CLI 抓包</th>
+      <th>本地当前</th>
+      <th>上游 Wei-Shaw/sub2api</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td class="field">CLI 版本</td>
+      <td><code>2.1.132</code></td>
+      <td class="diff"><code>2.1.132</code></td>
+      <td class="stale"><code>2.1.92</code></td>
+    </tr>
+    <tr>
+      <td class="field">User-Agent</td>
+      <td><code>claude-cli/2.1.132 (external, cli)</code></td>
+      <td class="diff"><code>claude-cli/2.1.132 (external, cli)</code></td>
+      <td class="stale"><code>claude-cli/2.1.92 (external, cli)</code></td>
+    </tr>
+    <tr>
+      <td class="field">X-Stainless-Lang</td>
+      <td><code>js</code></td>
+      <td class="same"><code>js</code></td>
+      <td class="same"><code>js</code></td>
+    </tr>
+    <tr>
+      <td class="field">X-Stainless-Package-Version</td>
+      <td><code>0.81.0</code></td>
+      <td class="diff"><code>0.81.0</code></td>
+      <td class="stale"><code>0.70.0</code></td>
+    </tr>
+    <tr>
+      <td class="field">X-Stainless-OS</td>
+      <td><code>Windows</code></td>
+      <td class="diff"><code>Windows</code></td>
+      <td class="stale"><code>Linux</code></td>
+    </tr>
+    <tr>
+      <td class="field">X-Stainless-Arch</td>
+      <td><code>x64</code></td>
+      <td class="diff"><code>x64</code></td>
+      <td class="stale"><code>arm64</code></td>
+    </tr>
+    <tr>
+      <td class="field">X-Stainless-Runtime</td>
+      <td><code>node</code></td>
+      <td class="same"><code>node</code></td>
+      <td class="same"><code>node</code></td>
+    </tr>
+    <tr>
+      <td class="field">X-Stainless-Runtime-Version</td>
+      <td><code>v24.3.0</code></td>
+      <td class="diff"><code>v24.3.0</code></td>
+      <td class="stale"><code>v24.13.0</code></td>
+    </tr>
+    <tr>
+      <td class="field">X-Stainless-Retry-Count</td>
+      <td><code>0</code></td>
+      <td class="same"><code>0</code></td>
+      <td class="same"><code>0</code></td>
+    </tr>
+    <tr>
+      <td class="field">X-Stainless-Timeout</td>
+      <td><code>3000</code></td>
+      <td class="diff"><code>3000</code></td>
+      <td class="stale"><code>600</code></td>
+    </tr>
+    <tr>
+      <td class="field">X-App</td>
+      <td><code>cli</code></td>
+      <td class="same"><code>cli</code></td>
+      <td class="same"><code>cli</code></td>
+    </tr>
+    <tr>
+      <td class="field">anthropic-dangerous-direct-browser-access</td>
+      <td><code>true</code></td>
+      <td class="same"><code>true</code></td>
+      <td class="same"><code>true</code></td>
+    </tr>
+    <tr>
+      <td class="field">billing block <code>cc_entrypoint</code></td>
+      <td><code>cli</code></td>
+      <td class="diff"><code>cli</code></td>
+      <td class="same"><code>cli</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>3. anthropic-beta 集合对照</h2>
+
+<p class="small">下面以 OAuth 账号 + 非 haiku 模型这条主链路为例。本地 <code>FullClaudeCodeMimicryBetas()</code> 输出会被注入到该路径的 <code>anthropic-beta</code>。</p>
+
+<table>
+  <colgroup><col style="width:32%"><col style="width:22%"><col style="width:23%"><col style="width:23%"></colgroup>
+  <thead>
+    <tr>
+      <th>beta token</th>
+      <th>真实 CLI 抓包</th>
+      <th>本地（FullClaudeCodeMimicryBetas）</th>
+      <th>上游 Wei-Shaw/sub2api</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr><td class="field"><code>claude-code-20250219</code></td><td>✓</td><td class="diff">✓</td><td class="same">✓</td></tr>
+    <tr><td class="field"><code>context-1m-2025-08-07</code></td><td>✓</td><td class="diff">✓</td><td class="stale">—</td></tr>
+    <tr><td class="field"><code>interleaved-thinking-2025-05-14</code></td><td>✓</td><td class="diff">✓</td><td class="same">✓</td></tr>
+    <tr><td class="field"><code>redact-thinking-2026-02-12</code></td><td>✓</td><td class="diff">✓</td><td class="stale">—</td></tr>
+    <tr><td class="field"><code>context-management-2025-06-27</code></td><td>✓</td><td class="diff">✓</td><td class="stale">—</td></tr>
+    <tr><td class="field"><code>prompt-caching-scope-2026-01-05</code></td><td>✓</td><td class="diff">✓</td><td class="stale">—</td></tr>
+    <tr><td class="field"><code>effort-2025-11-24</code></td><td>✓</td><td class="diff">✓</td><td class="stale">—</td></tr>
+    <tr><td class="field"><code>oauth-2025-04-20</code></td><td>—</td><td class="diff">—（已移除）</td><td class="stale">✓（已过时）</td></tr>
+    <tr><td class="field"><code>fine-grained-tool-streaming-2025-05-14</code></td><td>—</td><td class="diff">—</td><td class="stale">✓（已过时）</td></tr>
+    <tr><td class="field"><code>extended-cache-ttl-2025-04-11</code></td><td>—</td><td class="extra">✓（本地 1h TTL 注入功能需要）</td><td class="same">✓</td></tr>
+  </tbody>
+</table>
+
+<h3>3.1 各 header 常量的具体值</h3>
+<table>
+  <colgroup><col style="width:30%"><col style="width:70%"></colgroup>
+  <thead><tr><th>常量</th><th>本地当前值</th></tr></thead>
+  <tbody>
+    <tr><td><code>DefaultBetaHeader</code></td><td><code>claude-code-20250219,context-1m-2025-08-07,interleaved-thinking-2025-05-14,redact-thinking-2026-02-12,context-management-2025-06-27,prompt-caching-scope-2026-01-05,effort-2025-11-24</code></td></tr>
+    <tr><td><code>MessageBetaHeaderNoTools</code></td><td>同 <code>DefaultBetaHeader</code></td></tr>
+    <tr><td><code>MessageBetaHeaderWithTools</code></td><td>同 <code>DefaultBetaHeader</code></td></tr>
+    <tr><td><code>CountTokensBetaHeader</code></td><td><code>DefaultBetaHeader + ",token-counting-2024-11-01"</code></td></tr>
+    <tr><td><code>HaikuBetaHeader</code></td><td><code>interleaved-thinking-2025-05-14</code></td></tr>
+    <tr><td><code>APIKeyBetaHeader</code></td><td>同 <code>DefaultBetaHeader</code></td></tr>
+    <tr><td><code>APIKeyHaikuBetaHeader</code></td><td><code>interleaved-thinking-2025-05-14</code></td></tr>
+    <tr><td><code>FullClaudeCodeMimicryBetas()</code></td><td><code>DefaultBetaHeader + ",extended-cache-ttl-2025-04-11"</code></td></tr>
+  </tbody>
+</table>
+
+<h2>4. 网关逻辑层差异</h2>
+
+<table>
+  <colgroup><col style="width:28%"><col style="width:36%"><col style="width:36%"></colgroup>
+  <thead><tr><th>关注点</th><th>本地</th><th>上游</th></tr></thead>
+  <tbody>
+    <tr>
+      <td class="field">OAuth 客户端 beta 补齐逻辑（<code>getBetaHeader</code>）</td>
+      <td class="diff">直接透传 <code>clientBetaHeader</code>；缺省时回落到 <code>DefaultBetaHeader</code> / <code>HaikuBetaHeader</code>。真实 CLI 不带 <code>oauth-2025-04-20</code>，不需要补齐。</td>
+      <td class="stale">如果 <code>clientBetaHeader</code> 不含 <code>oauth-2025-04-20</code>，会在 <code>claude-code-20250219</code> 之后强制插入 <code>oauth-2025-04-20</code>。基于旧抓包的假设。</td>
+    </tr>
+    <tr>
+      <td class="field">Mimicry 路径 <code>requiredBetas</code> 起点</td>
+      <td class="diff">非 haiku → <code>FullClaudeCodeMimicryBetas()</code>；haiku → <code>{BetaInterleavedThinking}</code></td>
+      <td class="stale">非 haiku → <code>FullClaudeCodeMimicryBetas()</code>；haiku → <code>{BetaOAuth, BetaInterleavedThinking}</code></td>
+    </tr>
+    <tr>
+      <td class="field">cache_control TTL 顺序冲突规整</td>
+      <td class="extra">新增 <code>normalizeAnthropicCacheControlTTLOrder()</code>：如果请求中先出现 <code>ttl=5m</code>、后出现 <code>ttl=1h</code>，统一强制升级到 <code>1h</code>，规避 Anthropic 的 cache TTL 顺序冲突报错。</td>
+      <td>无此逻辑。</td>
+    </tr>
+    <tr>
+      <td class="field"><code>billing block</code> 格式</td>
+      <td><code>cc_version=2.1.132.{fp}; cc_entrypoint=cli; cch=00000;</code></td>
+      <td><code>cc_version=2.1.92.{fp}; cc_entrypoint=cli; cch=00000;</code></td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>5. 为什么这些差异会影响计费判定</h2>
+<ul>
+  <li><strong>User-Agent / X-Stainless-* 不匹配真实 CLI</strong>：Anthropic 反作弊会把 <code>(claude-cli/X.Y.Z, X-Stainless-OS, X-Stainless-Arch, X-Stainless-Runtime-Version, X-Stainless-Package-Version)</code> 作为指纹组合判定。任一组合越偏离真实 CLI 当前流量，越容易被识别为第三方调用 → <code>Third-party apps now draw from your extra usage</code>。</li>
+  <li><strong>anthropic-beta 集合不匹配</strong>：缺失 <code>claude-code-20250219</code> 或带上真实 CLI 已经不再发送的 <code>oauth-2025-04-20</code> 都会被识别为非 CC 流量。本地代码已经按真实抓包的精确顺序输出。</li>
+  <li><strong><code>cc_entrypoint</code> 必须和 User-Agent <code>(external, X)</code> 内的 X 保持一致</strong>：真实 CLI 这两处都是 <code>cli</code>。SDK 派生的进程会变成 <code>sdk-cli</code>，但本仓伪装的是交互 CLI，所以全用 <code>cli</code>。</li>
+  <li><strong><code>extended-cache-ttl-2025-04-11</code> 是本地策略性扩展</strong>：真实 CLI 不带它，但本仓有"开启后强制注入 1h 缓存断点"的开关；当该开关开启时如果不带这个 beta，Anthropic 会拒绝 <code>ttl=1h</code>。所以把它附加在 <code>FullClaudeCodeMimicryBetas()</code> 列表末尾。</li>
+</ul>
+
+<h2>6. 涉及到的文件</h2>
+<ul>
+  <li><code>backend/internal/pkg/claude/constants.go</code> — beta 集合 / <code>DefaultHeaders</code> / <code>CLICurrentVersion</code> / <code>FullClaudeCodeMimicryBetas()</code></li>
+  <li><code>backend/internal/service/identity_service.go</code> — <code>defaultFingerprint</code></li>
+  <li><code>backend/internal/service/gateway_billing_block.go</code> — <code>cc_entrypoint=cli</code> 拼装</li>
+  <li><code>backend/internal/service/gateway_service.go</code> — Forward 链路 beta 注入逻辑 + <code>normalizeAnthropicCacheControlTTLOrder()</code></li>
+  <li>测试：<code>gateway_anthropic_apikey_passthrough_test.go</code>、<code>gateway_prompt_test.go</code>、<code>gateway_beta_test.go</code>、<code>gateway_body_order_test.go</code></li>
+</ul>
+
+</body>
+</html>

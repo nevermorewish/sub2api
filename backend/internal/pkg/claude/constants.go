@@ -32,7 +32,11 @@ const (
 var DroppedBetas = []string{}
 
 // DefaultBetaHeader Claude Code 客户端默认的 anthropic-beta header
-const DefaultBetaHeader = BetaClaudeCode + "," + BetaInterleavedThinking + "," + BetaContextManagement + "," + BetaPromptCachingScope + "," + BetaEffort
+//
+// 顺序与真实交互式 Claude Code CLI 2.1.132 抓包一致（captures/claude-code-headers/latest_request.redacted.json）：
+//   claude-code, context-1m, interleaved-thinking, redact-thinking, context-management, prompt-caching-scope, effort
+// 真实 CLI 不带 oauth-2025-04-20 和 fine-grained-tool-streaming。
+const DefaultBetaHeader = BetaClaudeCode + "," + BetaContext1M + "," + BetaInterleavedThinking + "," + BetaRedactThinking + "," + BetaContextManagement + "," + BetaPromptCachingScope + "," + BetaEffort
 
 // MessageBetaHeaderNoTools /v1/messages 在无工具时的 beta header
 //
@@ -79,11 +83,13 @@ const CLICurrentVersion = "2.1.132"
 func FullClaudeCodeMimicryBetas() []string {
 	return []string{
 		BetaClaudeCode,
-		BetaOAuth,
+		BetaContext1M,
 		BetaInterleavedThinking,
+		BetaRedactThinking,
 		BetaContextManagement,
 		BetaPromptCachingScope,
 		BetaEffort,
+		// extended-cache-ttl 不在真实 CLI 抓包内，但本仓 1h TTL 注入功能依赖它，保留在末尾。
 		BetaExtendedCacheTTL,
 	}
 }
@@ -93,7 +99,7 @@ var DefaultHeaders = map[string]string{
 	// Keep these in sync with recent Claude CLI traffic to reduce the chance
 	// that Claude Code-scoped OAuth credentials are rejected as "non-CLI" usage.
 	// 版本参考：对齐 Parrot (src/transform/cc_mimicry.py:49) 的 CLI_USER_AGENT。
-	"User-Agent":                                "claude-cli/2.1.132 (external, sdk-cli)",
+	"User-Agent":                                "claude-cli/2.1.132 (external, cli)",
 	"X-Stainless-Lang":                          "js",
 	"X-Stainless-Package-Version":               "0.81.0",
 	"X-Stainless-OS":                            "Windows",
@@ -101,7 +107,7 @@ var DefaultHeaders = map[string]string{
 	"X-Stainless-Runtime":                       "node",
 	"X-Stainless-Runtime-Version":               "v24.3.0",
 	"X-Stainless-Retry-Count":                   "0",
-	"X-Stainless-Timeout":                       "600",
+	"X-Stainless-Timeout":                       "3000",
 	"X-App":                                     "cli",
 	"Anthropic-Dangerous-Direct-Browser-Access": "true",
 }

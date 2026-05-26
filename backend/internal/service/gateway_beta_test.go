@@ -124,13 +124,19 @@ func TestMergeAnthropicBetaDropping_DroppedBetas(t *testing.T) {
 	require.Contains(t, got, "fast-mode-2026-02-01")
 }
 
-func TestFullClaudeCodeMimicryBetas_DoesNotDefaultRedactThinking(t *testing.T) {
+func TestFullClaudeCodeMimicryBetas_MatchesRealCLICapture(t *testing.T) {
+	// 对齐真实交互式 Claude Code CLI 2.1.132 抓包（captures/claude-code-headers/latest_request.redacted.json）：
+	// 不含 oauth-2025-04-20；包含 redact-thinking-2026-02-12。
 	required := claude.FullClaudeCodeMimicryBetas()
 
-	require.NotContains(t, required, claude.BetaRedactThinking)
+	require.NotContains(t, required, claude.BetaOAuth)
 	require.Contains(t, required, claude.BetaClaudeCode)
-	require.Contains(t, required, claude.BetaOAuth)
 	require.Contains(t, required, claude.BetaInterleavedThinking)
+	require.Contains(t, required, claude.BetaRedactThinking)
+	require.Contains(t, required, claude.BetaContext1M)
+	require.Contains(t, required, claude.BetaContextManagement)
+	require.Contains(t, required, claude.BetaPromptCachingScope)
+	require.Contains(t, required, claude.BetaEffort)
 }
 
 func TestMergeAnthropicBetaDropping_PreservesIncomingRedactThinking(t *testing.T) {

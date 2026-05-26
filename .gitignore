@@ -136,3 +136,11 @@ docs/*
 frontend/coverage/
 aicodex
 output/
+
+# Python bytecode cache (e.g. tools/__pycache__/)
+__pycache__/
+
+# Claude header capture runtime artifacts — mitmdump 每次重写的临时文件，
+# 真正用来对齐 header 的快照请改名为 cli_baseline_*.redacted.json 并显式提交。
+captures/claude-code-headers/requests.redacted.jsonl
+captures/claude-code-headers/latest_request.redacted.json

@@ -4070,7 +4070,7 @@ func rewriteSystemForNonClaudeCode(body []byte, system any) []byte {
 	}
 
 	// 2. 构造 system 数组，对齐真实 Claude Code CLI 的 2-block 形态：
-	//    [0] billing attribution block（cc_version={cliVer}.{fp}; cc_entrypoint=sdk-cli; cch=00000;）
+	//    [0] billing attribution block（cc_version={cliVer}.{fp}; cc_entrypoint=cli; cch=00000;）
 	//    [1] "You are Claude Code..." prompt block（带 cache_control 作为稳定缓存断点）
 	//
 	//    billing block 的 cch=00000 是占位符，会被 buildUpstreamRequest 里的
