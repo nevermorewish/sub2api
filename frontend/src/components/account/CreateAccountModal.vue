@@ -3037,7 +3037,7 @@ const apiKeyHint = computed(() => {
   return t('admin.accounts.apiKeyHint')
 })
 
-const compatiblePlatforms: AccountPlatform[] = ['zhipu', 'deepseek', 'volcengine', 'ali', 'moonshot']
+const compatiblePlatforms: AccountPlatform[] = ['zhipu', 'deepseek', 'volcengine', 'ali', 'moonshot', 'mimo', 'minimax', 'opencode']
 
 const isCompatibleProviderPlatform = computed(() => compatiblePlatforms.includes(form.platform))
 
@@ -3057,6 +3057,12 @@ const getPlatformDefaultBaseURL = (platform: AccountPlatform) => {
       return 'https://dashscope.aliyuncs.com'
     case 'moonshot':
       return 'https://api.moonshot.cn'
+    case 'mimo':
+      return 'https://api.xiaomimimo.com/v1'
+    case 'minimax':
+      return 'https://api.minimaxi.com'
+    case 'opencode':
+      return 'https://opencode.ai/zen/go'
     default:
       return 'https://api.anthropic.com'
   }
@@ -3171,6 +3177,33 @@ const platformOptions = computed<PlatformSearchOption[]>(() => [
     activeClass: 'border-fuchsia-200 bg-white shadow-sm dark:border-fuchsia-900/50 dark:bg-dark-600',
     iconActiveClass: 'bg-fuchsia-50 text-fuchsia-600 dark:bg-fuchsia-900/30 dark:text-fuchsia-300',
     textActiveClass: 'text-fuchsia-600 dark:text-fuchsia-300'
+  },
+  {
+    value: 'mimo',
+    label: 'MiMo/小米',
+    subtitle: 'Xiaomi MiMo',
+    searchTerms: ['mimo', 'xiaomi', '小米'],
+    activeClass: 'border-orange-200 bg-white shadow-sm dark:border-orange-900/50 dark:bg-dark-600',
+    iconActiveClass: 'bg-orange-50 text-orange-600 dark:bg-orange-900/30 dark:text-orange-300',
+    textActiveClass: 'text-orange-600 dark:text-orange-300'
+  },
+  {
+    value: 'minimax',
+    label: 'MiniMax',
+    subtitle: 'MiniMax M 系列',
+    searchTerms: ['minimax', 'mm', 'abab'],
+    activeClass: 'border-violet-200 bg-white shadow-sm dark:border-violet-900/50 dark:bg-dark-600',
+    iconActiveClass: 'bg-violet-50 text-violet-600 dark:bg-violet-900/30 dark:text-violet-300',
+    textActiveClass: 'text-violet-600 dark:text-violet-300'
+  },
+  {
+    value: 'opencode',
+    label: 'OpenCode',
+    subtitle: '聚合 13 个模型',
+    searchTerms: ['opencode', 'aggregator', '聚合'],
+    activeClass: 'border-teal-200 bg-white shadow-sm dark:border-teal-900/50 dark:bg-dark-600',
+    iconActiveClass: 'bg-teal-50 text-teal-600 dark:bg-teal-900/30 dark:text-teal-300',
+    textActiveClass: 'text-teal-600 dark:text-teal-300'
   }
 ])
 

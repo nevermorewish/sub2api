@@ -624,7 +624,7 @@ export interface UpdateGroupRequest {
 
 // ==================== Account & Proxy Types ====================
 
-export type AccountPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'zhipu' | 'deepseek' | 'volcengine' | 'ali' | 'moonshot'
+export type AccountPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'zhipu' | 'deepseek' | 'volcengine' | 'ali' | 'moonshot' | 'mimo' | 'minimax' | 'opencode'
 export type AccountType = 'oauth' | 'setup-token' | 'apikey' | 'upstream' | 'bedrock'
 export type OAuthAddMethod = 'oauth' | 'setup-token'
 export type ProxyProtocol = 'http' | 'https' | 'socks5' | 'socks5h'

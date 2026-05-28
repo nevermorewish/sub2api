@@ -1962,6 +1962,12 @@ const getPlatformDefaultBaseURL = (platform?: AccountPlatform | null) => {
       return 'https://dashscope.aliyuncs.com'
     case 'moonshot':
       return 'https://api.moonshot.cn'
+    case 'mimo':
+      return 'https://api.xiaomimimo.com/v1'
+    case 'minimax':
+      return 'https://api.minimaxi.com'
+    case 'opencode':
+      return 'https://opencode.ai/zen/go'
     default:
       return 'https://api.anthropic.com'
   }
