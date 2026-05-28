@@ -36,10 +36,10 @@ func TestZhipuCompatibleProviderPreset(t *testing.T) {
 	if !preset.SupportsMessages("glm-5.1") {
 		t.Fatal("SupportsMessages(glm-5.1) = false, want true")
 	}
-	if len(preset.DefaultModels) != 2 {
-		t.Fatalf("len(DefaultModels) = %d, want 2", len(preset.DefaultModels))
+	if len(preset.DefaultModels) != 3 {
+		t.Fatalf("len(DefaultModels) = %d, want 3", len(preset.DefaultModels))
 	}
-	wantModels := []string{"glm-5.1", "glm-5"}
+	wantModels := []string{"glm-5.1", "glm-5-turbo", "glm-5"}
 	for i, want := range wantModels {
 		if preset.DefaultModels[i].ID != want {
 			t.Fatalf("DefaultModels[%d].ID = %q, want %q", i, preset.DefaultModels[i].ID, want)

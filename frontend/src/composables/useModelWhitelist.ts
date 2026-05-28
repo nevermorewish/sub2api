@@ -78,7 +78,7 @@ const antigravityModels = [
 
 // 智谱 GLM
 const zhipuModels = [
-  'glm-5.1', 'glm-5'
+  'glm-5.1', 'glm-5-turbo', 'glm-5'
 ]
 
 // 阿里 通义千问
@@ -158,6 +158,16 @@ const minimaxModels = [
   'minimax-m2.7', 'minimax-m2.5'
 ]
 
+// OpenCode 聚合(https://opencode.ai/zen/go),含 13 个跨厂商模型
+const opencodeModels = [
+  'glm-5.1', 'glm-5',
+  'kimi-k2.5', 'kimi-k2.6',
+  'deepseek-v4-pro', 'deepseek-v4-flash',
+  'mimo-v2.5', 'mimo-v2.5-pro',
+  'minimax-m2.7', 'minimax-m2.5',
+  'qwen3.7-max', 'qwen3.6-plus', 'qwen3.5-plus'
+]
+
 // 百度 文心
 const baiduModels = [
   'ernie-4.0-8k-latest', 'ernie-4.0-8k', 'ernie-4.0-turbo-8k',
@@ -205,6 +215,7 @@ const allModelsList: string[] = [
   ...mimoModels,
   ...doubaoModels,
   ...minimaxModels,
+  ...opencodeModels,
   ...baiduModels,
   ...sparkModels,
   ...hunyuanModels,
@@ -356,6 +367,7 @@ export function getModelsByPlatform(platform: string): string[] {
     case 'mimo': return mimoModels
     case 'doubao': return doubaoModels
     case 'minimax': return minimaxModels
+    case 'opencode': return opencodeModels
     case 'baidu': return baiduModels
     case 'spark': return sparkModels
     case 'hunyuan': return hunyuanModels

@@ -29,6 +29,7 @@ const (
 	PlatformMoonshot    = "moonshot"
 	PlatformMimo        = "mimo"
 	PlatformMiniMax     = "minimax"
+	PlatformOpenCode    = "opencode"
 )
 
 // Account type constants

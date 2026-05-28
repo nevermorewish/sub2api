@@ -21,6 +21,7 @@ func zhipuCompatibleProviderPreset() CompatibleProviderPreset {
 		DefaultBaseURL: "https://open.bigmodel.cn",
 		DefaultModels: NormalizeCompatibleModelList([]claude.Model{
 			{ID: "glm-5.1", Type: "model", DisplayName: "GLM-5.1"},
+			{ID: "glm-5-turbo", Type: "model", DisplayName: "GLM-5 Turbo"},
 			{ID: "glm-5", Type: "model", DisplayName: "GLM-5"},
 		}),
 		DefaultTestModel:      "glm-5",

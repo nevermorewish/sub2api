@@ -32,6 +32,7 @@ const (
 	PlatformMoonshot    = domain.PlatformMoonshot
 	PlatformMimo        = domain.PlatformMimo
 	PlatformMiniMax     = domain.PlatformMiniMax
+	PlatformOpenCode    = domain.PlatformOpenCode
 )
 
 func groupRequireOAuthOnlyApplies(platform string) bool {
