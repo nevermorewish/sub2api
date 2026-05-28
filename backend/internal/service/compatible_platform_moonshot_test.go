@@ -36,11 +36,11 @@ func TestMoonshotCompatibleProviderPreset(t *testing.T) {
 	if !preset.SupportsMessages("kimi-k2.5") {
 		t.Fatal("SupportsMessages(kimi-k2.5) = false, want true")
 	}
-	if len(preset.DefaultModels) != 3 {
-		t.Fatalf("len(DefaultModels) = %d, want 3", len(preset.DefaultModels))
+	if len(preset.DefaultModels) != 2 {
+		t.Fatalf("len(DefaultModels) = %d, want 2", len(preset.DefaultModels))
 	}
 
-	wantModels := []string{"kimi-k2.5", "kimi-k2-thinking", "kimi-k2-thinking-turbo"}
+	wantModels := []string{"kimi-k2.5", "kimi-k2.6"}
 	for i, want := range wantModels {
 		if preset.DefaultModels[i].ID != want {
 			t.Fatalf("DefaultModels[%d].ID = %q, want %q", i, preset.DefaultModels[i].ID, want)

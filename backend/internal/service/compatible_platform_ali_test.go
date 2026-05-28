@@ -19,7 +19,7 @@ func TestAliCompatibleProviderPreset(t *testing.T) {
 	if preset.DefaultBaseURL != "https://dashscope.aliyuncs.com" {
 		t.Fatalf("DefaultBaseURL = %q", preset.DefaultBaseURL)
 	}
-	if preset.DefaultTestModel != "qwen-turbo" {
+	if preset.DefaultTestModel != "qwen3.5-plus" {
 		t.Fatalf("DefaultTestModel = %q", preset.DefaultTestModel)
 	}
 	if preset.AuthMode != CompatibleAuthBearer {
@@ -34,11 +34,11 @@ func TestAliCompatibleProviderPreset(t *testing.T) {
 	if preset.SupportsMessages == nil {
 		t.Fatal("SupportsMessages should not be nil")
 	}
-	if len(preset.DefaultModels) != 4 {
-		t.Fatalf("len(DefaultModels) = %d, want 4", len(preset.DefaultModels))
+	if len(preset.DefaultModels) != 3 {
+		t.Fatalf("len(DefaultModels) = %d, want 3", len(preset.DefaultModels))
 	}
 
-	wantModels := []string{"qwen-turbo", "qwen-plus", "qwen-max", "qwq-32b"}
+	wantModels := []string{"qwen3.7-max", "qwen3.6-plus", "qwen3.5-plus"}
 	for i, want := range wantModels {
 		if preset.DefaultModels[i].ID != want {
 			t.Fatalf("DefaultModels[%d].ID = %q, want %q", i, preset.DefaultModels[i].ID, want)

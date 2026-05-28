@@ -30,6 +30,8 @@ const (
 	PlatformVolcEngine  = domain.PlatformVolcEngine
 	PlatformAli         = domain.PlatformAli
 	PlatformMoonshot    = domain.PlatformMoonshot
+	PlatformMimo        = domain.PlatformMimo
+	PlatformMiniMax     = domain.PlatformMiniMax
 )
 
 func groupRequireOAuthOnlyApplies(platform string) bool {

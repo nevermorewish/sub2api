@@ -13,8 +13,7 @@ func moonshotCompatibleProviderPreset() CompatibleProviderPreset {
 		DefaultBaseURL: "https://api.moonshot.cn",
 		DefaultModels: NormalizeCompatibleModelList([]claude.Model{
 			{ID: "kimi-k2.5", Type: "model", DisplayName: "Kimi K2.5"},
-			{ID: "kimi-k2-thinking", Type: "model", DisplayName: "Kimi K2 Thinking"},
-			{ID: "kimi-k2-thinking-turbo", Type: "model", DisplayName: "Kimi K2 Thinking Turbo"},
+			{ID: "kimi-k2.6", Type: "model", DisplayName: "Kimi K2.6"},
 		}),
 		DefaultTestModel:  "kimi-k2.5",
 		AuthMode:          CompatibleAuthBearer,

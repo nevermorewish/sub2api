@@ -78,23 +78,12 @@ const antigravityModels = [
 
 // 智谱 GLM
 const zhipuModels = [
-  'glm-4', 'glm-4v', 'glm-4-plus', 'glm-4-0520',
-  'glm-4-air', 'glm-4-airx', 'glm-4-long', 'glm-4-flash',
-  'glm-4v-plus', 'glm-4.5', 'glm-4.6',
-  'glm-3-turbo', 'glm-4-alltools',
-  'chatglm_turbo', 'chatglm_pro', 'chatglm_std', 'chatglm_lite',
-  'cogview-3', 'cogvideo'
+  'glm-5.1', 'glm-5'
 ]
 
 // 阿里 通义千问
 const qwenModels = [
-  'qwen-turbo', 'qwen-plus', 'qwen-max', 'qwen-max-longcontext', 'qwen-long',
-  'qwen2-72b-instruct', 'qwen2-57b-a14b-instruct', 'qwen2-7b-instruct',
-  'qwen2.5-72b-instruct', 'qwen2.5-32b-instruct', 'qwen2.5-14b-instruct',
-  'qwen2.5-7b-instruct', 'qwen2.5-3b-instruct', 'qwen2.5-1.5b-instruct',
-  'qwen2.5-coder-32b-instruct', 'qwen2.5-coder-14b-instruct', 'qwen2.5-coder-7b-instruct',
-  'qwen3-235b-a22b',
-  'qwq-32b', 'qwq-32b-preview'
+  'qwen3.7-max', 'qwen3.6-plus', 'qwen3.5-plus'
 ]
 
 // DeepSeek
@@ -147,8 +136,12 @@ const yiModels = [
 
 // Moonshot/Kimi
 const moonshotModels = [
-  'moonshot-v1-8k', 'moonshot-v1-32k', 'moonshot-v1-128k',
-  'kimi-latest'
+  'kimi-k2.5', 'kimi-k2.6'
+]
+
+// 小米 MiMo
+const mimoModels = [
+  'mimo-v2.5-pro', 'mimo-v2.5'
 ]
 
 // 字节跳动 豆包
@@ -162,9 +155,7 @@ const doubaoModels = [
 
 // MiniMax
 const minimaxModels = [
-  'abab6.5-chat', 'abab6.5s-chat', 'abab6.5s-chat-pro',
-  'abab6-chat',
-  'abab5.5-chat', 'abab5.5s-chat'
+  'minimax-m2.7', 'minimax-m2.5'
 ]
 
 // 百度 文心
@@ -211,6 +202,7 @@ const allModelsList: string[] = [
   ...cohereModels,
   ...yiModels,
   ...moonshotModels,
+  ...mimoModels,
   ...doubaoModels,
   ...minimaxModels,
   ...baiduModels,
@@ -361,6 +353,7 @@ export function getModelsByPlatform(platform: string): string[] {
     case 'cohere': return cohereModels
     case 'yi': return yiModels
     case 'moonshot': return moonshotModels
+    case 'mimo': return mimoModels
     case 'doubao': return doubaoModels
     case 'minimax': return minimaxModels
     case 'baidu': return baiduModels

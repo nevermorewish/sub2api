@@ -45,7 +45,7 @@ func RegisterGatewayRoutes(
 			switch getGroupPlatform(c) {
 			case service.PlatformOpenAI:
 				h.OpenAIGateway.Messages(c)
-			case service.PlatformZhipu, service.PlatformDeepSeek, service.PlatformVolcEngine, service.PlatformAli, service.PlatformMoonshot:
+			case service.PlatformZhipu, service.PlatformDeepSeek, service.PlatformVolcEngine, service.PlatformAli, service.PlatformMoonshot, service.PlatformMimo, service.PlatformMiniMax:
 				h.CompatibleGateway.Messages(c)
 			default:
 				h.Gateway.Messages(c)
@@ -63,7 +63,7 @@ func RegisterGatewayRoutes(
 					},
 				})
 				return
-			case service.PlatformZhipu, service.PlatformDeepSeek, service.PlatformVolcEngine, service.PlatformAli, service.PlatformMoonshot:
+			case service.PlatformZhipu, service.PlatformDeepSeek, service.PlatformVolcEngine, service.PlatformAli, service.PlatformMoonshot, service.PlatformMimo, service.PlatformMiniMax:
 				h.CompatibleGateway.CountTokens(c)
 				return
 			}
@@ -82,7 +82,7 @@ func RegisterGatewayRoutes(
 			switch getGroupPlatform(c) {
 			case service.PlatformOpenAI:
 				h.OpenAIGateway.Responses(c)
-			case service.PlatformZhipu, service.PlatformDeepSeek, service.PlatformVolcEngine, service.PlatformAli, service.PlatformMoonshot:
+			case service.PlatformZhipu, service.PlatformDeepSeek, service.PlatformVolcEngine, service.PlatformAli, service.PlatformMoonshot, service.PlatformMimo, service.PlatformMiniMax:
 				h.CompatibleGateway.Responses(c)
 			default:
 				h.Gateway.Responses(c)
@@ -92,7 +92,7 @@ func RegisterGatewayRoutes(
 			switch getGroupPlatform(c) {
 			case service.PlatformOpenAI:
 				h.OpenAIGateway.Responses(c)
-			case service.PlatformZhipu, service.PlatformDeepSeek, service.PlatformVolcEngine, service.PlatformAli, service.PlatformMoonshot:
+			case service.PlatformZhipu, service.PlatformDeepSeek, service.PlatformVolcEngine, service.PlatformAli, service.PlatformMoonshot, service.PlatformMimo, service.PlatformMiniMax:
 				h.CompatibleGateway.Responses(c)
 			default:
 				h.Gateway.Responses(c)
@@ -104,7 +104,7 @@ func RegisterGatewayRoutes(
 			switch getGroupPlatform(c) {
 			case service.PlatformOpenAI:
 				h.OpenAIGateway.ChatCompletions(c)
-			case service.PlatformZhipu, service.PlatformDeepSeek, service.PlatformVolcEngine, service.PlatformAli, service.PlatformMoonshot:
+			case service.PlatformZhipu, service.PlatformDeepSeek, service.PlatformVolcEngine, service.PlatformAli, service.PlatformMoonshot, service.PlatformMimo, service.PlatformMiniMax:
 				h.CompatibleGateway.ChatCompletions(c)
 			default:
 				h.Gateway.ChatCompletions(c)
@@ -156,7 +156,7 @@ func RegisterGatewayRoutes(
 		switch getGroupPlatform(c) {
 		case service.PlatformOpenAI:
 			h.OpenAIGateway.Responses(c)
-		case service.PlatformZhipu, service.PlatformDeepSeek, service.PlatformVolcEngine, service.PlatformAli, service.PlatformMoonshot:
+		case service.PlatformZhipu, service.PlatformDeepSeek, service.PlatformVolcEngine, service.PlatformAli, service.PlatformMoonshot, service.PlatformMimo, service.PlatformMiniMax:
 			h.CompatibleGateway.Responses(c)
 		default:
 			h.Gateway.Responses(c)
@@ -177,7 +177,7 @@ func RegisterGatewayRoutes(
 		switch getGroupPlatform(c) {
 		case service.PlatformOpenAI:
 			h.OpenAIGateway.ChatCompletions(c)
-		case service.PlatformZhipu, service.PlatformDeepSeek, service.PlatformVolcEngine, service.PlatformAli, service.PlatformMoonshot:
+		case service.PlatformZhipu, service.PlatformDeepSeek, service.PlatformVolcEngine, service.PlatformAli, service.PlatformMoonshot, service.PlatformMimo, service.PlatformMiniMax:
 			h.CompatibleGateway.ChatCompletions(c)
 		default:
 			h.Gateway.ChatCompletions(c)

@@ -27,6 +27,8 @@ const (
 	PlatformVolcEngine  = "volcengine"
 	PlatformAli         = "ali"
 	PlatformMoonshot    = "moonshot"
+	PlatformMimo        = "mimo"
+	PlatformMiniMax     = "minimax"
 )
 
 // Account type constants

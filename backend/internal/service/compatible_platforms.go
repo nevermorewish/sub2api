@@ -50,6 +50,8 @@ var compatiblePlatformOrder = []string{
 	PlatformVolcEngine,
 	PlatformAli,
 	PlatformMoonshot,
+	PlatformMimo,
+	PlatformMiniMax,
 }
 
 func CompatiblePlatforms() []string {
@@ -60,7 +62,7 @@ func CompatiblePlatforms() []string {
 
 func IsCompatiblePlatform(platform string) bool {
 	switch strings.TrimSpace(platform) {
-	case PlatformZhipu, PlatformDeepSeek, PlatformVolcEngine, PlatformAli, PlatformMoonshot:
+	case PlatformZhipu, PlatformDeepSeek, PlatformVolcEngine, PlatformAli, PlatformMoonshot, PlatformMimo, PlatformMiniMax:
 		return true
 	default:
 		return false
@@ -79,6 +81,10 @@ func compatiblePlatformDisplayName(platform string) string {
 		return "Qwen/阿里"
 	case PlatformMoonshot:
 		return "Kimi/月之暗面"
+	case PlatformMimo:
+		return "MiMo/小米"
+	case PlatformMiniMax:
+		return "MiniMax"
 	default:
 		return platform
 	}
@@ -96,6 +102,10 @@ func CompatibleProviderPresetForPlatform(platform string) (CompatibleProviderPre
 		return aliCompatibleProviderPreset(), true
 	case PlatformMoonshot:
 		return moonshotCompatibleProviderPreset(), true
+	case PlatformMimo:
+		return mimoCompatibleProviderPreset(), true
+	case PlatformMiniMax:
+		return minimaxCompatibleProviderPreset(), true
 	default:
 		return CompatibleProviderPreset{}, false
 	}

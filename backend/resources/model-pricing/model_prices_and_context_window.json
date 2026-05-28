@@ -779,6 +779,237 @@
     "supports_system_messages": true,
     "supports_tool_choice": true
   },
+  "glm-5": {
+    "cache_read_input_token_cost": 1.6e-07,
+    "input_cost_per_token": 4.0e-07,
+    "litellm_provider": "zhipu",
+    "max_input_tokens": 204800,
+    "max_output_tokens": 131072,
+    "max_tokens": 131072,
+    "mode": "chat",
+    "output_cost_per_token": 1.6e-06,
+    "source": "https://docs.bigmodel.cn/cn/guide/models/text/glm-5.1",
+    "supported_endpoints": [
+      "/v1/chat/completions"
+    ],
+    "supports_function_calling": true,
+    "supports_native_streaming": true,
+    "supports_parallel_function_calling": true,
+    "supports_prompt_caching": true,
+    "supports_response_schema": true,
+    "supports_system_messages": true,
+    "supports_tool_choice": true
+  },
+  "glm-5.1": {
+    "cache_read_input_token_cost": 4.75e-07,
+    "input_cost_per_token": 1.2e-06,
+    "litellm_provider": "zhipu",
+    "max_input_tokens": 204800,
+    "max_output_tokens": 131072,
+    "max_tokens": 131072,
+    "mode": "chat",
+    "output_cost_per_token": 4.8e-06,
+    "source": "https://docs.bigmodel.cn/cn/guide/models/text/glm-5.1",
+    "supported_endpoints": [
+      "/v1/chat/completions"
+    ],
+    "supports_function_calling": true,
+    "supports_native_streaming": true,
+    "supports_parallel_function_calling": true,
+    "supports_prompt_caching": true,
+    "supports_reasoning": true,
+    "supports_response_schema": true,
+    "supports_system_messages": true,
+    "supports_tool_choice": true
+  },
+  "kimi-k2.5": {
+    "cache_read_input_token_cost": 6.0e-08,
+    "input_cost_per_token": 6.0e-07,
+    "litellm_provider": "moonshot",
+    "max_input_tokens": 262144,
+    "max_output_tokens": 262144,
+    "max_tokens": 262144,
+    "mode": "chat",
+    "output_cost_per_token": 2.5e-06,
+    "source": "https://platform.moonshot.ai/",
+    "supported_endpoints": [
+      "/v1/chat/completions"
+    ],
+    "supports_function_calling": true,
+    "supports_native_streaming": true,
+    "supports_parallel_function_calling": true,
+    "supports_prompt_caching": true,
+    "supports_response_schema": true,
+    "supports_system_messages": true,
+    "supports_tool_choice": true
+  },
+  "kimi-k2.6": {
+    "cache_read_input_token_cost": 1.6e-07,
+    "input_cost_per_token": 9.5e-07,
+    "litellm_provider": "moonshot",
+    "max_input_tokens": 262144,
+    "max_output_tokens": 262144,
+    "max_tokens": 262144,
+    "mode": "chat",
+    "output_cost_per_token": 4.0e-06,
+    "source": "https://platform.kimi.com/docs/pricing/chat-k26",
+    "supported_endpoints": [
+      "/v1/chat/completions"
+    ],
+    "supports_function_calling": true,
+    "supports_native_streaming": true,
+    "supports_parallel_function_calling": true,
+    "supports_prompt_caching": true,
+    "supports_response_schema": true,
+    "supports_system_messages": true,
+    "supports_tool_choice": true,
+    "supports_vision": true
+  },
+  "mimo-v2.5": {
+    "input_cost_per_token": 4.0e-07,
+    "litellm_provider": "mimo",
+    "max_input_tokens": 262144,
+    "max_output_tokens": 131072,
+    "max_tokens": 131072,
+    "mode": "chat",
+    "output_cost_per_token": 2.0e-06,
+    "source": "https://platform.xiaomimimo.com/",
+    "supported_endpoints": [
+      "/v1/chat/completions"
+    ],
+    "supports_function_calling": true,
+    "supports_native_streaming": true,
+    "supports_parallel_function_calling": true,
+    "supports_response_schema": true,
+    "supports_system_messages": true,
+    "supports_tool_choice": true
+  },
+  "mimo-v2.5-pro": {
+    "input_cost_per_token": 1.0e-06,
+    "litellm_provider": "mimo",
+    "max_input_tokens": 1048576,
+    "max_output_tokens": 131072,
+    "max_tokens": 131072,
+    "mode": "chat",
+    "output_cost_per_token": 3.0e-06,
+    "source": "https://platform.xiaomimimo.com/",
+    "supported_endpoints": [
+      "/v1/chat/completions"
+    ],
+    "supports_function_calling": true,
+    "supports_native_streaming": true,
+    "supports_parallel_function_calling": true,
+    "supports_reasoning": true,
+    "supports_response_schema": true,
+    "supports_system_messages": true,
+    "supports_tool_choice": true,
+    "supports_vision": true
+  },
+  "minimax-m2.5": {
+    "input_cost_per_token": 1.5e-07,
+    "litellm_provider": "minimax",
+    "max_input_tokens": 262144,
+    "max_output_tokens": 8192,
+    "max_tokens": 8192,
+    "mode": "chat",
+    "output_cost_per_token": 1.15e-06,
+    "source": "https://platform.minimax.io/docs/pricing/overview",
+    "supported_endpoints": [
+      "/v1/chat/completions"
+    ],
+    "supports_function_calling": true,
+    "supports_native_streaming": true,
+    "supports_parallel_function_calling": true,
+    "supports_response_schema": true,
+    "supports_system_messages": true,
+    "supports_tool_choice": true
+  },
+  "minimax-m2.7": {
+    "input_cost_per_token": 2.79e-07,
+    "litellm_provider": "minimax",
+    "max_input_tokens": 204800,
+    "max_output_tokens": 131072,
+    "max_tokens": 131072,
+    "mode": "chat",
+    "output_cost_per_token": 1.2e-06,
+    "source": "https://platform.minimax.io/docs/pricing/overview",
+    "supported_endpoints": [
+      "/v1/chat/completions"
+    ],
+    "supports_function_calling": true,
+    "supports_native_streaming": true,
+    "supports_parallel_function_calling": true,
+    "supports_reasoning": true,
+    "supports_response_schema": true,
+    "supports_system_messages": true,
+    "supports_tool_choice": true
+  },
+  "qwen3.5-plus": {
+    "cache_read_input_token_cost": 3.0e-08,
+    "input_cost_per_token": 3.0e-07,
+    "litellm_provider": "ali",
+    "max_input_tokens": 1048576,
+    "max_output_tokens": 65536,
+    "max_tokens": 65536,
+    "mode": "chat",
+    "output_cost_per_token": 1.8e-06,
+    "source": "https://help.aliyun.com/zh/model-studio/model-pricing",
+    "supported_endpoints": [
+      "/v1/chat/completions"
+    ],
+    "supports_function_calling": true,
+    "supports_native_streaming": true,
+    "supports_parallel_function_calling": true,
+    "supports_prompt_caching": true,
+    "supports_response_schema": true,
+    "supports_system_messages": true,
+    "supports_tool_choice": true,
+    "supports_vision": true
+  },
+  "qwen3.6-plus": {
+    "cache_read_input_token_cost": 3.25e-08,
+    "input_cost_per_token": 3.25e-07,
+    "litellm_provider": "ali",
+    "max_input_tokens": 1048576,
+    "max_output_tokens": 65536,
+    "max_tokens": 65536,
+    "mode": "chat",
+    "output_cost_per_token": 1.95e-06,
+    "source": "https://help.aliyun.com/zh/model-studio/model-pricing",
+    "supported_endpoints": [
+      "/v1/chat/completions"
+    ],
+    "supports_function_calling": true,
+    "supports_native_streaming": true,
+    "supports_parallel_function_calling": true,
+    "supports_prompt_caching": true,
+    "supports_reasoning": true,
+    "supports_response_schema": true,
+    "supports_system_messages": true,
+    "supports_tool_choice": true
+  },
+  "qwen3.7-max": {
+    "cache_read_input_token_cost": 2.5e-07,
+    "input_cost_per_token": 2.5e-06,
+    "litellm_provider": "ali",
+    "max_input_tokens": 1048576,
+    "max_output_tokens": 65536,
+    "max_tokens": 65536,
+    "mode": "chat",
+    "output_cost_per_token": 7.5e-06,
+    "source": "https://help.aliyun.com/zh/model-studio/model-pricing",
+    "supported_endpoints": [
+      "/v1/chat/completions"
+    ],
+    "supports_function_calling": true,
+    "supports_native_streaming": true,
+    "supports_parallel_function_calling": true,
+    "supports_prompt_caching": true,
+    "supports_reasoning": true,
+    "supports_response_schema": true,
+    "supports_system_messages": true,
+    "supports_tool_choice": true
+  },
   "deepseek-v3-2-251201": {
     "input_cost_per_token": 0.0,
     "litellm_provider": "volcengine",

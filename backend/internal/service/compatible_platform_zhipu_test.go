@@ -18,7 +18,7 @@ func TestZhipuCompatibleProviderPreset(t *testing.T) {
 	if preset.DefaultBaseURL != "https://open.bigmodel.cn" {
 		t.Fatalf("DefaultBaseURL = %q", preset.DefaultBaseURL)
 	}
-	if preset.DefaultTestModel != "glm-4.5-flash" {
+	if preset.DefaultTestModel != "glm-5" {
 		t.Fatalf("DefaultTestModel = %q", preset.DefaultTestModel)
 	}
 	if preset.AuthMode != CompatibleAuthZhipuToken {
@@ -33,13 +33,13 @@ func TestZhipuCompatibleProviderPreset(t *testing.T) {
 	if preset.SupportsMessages == nil {
 		t.Fatal("SupportsMessages should not be nil")
 	}
-	if !preset.SupportsMessages("glm-4.5") {
-		t.Fatal("SupportsMessages(glm-4.5) = false, want true")
+	if !preset.SupportsMessages("glm-5.1") {
+		t.Fatal("SupportsMessages(glm-5.1) = false, want true")
 	}
-	if len(preset.DefaultModels) != 4 {
-		t.Fatalf("len(DefaultModels) = %d, want 4", len(preset.DefaultModels))
+	if len(preset.DefaultModels) != 2 {
+		t.Fatalf("len(DefaultModels) = %d, want 2", len(preset.DefaultModels))
 	}
-	wantModels := []string{"glm-4.5", "glm-4.5-air", "glm-4.5-flash", "glm-4-plus"}
+	wantModels := []string{"glm-5.1", "glm-5"}
 	for i, want := range wantModels {
 		if preset.DefaultModels[i].ID != want {
 			t.Fatalf("DefaultModels[%d].ID = %q, want %q", i, preset.DefaultModels[i].ID, want)
