@@ -450,7 +450,7 @@ export interface PaginationConfig {
 
 // ==================== API Key & Group Types ====================
 
-export type GroupPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'zhipu' | 'deepseek' | 'volcengine' | 'ali' | 'moonshot'
+export type GroupPlatform = 'anthropic' | 'openai' | 'gemini' | 'antigravity' | 'zhipu' | 'deepseek' | 'volcengine' | 'ali' | 'moonshot' | 'mimo' | 'minimax' | 'opencode'
 
 export type SubscriptionType = 'standard' | 'subscription'
 
