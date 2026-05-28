@@ -12,10 +12,10 @@ func deepseekCompatibleProviderPreset() CompatibleProviderPreset {
 		DisplayName:    compatiblePlatformDisplayName(PlatformDeepSeek),
 		DefaultBaseURL: "https://api.deepseek.com",
 		DefaultModels: NormalizeCompatibleModelList([]claude.Model{
-			{ID: "deepseek-chat", Type: "model", DisplayName: "DeepSeek Chat"},
-			{ID: "deepseek-reasoner", Type: "model", DisplayName: "DeepSeek Reasoner"},
+			{ID: "deepseek-v4-flash", Type: "model", DisplayName: "DeepSeek V4 Flash"},
+			{ID: "deepseek-v4-pro", Type: "model", DisplayName: "DeepSeek V4 Pro"},
 		}),
-		DefaultTestModel:  "deepseek-chat",
+		DefaultTestModel:  "deepseek-v4-flash",
 		AuthMode:          CompatibleAuthBearer,
 		SupportsChat:      true,
 		SupportsResponses: false,

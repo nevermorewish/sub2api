@@ -22,8 +22,8 @@ func TestDeepSeekCompatibleProviderPreset_Defaults(t *testing.T) {
 	if got := CompatibleDefaultBaseURL(PlatformDeepSeek); got != preset.DefaultBaseURL {
 		t.Fatalf("CompatibleDefaultBaseURL() = %q, want %q", got, preset.DefaultBaseURL)
 	}
-	if preset.DefaultTestModel != "deepseek-chat" {
-		t.Fatalf("DefaultTestModel = %q, want %q", preset.DefaultTestModel, "deepseek-chat")
+	if preset.DefaultTestModel != "deepseek-v4-flash" {
+		t.Fatalf("DefaultTestModel = %q, want %q", preset.DefaultTestModel, "deepseek-v4-flash")
 	}
 	if got := CompatibleDefaultTestModel(PlatformDeepSeek); got != preset.DefaultTestModel {
 		t.Fatalf("CompatibleDefaultTestModel() = %q, want %q", got, preset.DefaultTestModel)
@@ -40,11 +40,11 @@ func TestDeepSeekCompatibleProviderPreset_Defaults(t *testing.T) {
 	if preset.SupportsMessages == nil {
 		t.Fatal("SupportsMessages should not be nil")
 	}
-	if !preset.SupportsMessages("deepseek-chat") || !preset.SupportsMessages("deepseek-reasoner") {
+	if !preset.SupportsMessages("deepseek-v4-flash") || !preset.SupportsMessages("deepseek-v4-pro") {
 		t.Fatal("SupportsMessages should accept DeepSeek models")
 	}
 
-	wantModels := []string{"deepseek-chat", "deepseek-reasoner"}
+	wantModels := []string{"deepseek-v4-flash", "deepseek-v4-pro"}
 	if len(preset.DefaultModels) != len(wantModels) {
 		t.Fatalf("len(DefaultModels) = %d, want %d", len(preset.DefaultModels), len(wantModels))
 	}
@@ -69,19 +69,19 @@ func TestDeepSeekCompatibleProviderPreset_RoutesAndResponsesFallback(t *testing.
 	wantChatURL := "https://api.deepseek.com/chat/completions"
 	wantMessagesURL := "https://api.deepseek.com/anthropic/v1/messages"
 
-	if got := preset.BuildChatURL(baseURL, "deepseek-chat"); got != wantChatURL {
+	if got := preset.BuildChatURL(baseURL, "deepseek-v4-flash"); got != wantChatURL {
 		t.Fatalf("BuildChatURL() = %q, want %q", got, wantChatURL)
 	}
-	if got := preset.BuildMessagesURL(baseURL, "deepseek-chat"); got != wantMessagesURL {
+	if got := preset.BuildMessagesURL(baseURL, "deepseek-v4-flash"); got != wantMessagesURL {
 		t.Fatalf("BuildMessagesURL() = %q, want %q", got, wantMessagesURL)
 	}
-	if got := preset.BuildResponsesURL(baseURL, "deepseek-chat"); got != wantChatURL {
+	if got := preset.BuildResponsesURL(baseURL, "deepseek-v4-flash"); got != wantChatURL {
 		t.Fatalf("BuildResponsesURL() = %q, want %q", got, wantChatURL)
 	}
 
 	topP := 1.25
 	responsesReq := &apicompat.ResponsesRequest{
-		Model:   "deepseek-chat",
+		Model:   "deepseek-v4-flash",
 		Input:   json.RawMessage(`"hello from responses"`),
 		TopP:    &topP,
 		Stream:  true,
@@ -95,7 +95,7 @@ func TestDeepSeekCompatibleProviderPreset_RoutesAndResponsesFallback(t *testing.
 	if err != nil {
 		t.Fatalf("json.Marshal(chatReq) error = %v", err)
 	}
-	patchedFallbackBody, err := preset.PatchChatBody(chatBody, nil, "deepseek-chat")
+	patchedFallbackBody, err := preset.PatchChatBody(chatBody, nil, "deepseek-v4-flash")
 	if err != nil {
 		t.Fatalf("PatchChatBody(fallback) error = %v", err)
 	}
@@ -123,11 +123,11 @@ func TestDeepSeekCompatibleProviderPreset_BearerAuthAndChatBodyPatch(t *testing.
 		t.Fatal("PatchChatBody should not be nil")
 	}
 	patchedBody, err := preset.PatchChatBody([]byte(`{
-		"model": "deepseek-chat",
+		"model": "deepseek-v4-flash",
 		"messages": [{"role": "user", "content": "hello"}],
 		"top_p": 1.2,
 		"stop": "END"
-	}`), nil, "deepseek-chat")
+	}`), nil, "deepseek-v4-flash")
 	if err != nil {
 		t.Fatalf("PatchChatBody() error = %v", err)
 	}
