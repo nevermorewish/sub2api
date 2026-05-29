@@ -125,7 +125,7 @@ func TestMergeAnthropicBetaDropping_DroppedBetas(t *testing.T) {
 }
 
 func TestFullClaudeCodeMimicryBetas_MatchesRealCLICapture(t *testing.T) {
-	// 对齐真实交互式 Claude Code CLI 2.1.153 抓包（captures/claude-code-headers/latest_request.redacted.json）：
+	// 对齐真实交互式 Claude Code CLI 2.1.156 抓包（captures/claude-code-headers/latest_request.redacted.json）：
 	// 不含 oauth-2025-04-20；包含 redact-thinking-2026-02-12。
 	required := claude.FullClaudeCodeMimicryBetas()
 
