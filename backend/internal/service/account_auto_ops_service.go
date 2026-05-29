@@ -148,11 +148,9 @@ func (s *AccountAutoOpsService) GetModelOptions() map[string][]AccountAutoOpsMod
 		PlatformOpenAI:      make([]AccountAutoOpsModelOption, 0, len(openai.DefaultModels)),
 		PlatformGemini:      make([]AccountAutoOpsModelOption, 0, len(geminicli.DefaultModels)),
 		PlatformAntigravity: make([]AccountAutoOpsModelOption, 0, len(antigravity.DefaultModels())),
-		PlatformZhipu:       make([]AccountAutoOpsModelOption, 0, len(CompatibleDefaultModels(PlatformZhipu))),
-		PlatformDeepSeek:    make([]AccountAutoOpsModelOption, 0, len(CompatibleDefaultModels(PlatformDeepSeek))),
-		PlatformVolcEngine:  make([]AccountAutoOpsModelOption, 0, len(CompatibleDefaultModels(PlatformVolcEngine))),
-		PlatformAli:         make([]AccountAutoOpsModelOption, 0, len(CompatibleDefaultModels(PlatformAli))),
-		PlatformMoonshot:    make([]AccountAutoOpsModelOption, 0, len(CompatibleDefaultModels(PlatformMoonshot))),
+	}
+	for _, platform := range CompatiblePlatforms() {
+		options[platform] = make([]AccountAutoOpsModelOption, 0, len(CompatibleDefaultModels(platform)))
 	}
 
 	for _, model := range claude.DefaultModels {
@@ -179,7 +177,7 @@ func (s *AccountAutoOpsService) GetModelOptions() map[string][]AccountAutoOpsMod
 		}
 		options[PlatformAntigravity] = append(options[PlatformAntigravity], AccountAutoOpsModelOption{ID: model.ID, DisplayName: displayName})
 	}
-	for _, platform := range []string{PlatformZhipu, PlatformDeepSeek, PlatformVolcEngine, PlatformAli, PlatformMoonshot} {
+	for _, platform := range CompatiblePlatforms() {
 		for _, model := range CompatibleDefaultModels(platform) {
 			displayName := model.DisplayName
 			if strings.TrimSpace(displayName) == "" {

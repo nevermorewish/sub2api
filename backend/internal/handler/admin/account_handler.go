@@ -103,7 +103,7 @@ func NewAccountHandler(
 type CreateAccountRequest struct {
 	Name                    string         `json:"name" binding:"required"`
 	Notes                   *string        `json:"notes"`
-	Platform                string         `json:"platform" binding:"required,oneof=anthropic openai gemini antigravity zhipu deepseek volcengine ali moonshot"`
+	Platform                string         `json:"platform" binding:"required,oneof=anthropic openai gemini antigravity zhipu deepseek volcengine ali moonshot mimo minimax opencode"`
 	Type                    string         `json:"type" binding:"required,oneof=oauth setup-token apikey upstream bedrock"`
 	Credentials             map[string]any `json:"credentials" binding:"required"`
 	Extra                   map[string]any `json:"extra"`
