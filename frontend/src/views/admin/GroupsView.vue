@@ -2850,6 +2850,9 @@ const platformOptions = computed(() => [
   { value: "volcengine", label: "火山方舟/豆包" },
   { value: "ali", label: "Qwen/阿里" },
   { value: "moonshot", label: "Kimi/月之暗面" },
+  { value: "mimo", label: "MiMo/小米" },
+  { value: "minimax", label: "MiniMax" },
+  { value: "opencode", label: "OpenCode" },
 ]);
 
 const platformFilterOptions = computed(() => [
@@ -2863,6 +2866,9 @@ const platformFilterOptions = computed(() => [
   { value: "volcengine", label: "火山方舟/豆包" },
   { value: "ali", label: "Qwen/阿里" },
   { value: "moonshot", label: "Kimi/月之暗面" },
+  { value: "mimo", label: "MiMo/小米" },
+  { value: "minimax", label: "MiniMax" },
+  { value: "opencode", label: "OpenCode" },
 ]);
 
 const editStatusOptions = computed(() => [

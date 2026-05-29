@@ -1947,6 +1947,9 @@ export default {
         volcengine: 'VolcEngine/Doubao',
         ali: 'Qwen/Ali',
         moonshot: 'Kimi/Moonshot',
+        mimo: 'MiMo/Xiaomi',
+        minimax: 'MiniMax',
+        opencode: 'OpenCode',
       },
       deleteConfirm:
         "Are you sure you want to delete '{name}'? All associated API keys will no longer belong to any group.",
