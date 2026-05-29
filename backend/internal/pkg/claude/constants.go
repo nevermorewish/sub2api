@@ -5,7 +5,7 @@ package claude
 
 // Beta header 常量
 //
-// 这里的常量对齐真实 Claude Code CLI 的最新流量（截至 2026-04）。
+// 这里的常量对齐真实 Claude Code CLI 的最新流量（截至 2026-05）。
 // 选型参考：与 Parrot (src/transform/cc_mimicry.py) 的 BETAS 保持一致，
 // 原因：Anthropic 上游会基于 anthropic-beta 的完整集合判定请求来源；
 // 缺少任何"官方 Claude Code 请求才会带"的 beta，都会被降级到第三方额度，
@@ -24,6 +24,7 @@ const (
 	BetaEffort             = "effort-2025-11-24"
 	BetaRedactThinking     = "redact-thinking-2026-02-12"
 	BetaContextManagement  = "context-management-2025-06-27"
+	BetaMidConversation    = "mid-conversation-system-2026-04-07"
 	BetaExtendedCacheTTL   = "extended-cache-ttl-2025-04-11"
 )
 
@@ -33,10 +34,12 @@ var DroppedBetas = []string{}
 
 // DefaultBetaHeader Claude Code 客户端默认的 anthropic-beta header
 //
-// 顺序与真实交互式 Claude Code CLI 2.1.156 抓包一致（captures/claude-code-headers/latest_request.redacted.json）：
-//   claude-code, context-1m, interleaved-thinking, redact-thinking, context-management, prompt-caching-scope, effort
+// 顺序与真实交互式 Claude Code CLI 2.1.156 抓包一致（captures/claude-code-headers/cli_baseline_2026-05-30.redacted.json）：
+//
+//	claude-code, context-1m, interleaved-thinking, redact-thinking, context-management, prompt-caching-scope, mid-conversation-system, effort
+//
 // 真实 CLI 不带 oauth-2025-04-20 和 fine-grained-tool-streaming。
-const DefaultBetaHeader = BetaClaudeCode + "," + BetaContext1M + "," + BetaInterleavedThinking + "," + BetaRedactThinking + "," + BetaContextManagement + "," + BetaPromptCachingScope + "," + BetaEffort
+const DefaultBetaHeader = BetaClaudeCode + "," + BetaContext1M + "," + BetaInterleavedThinking + "," + BetaRedactThinking + "," + BetaContextManagement + "," + BetaPromptCachingScope + "," + BetaMidConversation + "," + BetaEffort
 
 // MessageBetaHeaderNoTools /v1/messages 在无工具时的 beta header
 //
@@ -88,6 +91,7 @@ func FullClaudeCodeMimicryBetas() []string {
 		BetaRedactThinking,
 		BetaContextManagement,
 		BetaPromptCachingScope,
+		BetaMidConversation,
 		BetaEffort,
 		// extended-cache-ttl 不在真实 CLI 抓包内，但本仓 1h TTL 注入功能依赖它，保留在末尾。
 		BetaExtendedCacheTTL,
@@ -101,13 +105,13 @@ var DefaultHeaders = map[string]string{
 	// 版本参考：对齐 Parrot (src/transform/cc_mimicry.py:49) 的 CLI_USER_AGENT。
 	"User-Agent":                                "claude-cli/2.1.156 (external, cli)",
 	"X-Stainless-Lang":                          "js",
-	"X-Stainless-Package-Version":               "0.100.1",
+	"X-Stainless-Package-Version":               "0.94.0",
 	"X-Stainless-OS":                            "Windows",
 	"X-Stainless-Arch":                          "x64",
 	"X-Stainless-Runtime":                       "node",
 	"X-Stainless-Runtime-Version":               "v24.3.0",
 	"X-Stainless-Retry-Count":                   "0",
-	"X-Stainless-Timeout":                       "3000",
+	"X-Stainless-Timeout":                       "600",
 	"X-App":                                     "cli",
 	"Anthropic-Dangerous-Direct-Browser-Access": "true",
 }

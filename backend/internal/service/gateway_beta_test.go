@@ -125,8 +125,8 @@ func TestMergeAnthropicBetaDropping_DroppedBetas(t *testing.T) {
 }
 
 func TestFullClaudeCodeMimicryBetas_MatchesRealCLICapture(t *testing.T) {
-	// 对齐真实交互式 Claude Code CLI 2.1.156 抓包（captures/claude-code-headers/latest_request.redacted.json）：
-	// 不含 oauth-2025-04-20；包含 redact-thinking-2026-02-12。
+	// 对齐真实交互式 Claude Code CLI 2.1.156 抓包（captures/claude-code-headers/cli_baseline_2026-05-30.redacted.json）：
+	// 不含 oauth-2025-04-20；包含 redact-thinking-2026-02-12 和 mid-conversation-system-2026-04-07。
 	required := claude.FullClaudeCodeMimicryBetas()
 
 	require.NotContains(t, required, claude.BetaOAuth)
@@ -136,6 +136,7 @@ func TestFullClaudeCodeMimicryBetas_MatchesRealCLICapture(t *testing.T) {
 	require.Contains(t, required, claude.BetaContext1M)
 	require.Contains(t, required, claude.BetaContextManagement)
 	require.Contains(t, required, claude.BetaPromptCachingScope)
+	require.Contains(t, required, claude.BetaMidConversation)
 	require.Contains(t, required, claude.BetaEffort)
 }
 
