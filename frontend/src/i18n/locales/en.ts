@@ -2800,6 +2800,12 @@ export default {
       apiKeyRequired: 'API Key *',
       apiKeyPlaceholder: 'sk-ant-api03-...',
       apiKeyHint: 'Your Claude Console API Key',
+      opencode: {
+        docs: 'Docs',
+        baseUrl: 'Base URL',
+        models: 'Models',
+        modelsApi: 'Models API'
+      },
       // OpenAI specific hints
       openai: {
         baseUrlHint: 'Leave default for official OpenAI API',

@@ -38,6 +38,55 @@
           />
           <p class="input-hint">{{ baseUrlHint }}</p>
         </div>
+        <div
+          v-if="account.platform === 'opencode'"
+          class="rounded-lg border border-teal-200 bg-teal-50 p-3 dark:border-teal-900/60 dark:bg-teal-900/20"
+        >
+          <div class="mb-2 flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2 text-sm font-semibold text-teal-900 dark:text-teal-100">
+              <Icon name="server" size="sm" />
+              <span>OpenCode Go</span>
+            </div>
+            <a
+              :href="OPENCODE_GO_DOCS_URL"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="inline-flex items-center gap-1 text-xs font-medium text-teal-700 hover:text-teal-800 dark:text-teal-300 dark:hover:text-teal-200"
+            >
+              <Icon name="book" size="xs" />
+              {{ t('admin.accounts.opencode.docs') }}
+            </a>
+          </div>
+          <div class="space-y-2">
+            <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+              <span class="w-28 shrink-0 text-xs font-medium text-teal-800 dark:text-teal-200">
+                {{ t('admin.accounts.opencode.baseUrl') }}
+              </span>
+              <code class="min-w-0 break-all rounded bg-white px-2 py-1 text-xs text-teal-950 dark:bg-dark-800 dark:text-teal-100">{{ OPENCODE_GO_BASE_URL }}</code>
+            </div>
+            <div
+              v-for="endpoint in OPENCODE_GO_ENDPOINTS"
+              :key="endpoint.key"
+              class="flex flex-col gap-1 sm:flex-row sm:items-start sm:gap-3"
+            >
+              <span class="w-28 shrink-0 text-xs font-medium text-teal-800 dark:text-teal-200">
+                {{ endpoint.label }}
+              </span>
+              <div class="min-w-0 flex-1">
+                <code class="block break-all rounded bg-white px-2 py-1 text-xs text-teal-950 dark:bg-dark-800 dark:text-teal-100">{{ endpoint.url }}</code>
+                <p class="mt-1 text-[11px] text-teal-700 dark:text-teal-300">
+                  {{ endpoint.sdk }} · {{ t('admin.accounts.opencode.models') }}: {{ endpoint.models.join(', ') }}
+                </p>
+              </div>
+            </div>
+            <div class="flex flex-col gap-1 sm:flex-row sm:items-center sm:gap-3">
+              <span class="w-28 shrink-0 text-xs font-medium text-teal-800 dark:text-teal-200">
+                {{ t('admin.accounts.opencode.modelsApi') }}
+              </span>
+              <code class="min-w-0 break-all rounded bg-white px-2 py-1 text-xs text-teal-950 dark:bg-dark-800 dark:text-teal-100">{{ OPENCODE_GO_MODELS_URL }}</code>
+            </div>
+          </div>
+        </div>
         <div>
           <label class="input-label">{{ t('admin.accounts.apiKey') }}</label>
           <input
@@ -1909,6 +1958,12 @@ import GroupSelector from '@/components/common/GroupSelector.vue'
 import ModelWhitelistSelector from '@/components/account/ModelWhitelistSelector.vue'
 import QuotaLimitCard from '@/components/account/QuotaLimitCard.vue'
 import { applyInterceptWarmup } from '@/components/account/credentialsBuilder'
+import {
+  OPENCODE_GO_BASE_URL,
+  OPENCODE_GO_DOCS_URL,
+  OPENCODE_GO_ENDPOINTS,
+  OPENCODE_GO_MODELS_URL
+} from '@/constants/account'
 import { formatDateTime, formatDateTimeLocalInput, parseDateTimeLocalInput } from '@/utils/format'
 import { createStableObjectKeyResolver } from '@/utils/stableObjectKey'
 import {
@@ -1967,7 +2022,7 @@ const getPlatformDefaultBaseURL = (platform?: AccountPlatform | null) => {
     case 'minimax':
       return 'https://api.minimaxi.com'
     case 'opencode':
-      return 'https://opencode.ai/zen/go'
+      return OPENCODE_GO_BASE_URL
     default:
       return 'https://api.anthropic.com'
   }
