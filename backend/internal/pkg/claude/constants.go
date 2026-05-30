@@ -55,14 +55,15 @@ const MessageBetaHeaderWithTools = DefaultBetaHeader
 // CountTokensBetaHeader count_tokens 请求使用的 anthropic-beta header
 const CountTokensBetaHeader = DefaultBetaHeader + "," + BetaTokenCounting
 
-// HaikuBetaHeader Haiku 模型使用的 anthropic-beta header（不需要 claude-code beta）
-const HaikuBetaHeader = BetaInterleavedThinking
+// HaikuBetaHeader Haiku 4.5 模型使用的 anthropic-beta header。
+// 顺序与 verify-haiku45-tool-20260530 抓包一致。
+const HaikuBetaHeader = BetaInterleavedThinking + "," + BetaRedactThinking + "," + BetaContextManagement + "," + BetaPromptCachingScope + "," + BetaClaudeCode
 
 // APIKeyBetaHeader API-key 账号建议使用的 anthropic-beta header（不包含 oauth）
 const APIKeyBetaHeader = DefaultBetaHeader
 
-// APIKeyHaikuBetaHeader Haiku 模型在 API-key 账号下使用的 anthropic-beta header（不包含 oauth / claude-code）
-const APIKeyHaikuBetaHeader = BetaInterleavedThinking
+// APIKeyHaikuBetaHeader Haiku 模型在 API-key 账号下使用的 anthropic-beta header。
+const APIKeyHaikuBetaHeader = HaikuBetaHeader
 
 // DefaultCacheControlTTL 是网关代理为自己生成的 cache_control 块默认使用的 ttl。
 // 真实 Claude Code CLI 当前使用 "1h"，但本仓策略是"客户端透传 ttl 优先；
@@ -83,6 +84,7 @@ const CLICurrentVersion = "2.1.156"
 //   - OAuth 账号 + haiku：Anthropic 对 haiku 不做 third-party 判定，使用 HaikuBetaHeader 即可。
 //   - API-key 账号：不要使用本函数，参见 APIKeyBetaHeader。
 //   - 不默认加入 redact-thinking，避免上游抹除 thinking 内容；客户端显式传入时由合并逻辑保留。
+//   - 不默认加入 extended-cache-ttl；默认 1h TTL 已不依赖该 beta。
 func FullClaudeCodeMimicryBetas() []string {
 	return []string{
 		BetaClaudeCode,
@@ -93,8 +95,6 @@ func FullClaudeCodeMimicryBetas() []string {
 		BetaPromptCachingScope,
 		BetaMidConversation,
 		BetaEffort,
-		// extended-cache-ttl 不在真实 CLI 抓包内，但本仓 1h TTL 注入功能依赖它，保留在末尾。
-		BetaExtendedCacheTTL,
 	}
 }
 
@@ -106,8 +106,8 @@ var DefaultHeaders = map[string]string{
 	"User-Agent":                                "claude-cli/2.1.156 (external, cli)",
 	"X-Stainless-Lang":                          "js",
 	"X-Stainless-Package-Version":               "0.94.0",
-	"X-Stainless-OS":                            "Windows",
-	"X-Stainless-Arch":                          "x64",
+	"X-Stainless-OS":                            "Linux",
+	"X-Stainless-Arch":                          "arm64",
 	"X-Stainless-Runtime":                       "node",
 	"X-Stainless-Runtime-Version":               "v24.3.0",
 	"X-Stainless-Retry-Count":                   "0",

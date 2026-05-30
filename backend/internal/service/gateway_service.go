@@ -6576,7 +6576,13 @@ func (s *GatewayService) computeFinalAnthropicBeta(
 		if mimicClaudeCode {
 			// mimic 路径：原代码跳过白名单透传，incomingBeta 总是空字符串。
 			// 这里传空 string 以严格对齐原行为。
-			requiredBetas := []string{claude.BetaOAuth, claude.BetaInterleavedThinking}
+			requiredBetas := []string{
+				claude.BetaInterleavedThinking,
+				claude.BetaRedactThinking,
+				claude.BetaContextManagement,
+				claude.BetaPromptCachingScope,
+				claude.BetaClaudeCode,
+			}
 			if !strings.Contains(strings.ToLower(modelID), "haiku") {
 				requiredBetas = claude.FullClaudeCodeMimicryBetas()
 			}
