@@ -1,0 +1,369 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>sub2api Claude 请求头生成逻辑 - 2026-05-30</title>
+  <style>
+    :root {
+      --bg: #f7f8fa;
+      --fg: #202428;
+      --muted: #68717d;
+      --line: #d7dde4;
+      --panel: #ffffff;
+      --code: #f0f3f6;
+      --accent: #0969da;
+      --good: #1a7f37;
+      --warn: #9a6700;
+      --warn-bg: #fff8c5;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      padding: 32px 44px 56px;
+      background: var(--bg);
+      color: var(--fg);
+      font: 14px/1.58 -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+    main { max-width: 1180px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 24px; line-height: 1.25; }
+    h2 {
+      margin: 30px 0 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--line);
+      font-size: 18px;
+    }
+    h3 { margin: 20px 0 8px; font-size: 15px; }
+    p { margin: 8px 0; }
+    ul, ol { margin: 8px 0 12px 22px; padding: 0; }
+    li { margin: 4px 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 16px;
+      background: var(--panel);
+      font-size: 13px;
+    }
+    th, td {
+      border: 1px solid var(--line);
+      padding: 8px 10px;
+      vertical-align: top;
+      text-align: left;
+    }
+    th { background: #eef2f6; font-weight: 600; }
+    code, pre {
+      font-family: ui-monospace, "SF Mono", Consolas, "Cascadia Code", monospace;
+      font-size: 12.5px;
+    }
+    code { background: var(--code); padding: 1px 5px; border-radius: 4px; }
+    pre {
+      overflow-x: auto;
+      background: var(--code);
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 12px 14px;
+      white-space: pre;
+    }
+    .meta { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+    .note {
+      border-left: 3px solid var(--warn);
+      background: var(--warn-bg);
+      padding: 10px 13px;
+      border-radius: 0 6px 6px 0;
+      margin: 12px 0;
+    }
+    .ok { color: var(--good); font-weight: 600; }
+    .muted { color: var(--muted); }
+    .nowrap { white-space: nowrap; }
+    .compact td:first-child { width: 260px; }
+    .flow td:first-child { width: 54px; text-align: center; font-weight: 700; color: var(--accent); }
+    .source-list code { color: #24292f; }
+    @media (max-width: 760px) {
+      body { padding: 22px 16px 40px; }
+      table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+<main>
+  <h1>sub2api Claude 请求头生成逻辑</h1>
+  <div class="meta">生成日期：2026-05-30；基于当前工作区代码，包含上游 Wei-Shaw/sub2api 合并后的 <code>ddf91e9</code> 相关请求头调整。</div>
+
+  <h2>结论</h2>
+  <p>当前 Claude 上游请求头不是简单透传客户端 header。核心逻辑是先算出最终 <code>anthropic-beta</code>，按这个 beta 清理 body，再做 billing CCH 签名，最后才创建上游请求并写入 Claude Code mimic 头。</p>
+  <p>OAuth + mimic Claude Code 的 <code>/v1/messages</code> 路径会跳过客户端 header 透传，并强制使用当前仓库内置的 Claude CLI 指纹头；API-key 和非 mimic OAuth 路径仍保留白名单透传语义。</p>
+  <p>这些规则来自上游 <code>E:\Claude\sub2apigit</code> 的一组历史修复：目标不是“看起来像普通 Anthropic SDK”，而是同时满足 Claude Code 识别、billing attribution、prompt cache、beta/body 能力对称和 CCH hash 一致性。</p>
+
+  <h2>上游历史依据</h2>
+  <table>
+    <thead>
+      <tr><th>提交</th><th>为什么改</th><th>影响到当前请求头/请求体</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>1c9a2128</code><br><span class="muted">2026-04-08</span></td>
+        <td>非 Claude Code 客户端用 OAuth 伪装时仍被 Anthropic 判为 third-party。根因是缺 <code>claude-code-20250219</code>，且 <code>system</code> 是 string，不是真实 CLI 的 array + <code>cache_control</code>。</td>
+        <td>非 Haiku mimic 必须保留 <code>claude-code</code> beta；系统提示改成 Claude Code 风格数组。</td>
+      </tr>
+      <tr>
+        <td><code>e51c9e50</code><br><span class="muted">2026-04-08</span></td>
+        <td>billing header 的 <code>cc_version</code> 必须和实际 User-Agent 版本同步，且 <code>cch=00000</code> 需要替换成 body hash。</td>
+        <td>新增 <code>syncBillingHeaderVersion</code> 和 <code>signBillingHeaderCCH</code>；CCH 用 <code>xxHash64Seeded(body, 0x6E52736AC806831E) &amp; 0xFFFFF</code>。</td>
+      </tr>
+      <tr>
+        <td><code>57ff9796</code><br><span class="muted">2026-04-24</span></td>
+        <td>Anthropic 会用完整 <code>anthropic-beta</code> 集合判断是否是官方 Claude Code；缺少真实 CLI 当前带的 beta 会落到 third-party usage。</td>
+        <td>新增 <code>FullClaudeCodeMimicryBetas()</code>，当时加入 <code>prompt-caching-scope</code>、<code>effort</code>、<code>redact-thinking</code>、<code>context-management</code>、<code>extended-cache-ttl</code>，并升级模拟 CLI UA。</td>
+      </tr>
+      <tr>
+        <td><code>165553cf</code><br><span class="muted">2026-04-24</span></td>
+        <td>虽然已有 full beta 函数，但 builder 仍使用旧的 3-token 子集，仍可能被判不是 Claude Code。</td>
+        <td><code>/v1/messages</code> mimic 改用 <code>FullClaudeCodeMimicryBetas()</code>；<code>count_tokens</code> 在此基础上补 <code>token-counting</code>。Haiku 继续保留轻量例外。</td>
+      </tr>
+      <tr>
+        <td><code>66d64545</code><br><span class="muted">2026-04-24</span></td>
+        <td>真实 Claude CLI 的 <code>cache_control</code> 带 <code>ttl</code> 字段；只发 <code>{"type":"ephemeral"}</code> 是 byte-level mismatch。</td>
+        <td>本仓代理生成的 cache_control 默认 <code>ttl="5m"</code>，客户端自带 ttl 原样透传；真实 CLI 是 <code>1h</code>，但默认 5m 是为了避免自动断点消耗 1h 缓存额度。</td>
+      </tr>
+      <tr>
+        <td><code>5862e2d8</code><br><span class="muted">2026-04-24</span></td>
+        <td>真实 Claude Code 会在 system[0] 放 billing attribution block；缺这个 block 是 Claude-Code-scoped OAuth 的主要 third-party 检测信号之一。</td>
+        <td>新增 <code>x-anthropic-billing-header: cc_version=X.Y.Z.{fp}; cc_entrypoint=cli; cch=00000;</code>，<code>{fp}</code> 来自首条 user 文本和 CLI version。</td>
+      </tr>
+      <tr>
+        <td><code>b5467d61</code><br><span class="muted">2026-04-24</span></td>
+        <td>OpenAI-compatible 入口只 prepend Claude Code 提示词不够，body 仍是非 Claude Code 形态；且缺少 per-request <code>x-client-request-id</code> 也是指纹信号。</td>
+        <td><code>/chat/completions</code>、<code>/responses</code> 复用完整 mimic pipeline；mimic header 生成 UUID request id。</td>
+      </tr>
+      <tr>
+        <td><code>6dc89765</code> / <code>496469ac</code><br><span class="muted">2026-04-25</span></td>
+        <td>第三方工具会“部分伪装”Claude Code，容易骗过本地检测但骗不过 Anthropic；后来又发现真实 Claude Code 被全量 body mimic 会破坏长 system prompt 的缓存命中。</td>
+        <td>第三方 OAuth 继续完整 mimic；真实 Claude Code 客户端绕过 body-level mimic，保留自己的长 system prompt 和稳定 cache_control 断点。</td>
+      </tr>
+      <tr>
+        <td><code>bdbd2916</code><br><span class="muted">2026-04-25</span></td>
+        <td>mimic 前白名单透传客户端 header 会把第三方的 <code>user-agent</code>、<code>x-stainless-*</code>、<code>anthropic-beta</code>、session id 混进请求，形成不一致 header 集合。</td>
+        <td>OAuth + mimic 路径跳过客户端 header 透传，由 <code>applyClaudeCodeMimicHeaders</code>、fingerprint 和最终 beta 统一构造。</td>
+      </tr>
+      <tr>
+        <td><code>57fd7998</code><br><span class="muted">2026-05-07</span></td>
+        <td>默认注入 <code>redact-thinking</code> 会导致 thinking 内容被上游抹除。</td>
+        <td>当时从 full mimic 默认中移除 redact-thinking；当前项目后续因 2026-05-30 CLI 抓包重新对齐，<code>DefaultBetaHeader</code> 又包含 <code>redact-thinking-2026-02-12</code>。</td>
+      </tr>
+      <tr>
+        <td><code>73b87299</code> / <code>9377c967</code><br><span class="muted">2026-04-30 / 2026-05-11</span></td>
+        <td>1h cache TTL 注入有成本风险，消息 <code>cache_control</code> 改写默认开启会影响真实客户端缓存语义。</td>
+        <td>新增 <code>enable_anthropic_cache_ttl_1h_injection</code> 与 <code>rewrite_message_cache_control</code> 设置；后者默认关闭。</td>
+      </tr>
+      <tr>
+        <td><code>ddf91e9</code><br><span class="muted">2026-05-27</span></td>
+        <td>body 带 <code>context_management</code> 但最终 beta 不含 <code>context-management-2025-06-27</code> 时，上游返回 <code>Extra inputs are not permitted</code>。按 model 名 strip 会漏掉 count_tokens、passthrough、别名和真 CC 带 beta 的场景。</td>
+        <td>改成按最终 <code>anthropic-beta</code> 做能力维度 sanitize，并且必须在 CCH 签名前执行；因此 beta 计算被抽成 request 创建前的纯函数。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>本仓后续改动</h2>
+  <p>下面来自当前仓库 <code>E:\Claude\sub2api</code> 的 git log。它解释了为什么当前报告里的最终值和 <code>E:\Claude\sub2apigit</code> 上游旧值不同。</p>
+  <table>
+    <thead>
+      <tr><th>提交</th><th>改动背景</th><th>落到当前代码的结果</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>09956844</code><br><span class="muted">2026-05-07</span></td>
+        <td>第一次按本地 Claude Code 2.1.132 抓包对齐 header；当时抓到的是 <code>sdk-cli</code> 形态。</td>
+        <td>把旧上游 <code>2.1.92 / Linux / arm64 / SDK 0.70.0</code> 改到 <code>2.1.132 / Windows / x64 / SDK 0.81.0</code>；同时开始移除默认 <code>oauth-2025-04-20</code> 补齐逻辑。</td>
+      </tr>
+      <tr>
+        <td><code>6d76db36</code><br><span class="muted">2026-05-20</span></td>
+        <td>修复 Anthropic cache TTL 顺序问题：同一请求里先出现 <code>ttl=5m</code>、后出现 <code>ttl=1h</code> 会形成顺序冲突。</td>
+        <td>新增 <code>normalizeAnthropicCacheControlTTLOrder</code>：检测到 5m 后面跟 1h 时，统一把已有 ephemeral cache_control 强制为 <code>1h</code>。</td>
+      </tr>
+      <tr>
+        <td><code>5af69258</code><br><span class="muted">2026-05-27</span></td>
+        <td>重新抓 interactive CLI 流量，发现之前的 <code>sdk-cli</code> 抓包不是交互式 Claude Code CLI 实际流量。</td>
+        <td>改回 <code>(external, cli)</code> 和 <code>cc_entrypoint=cli</code>；默认 beta 改为真实交互式顺序：<code>claude-code</code>、<code>context-1m</code>、<code>interleaved-thinking</code>、<code>redact-thinking</code>、<code>context-management</code>、<code>prompt-caching-scope</code>、<code>effort</code>；明确真实 CLI 不带 <code>oauth</code> / <code>fine-grained-tool-streaming</code>。<code>extended-cache-ttl</code> 只作为本仓 1h TTL 注入能力保留在 full mimic 末尾。</td>
+      </tr>
+      <tr>
+        <td><code>cf48eb9b</code><br><span class="muted">2026-05-29</span></td>
+        <td>继续更新 Claude Code client fingerprint 到 2.1.153。</td>
+        <td><code>CLICurrentVersion</code> 和 <code>User-Agent</code> 升到 <code>2.1.153</code>，<code>X-Stainless-Package-Version</code> 升到 <code>0.100.0</code>。</td>
+      </tr>
+      <tr>
+        <td><code>51ebb513</code><br><span class="muted">2026-05-29</span></td>
+        <td>继续 bump mimic CLI 到 2.1.156。</td>
+        <td><code>CLICurrentVersion</code> / <code>User-Agent</code> 升到 <code>2.1.156</code>，Stainless 包版本临时升到 <code>0.100.1</code>。</td>
+      </tr>
+      <tr>
+        <td><code>504d069d</code><br><span class="muted">2026-05-30</span></td>
+        <td>按 2026-05-30 最新交互式抓包再次校准指纹，而不是只按包版本 bump。</td>
+        <td>加入 <code>mid-conversation-system-2026-04-07</code>；默认 beta 顺序改成当前 <code>cli_baseline_2026-05-30.redacted.json</code>；<code>X-Stainless-Package-Version</code> 回到 <code>0.94.0</code>，<code>X-Stainless-Timeout</code> 回到 <code>600</code>。</td>
+      </tr>
+      <tr>
+        <td><code>1d651b6d</code><br><span class="muted">2026-05-30</span></td>
+        <td>合并 <code>upstream/main</code>，把 <code>ddf91e9</code> 的 final beta / sanitize / CCH 顺序修复合入当前仓。</td>
+        <td>当前最终逻辑同时包含本仓抓包指纹对齐和上游 <code>context_management</code> 能力维度 sanitize 修复。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>固定 Claude Code 请求头</h2>
+  <p>来源：<code>backend/internal/pkg/claude/constants.go</code> 的 <code>DefaultHeaders</code> 与 <code>CLICurrentVersion</code>。</p>
+  <table class="compact">
+    <thead>
+      <tr><th>Header / 常量</th><th>当前值</th><th>说明</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>CLICurrentVersion</code></td><td><code>2.1.156</code></td><td>必须和 User-Agent 中版本一致，也用于 billing block 的 <code>cc_version</code>。</td></tr>
+      <tr><td><code>User-Agent</code></td><td><code>claude-cli/2.1.156 (external, cli)</code></td><td>Claude Code CLI 伪装主指纹。</td></tr>
+      <tr><td><code>X-Stainless-Lang</code></td><td><code>js</code></td><td>Stainless SDK 语言。</td></tr>
+      <tr><td><code>X-Stainless-Package-Version</code></td><td><code>0.94.0</code></td><td>SDK 包版本。</td></tr>
+      <tr><td><code>X-Stainless-OS</code></td><td><code>Windows</code></td><td>当前模拟的 CLI 运行系统。</td></tr>
+      <tr><td><code>X-Stainless-Arch</code></td><td><code>x64</code></td><td>当前模拟的架构。</td></tr>
+      <tr><td><code>X-Stainless-Runtime</code></td><td><code>node</code></td><td>CLI 运行时。</td></tr>
+      <tr><td><code>X-Stainless-Runtime-Version</code></td><td><code>v24.3.0</code></td><td>Node 运行时版本。</td></tr>
+      <tr><td><code>X-Stainless-Retry-Count</code></td><td><code>0</code></td><td>请求重试次数。</td></tr>
+      <tr><td><code>X-Stainless-Timeout</code></td><td><code>600</code></td><td>请求超时。</td></tr>
+      <tr><td><code>X-App</code></td><td><code>cli</code></td><td>应用类型。</td></tr>
+      <tr><td><code>Anthropic-Dangerous-Direct-Browser-Access</code></td><td><code>true</code></td><td>Claude Code CLI 请求中存在的 direct browser access 标记。</td></tr>
+      <tr><td><code>Accept</code></td><td><code>application/json</code></td><td><code>applyClaudeCodeMimicHeaders</code> 会强制写入，stream 请求也一样。</td></tr>
+      <tr><td><code>x-stainless-helper-method</code></td><td><code>stream</code></td><td>仅 stream 请求设置。</td></tr>
+      <tr><td><code>x-client-request-id</code></td><td>每次请求生成 UUID</td><td>如果不存在则生成；用于请求级指纹。</td></tr>
+    </tbody>
+  </table>
+  <div class="note">历史原因：<code>User-Agent</code>、<code>X-Stainless-*</code>、<code>X-App</code> 和 <code>Anthropic-Dangerous-Direct-Browser-Access</code> 不是普通兼容字段，而是 Claude Code wire fingerprint 的一部分。上游历史里多次记录，混入第三方客户端自己的 UA / Stainless 值会形成不一致指纹，因此 OAuth mimic 路径会强制覆盖。</div>
+
+  <h2>默认 anthropic-beta</h2>
+  <p><code>DefaultBetaHeader</code> 当前顺序对齐 2026-05-30 交互式 Claude Code CLI 抓包：</p>
+  <pre>claude-code-20250219,
+context-1m-2025-08-07,
+interleaved-thinking-2025-05-14,
+redact-thinking-2026-02-12,
+context-management-2025-06-27,
+prompt-caching-scope-2026-01-05,
+mid-conversation-system-2026-04-07,
+effort-2025-11-24</pre>
+  <div class="note">注意：真实 CLI 默认不带 <code>oauth-2025-04-20</code> 和 <code>fine-grained-tool-streaming-2025-05-14</code>。当前 mimic 全量 beta 另外会在末尾保留 <code>extended-cache-ttl-2025-04-11</code>，因为本仓 1h TTL 注入能力依赖它。</div>
+  <p><code>extended-cache-ttl-2025-04-11</code> 的历史来源是 <code>57ff9796</code>：当时为了对齐 Parrot / 真实 CLI 2.1.9x 后的完整 beta 集合，把它加入 full mimic 列表。当前 2026-05-30 抓包没有这个 token；它在当前项目中属于为缓存 TTL 能力保留的额外 beta，不是抓包原样字段。</p>
+
+  <h2>messages 路径生成顺序</h2>
+  <p>入口：<code>buildUpstreamRequest</code>，关键顺序在 <code>backend/internal/service/gateway_service.go</code>。</p>
+  <table class="flow">
+    <thead>
+      <tr><th>#</th><th>阶段</th><th>作用</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td>OAuth 账号获取或创建 fingerprint</td><td>后续可覆盖 User-Agent 与 <code>x-stainless-*</code> 指纹头。</td></tr>
+      <tr><td>2</td><td>重写 <code>metadata.user_id</code></td><td>除 metadata passthrough 开启外，会按账号和 fingerprint 规则重写用户标识。</td></tr>
+      <tr><td>3</td><td><code>syncBillingHeaderVersion</code></td><td>将 body 内 billing block 的 <code>cc_version=X.Y.Z</code> 同步到实际 User-Agent 版本。</td></tr>
+      <tr><td>4</td><td><code>computeFinalAnthropicBeta</code></td><td>在创建 <code>http.Request</code> 前算出最终 beta；这是后续 body 清理和 CCH 签名的依据。</td></tr>
+      <tr><td>5</td><td><code>sanitizeAnthropicBodyForBetaTokens</code></td><td>如果最终 beta 不含 <code>context-management-2025-06-27</code>，删除 body 的 <code>context_management</code>。</td></tr>
+      <tr><td>6</td><td><code>signBillingHeaderCCH</code></td><td>所有 body 修改完成后，把 billing block 中 <code>cch=00000</code> 替换成 xxHash64 签名。</td></tr>
+      <tr><td>7</td><td>创建上游 request 并设置认证头</td><td>OAuth 写 <code>authorization: Bearer ...</code>；API-key 写 <code>x-api-key</code>。</td></tr>
+      <tr><td>8</td><td>白名单透传或跳过透传</td><td>OAuth mimic messages 路径跳过客户端 header 透传；其他路径按白名单透传。</td></tr>
+      <tr><td>9</td><td>应用 fingerprint / 默认头 / mimic 头</td><td>补齐 <code>content-type</code>、<code>anthropic-version</code>，OAuth mimic 强制写 Claude Code 指纹头。</td></tr>
+      <tr><td>10</td><td>删除旧 <code>anthropic-beta</code> 并写入最终 beta</td><td>避免客户端原始 beta 或大小写变体残留。</td></tr>
+      <tr><td>11</td><td>同步 <code>X-Claude-Code-Session-Id</code></td><td>如果请求头已有该字段，用处理后的 <code>metadata.user_id</code> 里的 session id 覆盖。</td></tr>
+    </tbody>
+  </table>
+  <div class="note">这个顺序来自 <code>ddf91e9</code> 的重排：先算最终 beta，才能知道 body 里哪些 beta-gated 字段能保留；body 变完之后才能签 CCH。否则 header、body、billing hash 三者会互相不一致。</div>
+
+  <h2>anthropic-beta 决策矩阵</h2>
+  <table>
+    <thead>
+      <tr><th>路径</th><th>最终 beta 来源</th><th>是否透传客户端 beta</th><th>备注</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="nowrap">OAuth + mimic + messages + 非 Haiku</td>
+        <td><code>FullClaudeCodeMimicryBetas()</code> 后再应用 dropSet</td>
+        <td>否</td>
+        <td>严格模拟 Claude Code；跳过白名单透传，避免客户端 header 污染。</td>
+      </tr>
+      <tr>
+        <td class="nowrap">OAuth + mimic + messages + Haiku</td>
+        <td><code>oauth-2025-04-20</code> + <code>interleaved-thinking-2025-05-14</code> 后再应用 dropSet</td>
+        <td>否</td>
+        <td>代码中 Haiku 走轻量 beta 组合。</td>
+      </tr>
+      <tr>
+        <td class="nowrap">OAuth + 非 mimic + messages</td>
+        <td><code>getBetaHeader(modelID, clientBeta)</code> 后再应用 dropSet</td>
+        <td>是</td>
+        <td>用于真实 Claude Code 客户端或 passthrough 场景。</td>
+      </tr>
+      <tr>
+        <td class="nowrap">API-key + 客户端传 beta</td>
+        <td>客户端 <code>anthropic-beta</code> 后再应用 dropSet</td>
+        <td>是</td>
+        <td>保持 API-key 客户端控制权。</td>
+      </tr>
+      <tr>
+        <td class="nowrap">API-key + 未传 beta</td>
+        <td>仅当 <code>InjectBetaForAPIKey</code> 开启且 body 需要 beta 功能时注入</td>
+        <td>无</td>
+        <td>否则不主动设置 <code>anthropic-beta</code>。</td>
+      </tr>
+      <tr>
+        <td class="nowrap">OAuth + mimic + count_tokens</td>
+        <td><code>FullClaudeCodeMimicryBetas()</code> + <code>token-counting-2024-11-01</code>，再合并客户端 beta 和 dropSet</td>
+        <td>是</td>
+        <td>与 messages mimic 不同，count_tokens mimic 保留客户端 beta 合并语义。</td>
+      </tr>
+      <tr>
+        <td class="nowrap">OAuth + 非 mimic + count_tokens</td>
+        <td>无客户端 beta 时用 <code>CountTokensBetaHeader</code>；有客户端 beta 时补齐 token-counting</td>
+        <td>是</td>
+        <td>保证 count_tokens 请求携带 token-counting beta。</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Billing block 与 CCH</h2>
+  <p>Billing attribution block 来源：<code>backend/internal/service/gateway_billing_block.go</code>。</p>
+  <pre>{"type":"text","text":"x-anthropic-billing-header: cc_version=2.1.156.{fp}; cc_entrypoint=cli; cch=00000;"}</pre>
+  <table class="compact">
+    <thead>
+      <tr><th>字段</th><th>当前算法</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>{fp}</code></td><td>取第一条 user 消息的首个文本块，读取字符索引 <code>4</code>、<code>7</code>、<code>20</code>，不足用 <code>0</code>；计算 <code>SHA256("59cf53e54c78" + chars + version)</code>，取 hex 前 3 位。</td></tr>
+      <tr><td><code>cch</code></td><td>在最终 body 上计算 <code>xxHash64Seeded(body, 0x6E52736AC806831E) &amp; 0xFFFFF</code>，格式化为 5 位十六进制，再替换 <code>cch=00000</code>。</td></tr>
+      <tr><td>顺序约束</td><td><span class="ok">必须先 sanitize body，再签 CCH。</span> 如果先签名再删除 <code>context_management</code>，最终 body 和 hash 不一致，容易触发 third-party 判定。</td></tr>
+    </tbody>
+  </table>
+  <p>历史原因：<code>5862e2d8</code> 把 billing block 加进 system[0]，因为真实 Claude Code 总是发送它；<code>e51c9e50</code> 再把 <code>cc_version</code> 与实际 User-Agent 同步，并实现 opt-in CCH 签名。当前代码中 CCH 是否签名仍受设置控制，但一旦开启，必须在所有 body 修改之后运行。</p>
+
+  <h2>与抓包 JSON 的差异点</h2>
+  <p>对比 <code>captures/claude-code-headers/cli_baseline_2026-05-30.redacted.json</code> 和实时抓包时，以下字段天然会变化，不应按固定字符串比较：</p>
+  <ul>
+    <li><code>Content-Length</code>：由最终 body 字节数决定。</li>
+    <li><code>x-client-request-id</code>：每次请求生成新的 UUID。</li>
+    <li><code>X-Claude-Code-Session-Id</code>：由处理后的 <code>metadata.user_id</code> 同步。</li>
+    <li><code>cch</code>：由最终 body 计算，消息内容、metadata、context_management 是否保留都会改变它。</li>
+    <li><code>cc_version=2.1.156.{fp}</code> 的后三位 <code>{fp}</code>：由第一条 user 文本内容计算；同一 CLI 版本下也会随消息变化。</li>
+  </ul>
+  <p>需要重点保持稳定的是 CLI 指纹头：<code>User-Agent</code>、<code>X-Stainless-*</code>、<code>X-App</code>、<code>Accept</code>、默认 <code>anthropic-beta</code> 顺序，以及 CCH 签名前后的 body 顺序。</p>
+  <p>和 <code>E:\Claude\sub2apigit</code> 的旧上游相比，当前项目已经把 CLI 指纹从 <code>2.1.92 / Linux / arm64 / SDK 0.70.0 / Node v24.13.0</code> 更新为 <code>2.1.156 / Windows / x64 / SDK 0.94.0 / Node v24.3.0</code>，并把默认 beta 改为 2026-05-30 抓包顺序。</p>
+
+  <h2>为什么不是全量透传</h2>
+  <ul>
+    <li><code>bdbd2916</code> 说明：客户端透传会把第三方工具自己的 header 混进 mimic 请求，导致同一个请求里同时存在“像 Claude Code”和“不像 Claude Code”的指纹。</li>
+    <li><code>6dc89765</code> 说明：很多客户端只做了部分伪装，例如带了 Claude Code UA，但缺 billing block、完整 beta、工具名混淆和缓存断点；本地误判为真 CC 会让上游仍按 third-party 处理。</li>
+    <li><code>496469ac</code> 说明：真 Claude Code 客户端又不能粗暴全量改 body，否则会破坏它自己的长 system prompt 和 prompt cache 命中。</li>
+    <li><code>ddf91e9</code> 说明：body 字段是否保留不能只看模型名，必须看最终发送的 beta 能力集合。</li>
+  </ul>
+
+  <h2>源码索引</h2>
+  <ul class="source-list">
+    <li><code>backend/internal/pkg/claude/constants.go</code>：Claude Code 固定头、CLI 版本、beta token 与默认 beta 顺序。</li>
+    <li><code>backend/internal/service/gateway_service.go</code>：<code>buildUpstreamRequest</code> 主流程、<code>computeFinalAnthropicBeta</code>、<code>computeFinalCountTokensAnthropicBeta</code>、<code>applyClaudeCodeMimicHeaders</code>。</li>
+    <li><code>backend/internal/service/gateway_request.go</code>：<code>sanitizeAnthropicBodyForBetaTokens</code>。</li>
+    <li><code>backend/internal/service/gateway_billing_block.go</code>：billing block 和 <code>cc_version</code> fingerprint。</li>
+    <li><code>backend/internal/service/gateway_billing_header.go</code>：<code>syncBillingHeaderVersion</code> 与 <code>signBillingHeaderCCH</code>。</li>
+    <li><code>backend/internal/service/identity_service.go</code>：OAuth fingerprint 应用到请求头。</li>
+  </ul>
+</main>
+</body>
+</html>
