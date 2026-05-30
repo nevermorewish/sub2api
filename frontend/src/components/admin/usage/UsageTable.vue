@@ -194,10 +194,12 @@
           <button
             v-if="hasRequestHeaders(row)"
             type="button"
-            class="text-sm font-medium text-primary-600 underline decoration-dashed underline-offset-2 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            class="inline-flex items-center gap-1 rounded border border-primary-200 px-2 py-1 text-xs font-medium text-primary-700 hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300 dark:hover:bg-primary-900/30"
             @click="showHeaders(row)"
           >
-            {{ Object.keys(row.request_headers || {}).length }}
+            <Icon name="eye" size="xs" />
+            {{ t('usage.viewRequestHeaders') }}
+            <span class="text-primary-500 dark:text-primary-400">({{ Object.keys(row.request_headers || {}).length }})</span>
           </button>
           <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
         </template>
@@ -407,13 +409,34 @@
     >
       <div class="max-h-[80vh] w-full max-w-3xl overflow-hidden rounded-lg bg-white shadow-xl dark:bg-dark-800">
         <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-dark-700">
-          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('usage.requestHeaders') }}</h3>
-          <button type="button" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" @click="hideHeaders">
-            <Icon name="x" size="sm" />
-          </button>
+          <div>
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('usage.requestHeaders') }}</h3>
+            <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
+              {{ headersModalCount }} {{ t('usage.requestHeadersCount') }}
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button type="button" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" @click="hideHeaders">
+              <Icon name="x" size="sm" />
+            </button>
+          </div>
         </div>
         <div class="max-h-[calc(80vh-3.25rem)] overflow-auto p-4">
-          <pre class="whitespace-pre-wrap break-all rounded bg-gray-950 p-3 font-mono text-xs text-gray-100">{{ formattedHeaders }}</pre>
+          <div class="overflow-hidden rounded border border-gray-200 dark:border-dark-700">
+            <div
+              v-for="[key, value] in formattedHeaderEntries"
+              :key="key"
+              class="grid grid-cols-[minmax(160px,260px)_1fr] border-b border-gray-200 text-xs last:border-b-0 dark:border-dark-700"
+            >
+              <div class="break-all bg-gray-50 px-3 py-2 font-mono font-medium text-gray-700 dark:bg-dark-900 dark:text-gray-200">
+                {{ key }}
+              </div>
+              <div class="break-all px-3 py-2 font-mono text-gray-800 dark:text-gray-100">
+                {{ value }}
+              </div>
+            </div>
+          </div>
+          <pre class="mt-4 whitespace-pre-wrap break-all rounded bg-gray-950 p-3 font-mono text-xs text-gray-100">{{ formattedHeaders }}</pre>
         </div>
       </div>
     </div>
@@ -561,9 +584,15 @@ const hideTokenTooltip = () => {
 
 const hasRequestHeaders = (row: AdminUsageLog): boolean => Object.keys(row.request_headers || {}).length > 0
 
+const formattedHeaderEntries = computed<[string, string][]>(() => {
+  if (!headersModalData.value) return []
+  return Object.entries(headersModalData.value).sort(([a], [b]) => a.localeCompare(b))
+})
+
+const headersModalCount = computed(() => formattedHeaderEntries.value.length)
+
 const formattedHeaders = computed(() => {
-  if (!headersModalData.value) return ''
-  return Object.entries(headersModalData.value)
+  return formattedHeaderEntries.value
     .map(([key, value]) => `${key}: ${value}`)
     .join('\n')
 })

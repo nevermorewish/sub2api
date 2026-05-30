@@ -936,7 +936,9 @@ export default {
     exportExcelFailed: 'Failed to export usage data',
     imageUnit: ' images',
     userAgent: 'User-Agent',
-    requestHeaders: 'Request Headers'
+    requestHeaders: 'Request Headers',
+    viewRequestHeaders: 'View',
+    requestHeadersCount: 'headers'
   },
 
   // Shared keys for channel monitor (admin + user views)

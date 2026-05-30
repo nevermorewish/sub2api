@@ -940,7 +940,9 @@ export default {
     exportExcelFailed: '使用数据导出失败',
     imageUnit: '张',
     userAgent: 'User-Agent',
-    requestHeaders: '请求头'
+    requestHeaders: '请求头',
+    viewRequestHeaders: '查看',
+    requestHeadersCount: '个请求头'
   },
 
   // Shared keys for channel monitor (admin + user views)
