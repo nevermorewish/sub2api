@@ -1240,6 +1240,9 @@ export interface UsageLog {
   // User-Agent
   user_agent: string | null
 
+  // Redacted request headers, admin-visible when enabled.
+  request_headers?: Record<string, string> | null
+
   // Cache TTL Override
   cache_ttl_overridden: boolean
 

@@ -678,6 +678,18 @@ func (_u *UsageLogUpdate) ClearUserAgent() *UsageLogUpdate {
 	return _u
 }
 
+// SetRequestHeaders sets the "request_headers" field.
+func (_u *UsageLogUpdate) SetRequestHeaders(v map[string]string) *UsageLogUpdate {
+	_u.mutation.SetRequestHeaders(v)
+	return _u
+}
+
+// ClearRequestHeaders clears the value of the "request_headers" field.
+func (_u *UsageLogUpdate) ClearRequestHeaders() *UsageLogUpdate {
+	_u.mutation.ClearRequestHeaders()
+	return _u
+}
+
 // SetIPAddress sets the "ip_address" field.
 func (_u *UsageLogUpdate) SetIPAddress(v string) *UsageLogUpdate {
 	_u.mutation.SetIPAddress(v)
@@ -1217,6 +1229,12 @@ func (_u *UsageLogUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.UserAgentCleared() {
 		_spec.ClearField(usagelog.FieldUserAgent, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequestHeaders(); ok {
+		_spec.SetField(usagelog.FieldRequestHeaders, field.TypeJSON, value)
+	}
+	if _u.mutation.RequestHeadersCleared() {
+		_spec.ClearField(usagelog.FieldRequestHeaders, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.IPAddress(); ok {
 		_spec.SetField(usagelog.FieldIPAddress, field.TypeString, value)
@@ -2086,6 +2104,18 @@ func (_u *UsageLogUpdateOne) ClearUserAgent() *UsageLogUpdateOne {
 	return _u
 }
 
+// SetRequestHeaders sets the "request_headers" field.
+func (_u *UsageLogUpdateOne) SetRequestHeaders(v map[string]string) *UsageLogUpdateOne {
+	_u.mutation.SetRequestHeaders(v)
+	return _u
+}
+
+// ClearRequestHeaders clears the value of the "request_headers" field.
+func (_u *UsageLogUpdateOne) ClearRequestHeaders() *UsageLogUpdateOne {
+	_u.mutation.ClearRequestHeaders()
+	return _u
+}
+
 // SetIPAddress sets the "ip_address" field.
 func (_u *UsageLogUpdateOne) SetIPAddress(v string) *UsageLogUpdateOne {
 	_u.mutation.SetIPAddress(v)
@@ -2655,6 +2685,12 @@ func (_u *UsageLogUpdateOne) sqlSave(ctx context.Context) (_node *UsageLog, err 
 	}
 	if _u.mutation.UserAgentCleared() {
 		_spec.ClearField(usagelog.FieldUserAgent, field.TypeString)
+	}
+	if value, ok := _u.mutation.RequestHeaders(); ok {
+		_spec.SetField(usagelog.FieldRequestHeaders, field.TypeJSON, value)
+	}
+	if _u.mutation.RequestHeadersCleared() {
+		_spec.ClearField(usagelog.FieldRequestHeaders, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.IPAddress(); ok {
 		_spec.SetField(usagelog.FieldIPAddress, field.TypeString, value)

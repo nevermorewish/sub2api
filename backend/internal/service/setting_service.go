@@ -108,6 +108,7 @@ type cachedGatewayForwardingSettings struct {
 	cchSigning                   bool
 	anthropicCacheTTL1hInjection bool
 	rewriteMessageCacheControl   bool
+	usageRequestHeadersLog       bool
 	expiresAt                    int64 // unix nano
 }
 
@@ -1895,6 +1896,7 @@ func (s *SettingService) buildSystemSettingsUpdates(ctx context.Context, setting
 	updates[SettingKeyEnableCCHSigning] = strconv.FormatBool(settings.EnableCCHSigning)
 	updates[SettingKeyEnableAnthropicCacheTTL1hInjection] = strconv.FormatBool(settings.EnableAnthropicCacheTTL1hInjection)
 	updates[SettingKeyRewriteMessageCacheControl] = strconv.FormatBool(settings.RewriteMessageCacheControl)
+	updates[SettingKeyEnableUsageRequestHeadersLog] = strconv.FormatBool(settings.EnableUsageRequestHeadersLog)
 	updates[SettingKeyAntigravityUserAgentVersion] = antigravity.NormalizeUserAgentVersion(settings.AntigravityUserAgentVersion)
 	updates[SettingKeyOpenAICodexUserAgent] = strings.TrimSpace(settings.OpenAICodexUserAgent)
 	updates[SettingKeyOpenAIAllowClaudeCodeCodexPlugin] = strconv.FormatBool(settings.OpenAIAllowClaudeCodeCodexPlugin)
@@ -2022,6 +2024,7 @@ func (s *SettingService) refreshCachedSettings(settings *SystemSettings) {
 		cchSigning:                   settings.EnableCCHSigning,
 		anthropicCacheTTL1hInjection: settings.EnableAnthropicCacheTTL1hInjection,
 		rewriteMessageCacheControl:   settings.RewriteMessageCacheControl,
+		usageRequestHeadersLog:       settings.EnableUsageRequestHeadersLog,
 		expiresAt:                    time.Now().Add(gatewayForwardingCacheTTL).UnixNano(),
 	})
 	s.antigravityUAVersionSF.Forget("antigravity_user_agent_version")
@@ -2226,7 +2229,7 @@ func (s *SettingService) IsBackendModeEnabled(ctx context.Context) bool {
 }
 
 type gatewayForwardingSettingsResult struct {
-	fp, mp, cch, cacheTTL1h, rewriteMessageCacheControl bool
+	fp, mp, cch, cacheTTL1h, rewriteMessageCacheControl, usageRequestHeadersLog bool
 }
 
 func (s *SettingService) getGatewayForwardingSettingsCached(ctx context.Context) gatewayForwardingSettingsResult {
@@ -2238,6 +2241,7 @@ func (s *SettingService) getGatewayForwardingSettingsCached(ctx context.Context)
 				cch:                        cached.cchSigning,
 				cacheTTL1h:                 cached.anthropicCacheTTL1hInjection,
 				rewriteMessageCacheControl: cached.rewriteMessageCacheControl,
+				usageRequestHeadersLog:     cached.usageRequestHeadersLog,
 			}
 		}
 	}
@@ -2250,6 +2254,7 @@ func (s *SettingService) getGatewayForwardingSettingsCached(ctx context.Context)
 					cch:                        cached.cchSigning,
 					cacheTTL1h:                 cached.anthropicCacheTTL1hInjection,
 					rewriteMessageCacheControl: cached.rewriteMessageCacheControl,
+					usageRequestHeadersLog:     cached.usageRequestHeadersLog,
 				}, nil
 			}
 		}
@@ -2261,6 +2266,7 @@ func (s *SettingService) getGatewayForwardingSettingsCached(ctx context.Context)
 			SettingKeyEnableCCHSigning,
 			SettingKeyEnableAnthropicCacheTTL1hInjection,
 			SettingKeyRewriteMessageCacheControl,
+			SettingKeyEnableUsageRequestHeadersLog,
 		})
 		if err != nil {
 			slog.Warn("failed to get gateway forwarding settings", "error", err)
@@ -2270,6 +2276,7 @@ func (s *SettingService) getGatewayForwardingSettingsCached(ctx context.Context)
 				cchSigning:                   false,
 				anthropicCacheTTL1hInjection: false,
 				rewriteMessageCacheControl:   s.defaultRewriteMessageCacheControl(),
+				usageRequestHeadersLog:       false,
 				expiresAt:                    time.Now().Add(gatewayForwardingErrorTTL).UnixNano(),
 			})
 			return gatewayForwardingSettingsResult{fp: true, rewriteMessageCacheControl: s.defaultRewriteMessageCacheControl()}, nil
@@ -2285,12 +2292,14 @@ func (s *SettingService) getGatewayForwardingSettingsCached(ctx context.Context)
 		if v, ok := values[SettingKeyRewriteMessageCacheControl]; ok && v != "" {
 			rewriteMessageCacheControl = v == "true"
 		}
+		usageRequestHeadersLog := values[SettingKeyEnableUsageRequestHeadersLog] == "true"
 		gatewayForwardingCache.Store(&cachedGatewayForwardingSettings{
 			fingerprintUnification:       fp,
 			metadataPassthrough:          mp,
 			cchSigning:                   cch,
 			anthropicCacheTTL1hInjection: cacheTTL1h,
 			rewriteMessageCacheControl:   rewriteMessageCacheControl,
+			usageRequestHeadersLog:       usageRequestHeadersLog,
 			expiresAt:                    time.Now().Add(gatewayForwardingCacheTTL).UnixNano(),
 		})
 		return gatewayForwardingSettingsResult{
@@ -2299,6 +2308,7 @@ func (s *SettingService) getGatewayForwardingSettingsCached(ctx context.Context)
 			cch:                        cch,
 			cacheTTL1h:                 cacheTTL1h,
 			rewriteMessageCacheControl: rewriteMessageCacheControl,
+			usageRequestHeadersLog:     usageRequestHeadersLog,
 		}, nil
 	})
 	if r, ok := val.(gatewayForwardingSettingsResult); ok {
@@ -2323,6 +2333,11 @@ func (s *SettingService) IsAnthropicCacheTTL1hInjectionEnabled(ctx context.Conte
 // IsRewriteMessageCacheControlEnabled 检查是否启用 messages cache_control 改写。
 func (s *SettingService) IsRewriteMessageCacheControlEnabled(ctx context.Context) bool {
 	return s.getGatewayForwardingSettingsCached(ctx).rewriteMessageCacheControl
+}
+
+// IsUsageRequestHeadersLogEnabled 检查是否将脱敏请求头快照写入 usage_logs。
+func (s *SettingService) IsUsageRequestHeadersLogEnabled(ctx context.Context) bool {
+	return s.getGatewayForwardingSettingsCached(ctx).usageRequestHeadersLog
 }
 
 // IsEmailVerifyEnabled 检查是否开启邮件验证
@@ -2809,6 +2824,7 @@ func (s *SettingService) InitializeDefaultSettings(ctx context.Context) error {
 		SettingKeyAllowUngroupedKeyScheduling:        "false",
 		SettingKeyEnableAnthropicCacheTTL1hInjection: "false",
 		SettingKeyRewriteMessageCacheControl:         strconv.FormatBool(s.defaultRewriteMessageCacheControl()),
+		SettingKeyEnableUsageRequestHeadersLog:       "false",
 		SettingKeyAntigravityUserAgentVersion:        "",
 		SettingKeyOpenAICodexUserAgent:               "",
 		SettingPaymentVisibleMethodAlipaySource:      "",
@@ -3329,6 +3345,7 @@ func (s *SettingService) parseSettings(settings map[string]string) *SystemSettin
 	} else {
 		result.RewriteMessageCacheControl = s.defaultRewriteMessageCacheControl()
 	}
+	result.EnableUsageRequestHeadersLog = settings[SettingKeyEnableUsageRequestHeadersLog] == "true"
 	result.AntigravityUserAgentVersion = antigravity.NormalizeUserAgentVersion(settings[SettingKeyAntigravityUserAgentVersion])
 	result.OpenAICodexUserAgent = strings.TrimSpace(settings[SettingKeyOpenAICodexUserAgent])
 	result.OpenAIAllowClaudeCodeCodexPlugin = settings[SettingKeyOpenAIAllowClaudeCodeCodexPlugin] == "true"

@@ -939,7 +939,8 @@ export default {
     exportExcelSuccess: '使用数据导出成功（Excel格式）',
     exportExcelFailed: '使用数据导出失败',
     imageUnit: '张',
-    userAgent: 'User-Agent'
+    userAgent: 'User-Agent',
+    requestHeaders: '请求头'
   },
 
   // Shared keys for channel monitor (admin + user views)
@@ -5776,6 +5777,8 @@ export default {
         anthropicCacheTTL1hInjectionHint: '开启后，对 Anthropic OAuth/Setup Token 请求体中已有的 ephemeral 缓存块强制写入 1h；响应 usage 默认按 5m 回写计费，账号级 TTL 计费设置优先。',
         rewriteMessageCacheControl: '改写消息缓存断点',
         rewriteMessageCacheControlHint: '默认关闭，保留客户端在 messages 内容块中的 cache_control。开启后会清除客户端断点并注入代理断点，适合不自行管理缓存策略的客户端。',
+        usageRequestHeadersLog: 'Usage 请求头日志',
+        usageRequestHeadersLogHint: '开启后，将脱敏后的上游请求头快照写入 usage_logs，并可在 admin/usage 中查看。默认关闭以减少硬盘占用；Authorization、x-api-key、Cookie 等敏感头会脱敏。',
         antigravityUserAgentVersion: 'Antigravity UA 版本',
         antigravityUserAgentVersionPlaceholder: '1.23.2',
         antigravityUserAgentVersionHint: '留空时使用 ANTIGRAVITY_USER_AGENT_VERSION 或内置默认值 1.23.2；填写后后台设置优先。',

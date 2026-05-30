@@ -183,6 +183,7 @@ type SystemSettings struct {
 	EnableCCHSigning                   bool   `json:"enable_cch_signing"`
 	EnableAnthropicCacheTTL1hInjection bool   `json:"enable_anthropic_cache_ttl_1h_injection"`
 	RewriteMessageCacheControl         bool   `json:"rewrite_message_cache_control"`
+	EnableUsageRequestHeadersLog       bool   `json:"enable_usage_request_headers_log"`
 	AntigravityUserAgentVersion        string `json:"antigravity_user_agent_version"`
 	OpenAICodexUserAgent               string `json:"openai_codex_user_agent"`
 	OpenAIAllowClaudeCodeCodexPlugin   bool   `json:"openai_allow_claude_code_codex_plugin"`

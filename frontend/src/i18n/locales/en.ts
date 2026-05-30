@@ -935,7 +935,8 @@ export default {
     exportExcelSuccess: 'Usage data exported successfully (Excel format)',
     exportExcelFailed: 'Failed to export usage data',
     imageUnit: ' images',
-    userAgent: 'User-Agent'
+    userAgent: 'User-Agent',
+    requestHeaders: 'Request Headers'
   },
 
   // Shared keys for channel monitor (admin + user views)
@@ -5622,6 +5623,8 @@ export default {
         anthropicCacheTTL1hInjectionHint: 'When enabled, existing ephemeral cache_control blocks in Anthropic OAuth/Setup Token request bodies are forced to 1h; response usage is billed back as 5m by default, with account-level TTL billing override taking priority.',
         rewriteMessageCacheControl: 'Rewrite Message Cache Breakpoints',
         rewriteMessageCacheControlHint: 'Default off: preserve client cache_control on message content blocks. When enabled, client breakpoints are stripped and proxy breakpoints are injected for clients that do not manage caching themselves.',
+        usageRequestHeadersLog: 'Usage Request Header Logging',
+        usageRequestHeadersLogHint: 'When enabled, a redacted upstream request-header snapshot is stored in usage_logs and shown in admin/usage. Disabled by default to reduce disk usage; Authorization, x-api-key, Cookie, and similar sensitive headers are redacted.',
         antigravityUserAgentVersion: 'Antigravity UA Version',
         antigravityUserAgentVersionPlaceholder: '1.23.2',
         antigravityUserAgentVersionHint: 'Leave empty to use ANTIGRAVITY_USER_AGENT_VERSION or the built-in default 1.23.2; when set, the admin setting takes precedence.',

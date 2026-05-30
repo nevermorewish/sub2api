@@ -2385,6 +2385,7 @@ func (s *OpenAIGatewayService) forwardOpenAIWSV2(
 		ResponseHeaders:  lease.HandshakeHeaders(),
 		Duration:         time.Since(startTime),
 		FirstTokenMs:     firstTokenMs,
+		RequestHeaders:   s.snapshotUsageRequestHeaders(ctx, wsHeaders),
 	}, nil
 }
 
@@ -3093,6 +3094,7 @@ func (s *OpenAIGatewayService) ProxyResponsesWebSocketFromClient(
 					ResponseHeaders: lease.HandshakeHeaders(),
 					Duration:        time.Since(turnStart),
 					FirstTokenMs:    firstTokenMs,
+					RequestHeaders:  s.snapshotUsageRequestHeaders(ctx, baseAcquireReq.Headers),
 				}
 				if imageCount > 0 {
 					result.ImageCount = imageCount

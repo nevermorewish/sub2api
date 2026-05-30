@@ -518,7 +518,7 @@ const exportToExcel = async () => {
 
 // Column visibility
 const ALWAYS_VISIBLE = ['user', 'created_at']
-const DEFAULT_HIDDEN_COLUMNS = ['reasoning_effort', 'user_agent']
+const DEFAULT_HIDDEN_COLUMNS = ['reasoning_effort', 'request_headers', 'user_agent']
 const HIDDEN_COLUMNS_KEY = 'usage-hidden-columns'
 
 const allColumns = computed(() => [
@@ -537,6 +537,7 @@ const allColumns = computed(() => [
   { key: 'first_token', label: t('usage.firstToken'), sortable: false },
   { key: 'duration', label: t('usage.duration'), sortable: false },
   { key: 'created_at', label: t('usage.time'), sortable: true },
+  { key: 'request_headers', label: t('usage.requestHeaders'), sortable: false },
   { key: 'user_agent', label: t('usage.userAgent'), sortable: false },
   { key: 'ip_address', label: t('admin.usage.ipAddress'), sortable: false }
 ])

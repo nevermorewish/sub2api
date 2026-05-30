@@ -190,6 +190,18 @@
           <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
         </template>
 
+        <template #cell-request_headers="{ row }">
+          <button
+            v-if="hasRequestHeaders(row)"
+            type="button"
+            class="text-sm font-medium text-primary-600 underline decoration-dashed underline-offset-2 hover:text-primary-700 dark:text-primary-400 dark:hover:text-primary-300"
+            @click="showHeaders(row)"
+          >
+            {{ Object.keys(row.request_headers || {}).length }}
+          </button>
+          <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
+        </template>
+
         <template #cell-ip_address="{ row }">
           <span v-if="row.ip_address" class="text-sm font-mono text-gray-600 dark:text-gray-400">{{ row.ip_address }}</span>
           <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
@@ -386,10 +398,30 @@
       </div>
     </div>
   </Teleport>
+
+  <Teleport to="body">
+    <div
+      v-if="headersModalVisible"
+      class="fixed inset-0 z-[9998] flex items-center justify-center bg-black/40 p-4"
+      @click.self="hideHeaders"
+    >
+      <div class="max-h-[80vh] w-full max-w-3xl overflow-hidden rounded-lg bg-white shadow-xl dark:bg-dark-800">
+        <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-dark-700">
+          <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('usage.requestHeaders') }}</h3>
+          <button type="button" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" @click="hideHeaders">
+            <Icon name="x" size="sm" />
+          </button>
+        </div>
+        <div class="max-h-[calc(80vh-3.25rem)] overflow-auto p-4">
+          <pre class="whitespace-pre-wrap break-all rounded bg-gray-950 p-3 font-mono text-xs text-gray-100">{{ formattedHeaders }}</pre>
+        </div>
+      </div>
+    </div>
+  </Teleport>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { formatDateTime, formatReasoningEffort } from '@/utils/format'
 import { formatCacheTokens, formatMultiplier } from '@/utils/formatters'
@@ -466,6 +498,8 @@ const tooltipData = ref<AdminUsageLog | null>(null)
 const tokenTooltipVisible = ref(false)
 const tokenTooltipPosition = ref({ x: 0, y: 0 })
 const tokenTooltipData = ref<AdminUsageLog | null>(null)
+const headersModalVisible = ref(false)
+const headersModalData = ref<Record<string, string> | null>(null)
 
 const getRequestTypeLabel = (row: AdminUsageLog): string => {
   const requestType = resolveUsageRequestType(row)
@@ -523,5 +557,24 @@ const showTokenTooltip = (event: MouseEvent, row: AdminUsageLog) => {
 const hideTokenTooltip = () => {
   tokenTooltipVisible.value = false
   tokenTooltipData.value = null
+}
+
+const hasRequestHeaders = (row: AdminUsageLog): boolean => Object.keys(row.request_headers || {}).length > 0
+
+const formattedHeaders = computed(() => {
+  if (!headersModalData.value) return ''
+  return Object.entries(headersModalData.value)
+    .map(([key, value]) => `${key}: ${value}`)
+    .join('\n')
+})
+
+const showHeaders = (row: AdminUsageLog) => {
+  headersModalData.value = row.request_headers || null
+  headersModalVisible.value = true
+}
+
+const hideHeaders = () => {
+  headersModalVisible.value = false
+  headersModalData.value = null
 }
 </script>

@@ -34493,6 +34493,7 @@ type UsageLogMutation struct {
 	first_token_ms              *int
 	addfirst_token_ms           *int
 	user_agent                  *string
+	request_headers             *map[string]string
 	ip_address                  *string
 	error_status                *string
 	error_message               *string
@@ -36291,6 +36292,55 @@ func (m *UsageLogMutation) ResetUserAgent() {
 	delete(m.clearedFields, usagelog.FieldUserAgent)
 }
 
+// SetRequestHeaders sets the "request_headers" field.
+func (m *UsageLogMutation) SetRequestHeaders(value map[string]string) {
+	m.request_headers = &value
+}
+
+// RequestHeaders returns the value of the "request_headers" field in the mutation.
+func (m *UsageLogMutation) RequestHeaders() (r map[string]string, exists bool) {
+	v := m.request_headers
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldRequestHeaders returns the old "request_headers" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldRequestHeaders(ctx context.Context) (v map[string]string, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldRequestHeaders is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldRequestHeaders requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldRequestHeaders: %w", err)
+	}
+	return oldValue.RequestHeaders, nil
+}
+
+// ClearRequestHeaders clears the value of the "request_headers" field.
+func (m *UsageLogMutation) ClearRequestHeaders() {
+	m.request_headers = nil
+	m.clearedFields[usagelog.FieldRequestHeaders] = struct{}{}
+}
+
+// RequestHeadersCleared returns if the "request_headers" field was cleared in this mutation.
+func (m *UsageLogMutation) RequestHeadersCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldRequestHeaders]
+	return ok
+}
+
+// ResetRequestHeaders resets all changes to the "request_headers" field.
+func (m *UsageLogMutation) ResetRequestHeaders() {
+	m.request_headers = nil
+	delete(m.clearedFields, usagelog.FieldRequestHeaders)
+}
+
 // SetIPAddress sets the "ip_address" field.
 func (m *UsageLogMutation) SetIPAddress(s string) {
 	m.ip_address = &s
@@ -36980,7 +37030,7 @@ func (m *UsageLogMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UsageLogMutation) Fields() []string {
-	fields := make([]string, 0, 43)
+	fields := make([]string, 0, 44)
 	if m.user != nil {
 		fields = append(fields, usagelog.FieldUserID)
 	}
@@ -37076,6 +37126,9 @@ func (m *UsageLogMutation) Fields() []string {
 	}
 	if m.user_agent != nil {
 		fields = append(fields, usagelog.FieldUserAgent)
+	}
+	if m.request_headers != nil {
+		fields = append(fields, usagelog.FieldRequestHeaders)
 	}
 	if m.ip_address != nil {
 		fields = append(fields, usagelog.FieldIPAddress)
@@ -37182,6 +37235,8 @@ func (m *UsageLogMutation) Field(name string) (ent.Value, bool) {
 		return m.FirstTokenMs()
 	case usagelog.FieldUserAgent:
 		return m.UserAgent()
+	case usagelog.FieldRequestHeaders:
+		return m.RequestHeaders()
 	case usagelog.FieldIPAddress:
 		return m.IPAddress()
 	case usagelog.FieldErrorStatus:
@@ -37277,6 +37332,8 @@ func (m *UsageLogMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldFirstTokenMs(ctx)
 	case usagelog.FieldUserAgent:
 		return m.OldUserAgent(ctx)
+	case usagelog.FieldRequestHeaders:
+		return m.OldRequestHeaders(ctx)
 	case usagelog.FieldIPAddress:
 		return m.OldIPAddress(ctx)
 	case usagelog.FieldErrorStatus:
@@ -37531,6 +37588,13 @@ func (m *UsageLogMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetUserAgent(v)
+		return nil
+	case usagelog.FieldRequestHeaders:
+		v, ok := value.(map[string]string)
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetRequestHeaders(v)
 		return nil
 	case usagelog.FieldIPAddress:
 		v, ok := value.(string)
@@ -37906,6 +37970,9 @@ func (m *UsageLogMutation) ClearedFields() []string {
 	if m.FieldCleared(usagelog.FieldUserAgent) {
 		fields = append(fields, usagelog.FieldUserAgent)
 	}
+	if m.FieldCleared(usagelog.FieldRequestHeaders) {
+		fields = append(fields, usagelog.FieldRequestHeaders)
+	}
 	if m.FieldCleared(usagelog.FieldIPAddress) {
 		fields = append(fields, usagelog.FieldIPAddress)
 	}
@@ -37979,6 +38046,9 @@ func (m *UsageLogMutation) ClearField(name string) error {
 		return nil
 	case usagelog.FieldUserAgent:
 		m.ClearUserAgent()
+		return nil
+	case usagelog.FieldRequestHeaders:
+		m.ClearRequestHeaders()
 		return nil
 	case usagelog.FieldIPAddress:
 		m.ClearIPAddress()
@@ -38107,6 +38177,9 @@ func (m *UsageLogMutation) ResetField(name string) error {
 		return nil
 	case usagelog.FieldUserAgent:
 		m.ResetUserAgent()
+		return nil
+	case usagelog.FieldRequestHeaders:
+		m.ResetRequestHeaders()
 		return nil
 	case usagelog.FieldIPAddress:
 		m.ResetIPAddress()

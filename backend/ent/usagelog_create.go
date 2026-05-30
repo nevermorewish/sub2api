@@ -435,6 +435,12 @@ func (_c *UsageLogCreate) SetNillableUserAgent(v *string) *UsageLogCreate {
 	return _c
 }
 
+// SetRequestHeaders sets the "request_headers" field.
+func (_c *UsageLogCreate) SetRequestHeaders(v map[string]string) *UsageLogCreate {
+	_c.mutation.SetRequestHeaders(v)
+	return _c
+}
+
 // SetIPAddress sets the "ip_address" field.
 func (_c *UsageLogCreate) SetIPAddress(v string) *UsageLogCreate {
 	_c.mutation.SetIPAddress(v)
@@ -1004,6 +1010,10 @@ func (_c *UsageLogCreate) createSpec() (*UsageLog, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UserAgent(); ok {
 		_spec.SetField(usagelog.FieldUserAgent, field.TypeString, value)
 		_node.UserAgent = &value
+	}
+	if value, ok := _c.mutation.RequestHeaders(); ok {
+		_spec.SetField(usagelog.FieldRequestHeaders, field.TypeJSON, value)
+		_node.RequestHeaders = value
 	}
 	if value, ok := _c.mutation.IPAddress(); ok {
 		_spec.SetField(usagelog.FieldIPAddress, field.TypeString, value)
@@ -1747,6 +1757,24 @@ func (u *UsageLogUpsert) UpdateUserAgent() *UsageLogUpsert {
 // ClearUserAgent clears the value of the "user_agent" field.
 func (u *UsageLogUpsert) ClearUserAgent() *UsageLogUpsert {
 	u.SetNull(usagelog.FieldUserAgent)
+	return u
+}
+
+// SetRequestHeaders sets the "request_headers" field.
+func (u *UsageLogUpsert) SetRequestHeaders(v map[string]string) *UsageLogUpsert {
+	u.Set(usagelog.FieldRequestHeaders, v)
+	return u
+}
+
+// UpdateRequestHeaders sets the "request_headers" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateRequestHeaders() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldRequestHeaders)
+	return u
+}
+
+// ClearRequestHeaders clears the value of the "request_headers" field.
+func (u *UsageLogUpsert) ClearRequestHeaders() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldRequestHeaders)
 	return u
 }
 
@@ -2624,6 +2652,27 @@ func (u *UsageLogUpsertOne) UpdateUserAgent() *UsageLogUpsertOne {
 func (u *UsageLogUpsertOne) ClearUserAgent() *UsageLogUpsertOne {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearUserAgent()
+	})
+}
+
+// SetRequestHeaders sets the "request_headers" field.
+func (u *UsageLogUpsertOne) SetRequestHeaders(v map[string]string) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRequestHeaders(v)
+	})
+}
+
+// UpdateRequestHeaders sets the "request_headers" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateRequestHeaders() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRequestHeaders()
+	})
+}
+
+// ClearRequestHeaders clears the value of the "request_headers" field.
+func (u *UsageLogUpsertOne) ClearRequestHeaders() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRequestHeaders()
 	})
 }
 
@@ -3696,6 +3745,27 @@ func (u *UsageLogUpsertBulk) UpdateUserAgent() *UsageLogUpsertBulk {
 func (u *UsageLogUpsertBulk) ClearUserAgent() *UsageLogUpsertBulk {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearUserAgent()
+	})
+}
+
+// SetRequestHeaders sets the "request_headers" field.
+func (u *UsageLogUpsertBulk) SetRequestHeaders(v map[string]string) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetRequestHeaders(v)
+	})
+}
+
+// UpdateRequestHeaders sets the "request_headers" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateRequestHeaders() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateRequestHeaders()
+	})
+}
+
+// ClearRequestHeaders clears the value of the "request_headers" field.
+func (u *UsageLogUpsertBulk) ClearRequestHeaders() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearRequestHeaders()
 	})
 }
 

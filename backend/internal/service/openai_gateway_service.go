@@ -243,6 +243,7 @@ type OpenAIForwardResult struct {
 	ImageOutputSizes   []string
 	ImageSizeSource    string
 	ImageSizeBreakdown map[string]int
+	RequestHeaders     map[string]string
 }
 
 type OpenAIWSRetryMetricsSnapshot struct {
@@ -3134,6 +3135,7 @@ func (s *OpenAIGatewayService) Forward(ctx context.Context, c *gin.Context, acco
 			OpenAIWSMode:    false,
 			Duration:        time.Since(startTime),
 			FirstTokenMs:    firstTokenMs,
+			RequestHeaders:  s.snapshotUsageRequestHeaders(ctx, upstreamReq.Header),
 		}
 		if imageCount > 0 {
 			forwardResult.ImageCount = imageCount
@@ -3377,6 +3379,7 @@ func (s *OpenAIGatewayService) forwardOpenAIPassthrough(
 		OpenAIWSMode:    false,
 		Duration:        time.Since(startTime),
 		FirstTokenMs:    firstTokenMs,
+		RequestHeaders:  s.snapshotUsageRequestHeaders(ctx, upstreamReq.Header),
 	}
 	if imageCount > 0 {
 		forwardResult.ImageCount = imageCount
@@ -4276,6 +4279,13 @@ func (s *OpenAIGatewayService) overrideBrowserUserAgent(ctx context.Context, acc
 		}
 	}
 	req.Header.Set("user-agent", codexUA)
+}
+
+func (s *OpenAIGatewayService) snapshotUsageRequestHeaders(ctx context.Context, headers http.Header) map[string]string {
+	if s == nil || s.settingService == nil || !s.settingService.IsUsageRequestHeadersLogEnabled(ctx) {
+		return nil
+	}
+	return snapshotRequestHeadersForUsage(headers)
 }
 
 func (s *OpenAIGatewayService) handleErrorResponse(
@@ -5919,6 +5929,7 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	if input.UserAgent != "" {
 		usageLog.UserAgent = &input.UserAgent
 	}
+	usageLog.RequestHeaders = result.RequestHeaders
 
 	// 添加 IPAddress
 	if input.IPAddress != "" {

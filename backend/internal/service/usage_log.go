@@ -161,6 +161,8 @@ type UsageLog struct {
 	FirstTokenMs *int
 	UserAgent    *string
 	IPAddress    *string
+	// RequestHeaders stores a redacted snapshot of request headers for admin diagnostics.
+	RequestHeaders map[string]string
 
 	// Cache TTL Override 标记（管理员强制替换了缓存 TTL 计费）
 	CacheTTLOverridden bool

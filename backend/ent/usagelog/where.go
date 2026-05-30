@@ -1735,6 +1735,16 @@ func UserAgentContainsFold(v string) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldContainsFold(FieldUserAgent, v))
 }
 
+// RequestHeadersIsNil applies the IsNil predicate on the "request_headers" field.
+func RequestHeadersIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldRequestHeaders))
+}
+
+// RequestHeadersNotNil applies the NotNil predicate on the "request_headers" field.
+func RequestHeadersNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldRequestHeaders))
+}
+
 // IPAddressEQ applies the EQ predicate on the "ip_address" field.
 func IPAddressEQ(v string) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldIPAddress, v))

@@ -87,6 +87,8 @@ type UsageLog struct {
 	FirstTokenMs *int `json:"first_token_ms,omitempty"`
 	// UserAgent holds the value of the "user_agent" field.
 	UserAgent *string `json:"user_agent,omitempty"`
+	// 脱敏后的请求头快照
+	RequestHeaders map[string]string `json:"request_headers,omitempty"`
 	// IPAddress holds the value of the "ip_address" field.
 	IPAddress *string `json:"ip_address,omitempty"`
 	// ErrorStatus holds the value of the "error_status" field.
@@ -192,7 +194,7 @@ func (*UsageLog) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case usagelog.FieldImageSizeBreakdown:
+		case usagelog.FieldRequestHeaders, usagelog.FieldImageSizeBreakdown:
 			values[i] = new([]byte)
 		case usagelog.FieldStream, usagelog.FieldCacheTTLOverridden:
 			values[i] = new(sql.NullBool)
@@ -428,6 +430,14 @@ func (_m *UsageLog) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UserAgent = new(string)
 				*_m.UserAgent = value.String
+			}
+		case usagelog.FieldRequestHeaders:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field request_headers", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.RequestHeaders); err != nil {
+					return fmt.Errorf("unmarshal field request_headers: %w", err)
+				}
 			}
 		case usagelog.FieldIPAddress:
 			if value, ok := values[i].(*sql.NullString); !ok {
@@ -684,6 +694,9 @@ func (_m *UsageLog) String() string {
 		builder.WriteString("user_agent=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	builder.WriteString("request_headers=")
+	builder.WriteString(fmt.Sprintf("%v", _m.RequestHeaders))
 	builder.WriteString(", ")
 	if v := _m.IPAddress; v != nil {
 		builder.WriteString("ip_address=")

@@ -258,11 +258,51 @@ func redactAuthHeaderValue(v string) string {
 func safeHeaderValueForLog(key string, v string) string {
 	key = strings.ToLower(strings.TrimSpace(key))
 	switch key {
-	case "authorization", "x-api-key":
+	case "authorization", "x-api-key", "x-goog-api-key", "api-key", "cookie", "set-cookie", "proxy-authorization":
 		return redactAuthHeaderValue(v)
 	default:
-		return strings.TrimSpace(v)
+		v = strings.TrimSpace(v)
+		const maxHeaderValueLogBytes = 2048
+		if len(v) > maxHeaderValueLogBytes {
+			return v[:maxHeaderValueLogBytes] + "...[truncated]"
+		}
+		return v
 	}
+}
+
+func snapshotRequestHeadersForUsage(header http.Header) map[string]string {
+	if len(header) == 0 {
+		return nil
+	}
+	keys := sortHeadersByWireOrder(header)
+	out := make(map[string]string, len(keys))
+	for _, key := range keys {
+		values := header[key]
+		if len(values) == 0 {
+			continue
+		}
+		safeValues := make([]string, 0, len(values))
+		for _, value := range values {
+			if safe := safeHeaderValueForLog(key, value); safe != "" {
+				safeValues = append(safeValues, safe)
+			}
+		}
+		if len(safeValues) == 0 {
+			continue
+		}
+		out[key] = strings.Join(safeValues, ", ")
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func (s *GatewayService) snapshotUsageRequestHeaders(ctx context.Context, req *http.Request) map[string]string {
+	if req == nil || s == nil || s.settingService == nil || !s.settingService.IsUsageRequestHeadersLogEnabled(ctx) {
+		return nil
+	}
+	return snapshotRequestHeadersForUsage(req.Header)
 }
 
 func extractSystemPreviewFromBody(body []byte) string {
@@ -551,6 +591,7 @@ type ForwardResult struct {
 	ImageOutputSizes   []string
 	ImageSizeSource    string
 	ImageSizeBreakdown map[string]int
+	RequestHeaders     map[string]string
 }
 
 // UpstreamFailoverError indicates an upstream error that should trigger account failover.
@@ -4647,6 +4688,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 
 	// 重试循环
 	var resp *http.Response
+	var requestHeaders map[string]string
 	retryStart := time.Now()
 	for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
 		// 构建上游请求（每次重试需要重新构建，因为请求体需要重新读取）
@@ -4656,6 +4698,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 		if err != nil {
 			return nil, err
 		}
+		requestHeaders = s.snapshotUsageRequestHeaders(ctx, upstreamReq)
 
 		// 发送请求
 		resp, err = s.httpUpstream.DoWithTLS(upstreamReq, proxyURL, account.ID, account.Concurrency, tlsProfile)
@@ -5077,6 +5120,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 		Duration:         time.Since(startTime),
 		FirstTokenMs:     firstTokenMs,
 		ClientDisconnect: clientDisconnect,
+		RequestHeaders:   requestHeaders,
 	}, nil
 }
 
@@ -5136,6 +5180,7 @@ func (s *GatewayService) forwardAnthropicAPIKeyPassthroughWithInput(
 	input.Body = StripEmptyTextBlocks(input.Body)
 
 	var resp *http.Response
+	var requestHeaders map[string]string
 	retryStart := time.Now()
 	for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
 		upstreamCtx, releaseUpstreamCtx := detachStreamUpstreamContext(ctx, input.RequestStream)
@@ -5144,6 +5189,7 @@ func (s *GatewayService) forwardAnthropicAPIKeyPassthroughWithInput(
 		if err != nil {
 			return nil, err
 		}
+		requestHeaders = s.snapshotUsageRequestHeaders(ctx, upstreamReq)
 
 		resp, err = s.httpUpstream.DoWithTLS(upstreamReq, proxyURL, account.ID, account.Concurrency, s.tlsFPProfileService.ResolveTLSProfile(account))
 		if err != nil {
@@ -5326,6 +5372,7 @@ func (s *GatewayService) forwardAnthropicAPIKeyPassthroughWithInput(
 		Duration:         time.Since(input.StartTime),
 		FirstTokenMs:     firstTokenMs,
 		ClientDisconnect: clientDisconnect,
+		RequestHeaders:   requestHeaders,
 	}, nil
 }
 
@@ -5902,6 +5949,7 @@ func (s *GatewayService) forwardBedrock(
 		Duration:         time.Since(startTime),
 		FirstTokenMs:     firstTokenMs,
 		ClientDisconnect: clientDisconnect,
+		RequestHeaders:   s.snapshotUsageRequestHeaders(ctx, resp.Request),
 	}, nil
 }
 
@@ -9048,6 +9096,7 @@ func (s *GatewayService) buildRecordUsageLog(
 		ChannelID:             optionalInt64Ptr(input.ChannelID),
 		ModelMappingChain:     optionalTrimmedStringPtr(input.ModelMappingChain),
 		UserAgent:             optionalTrimmedStringPtr(input.UserAgent),
+		RequestHeaders:        result.RequestHeaders,
 		IPAddress:             optionalTrimmedStringPtr(input.IPAddress),
 		GroupID:               apiKey.GroupID,
 		SubscriptionID:        optionalSubscriptionID(subscription),
