@@ -161,7 +161,9 @@ type UsageLog struct {
 	FirstTokenMs *int
 	UserAgent    *string
 	IPAddress    *string
-	// RequestHeaders stores a redacted snapshot of request headers for admin diagnostics.
+	// InboundRequestHeaders stores the redacted client-to-sub2api request headers.
+	InboundRequestHeaders map[string]string
+	// RequestHeaders stores the redacted sub2api-to-upstream request headers.
 	RequestHeaders map[string]string
 
 	// Cache TTL Override 标记（管理员强制替换了缓存 TTL 计费）

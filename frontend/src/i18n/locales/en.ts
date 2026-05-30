@@ -937,6 +937,8 @@ export default {
     imageUnit: ' images',
     userAgent: 'User-Agent',
     requestHeaders: 'Request Headers',
+    inboundRequestHeaders: 'Inbound Headers',
+    outboundRequestHeaders: 'Outbound Headers',
     viewRequestHeaders: 'View',
     requestHeadersCount: 'headers'
   },

@@ -435,6 +435,12 @@ func (_c *UsageLogCreate) SetNillableUserAgent(v *string) *UsageLogCreate {
 	return _c
 }
 
+// SetInboundRequestHeaders sets the "inbound_request_headers" field.
+func (_c *UsageLogCreate) SetInboundRequestHeaders(v map[string]string) *UsageLogCreate {
+	_c.mutation.SetInboundRequestHeaders(v)
+	return _c
+}
+
 // SetRequestHeaders sets the "request_headers" field.
 func (_c *UsageLogCreate) SetRequestHeaders(v map[string]string) *UsageLogCreate {
 	_c.mutation.SetRequestHeaders(v)
@@ -1010,6 +1016,10 @@ func (_c *UsageLogCreate) createSpec() (*UsageLog, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.UserAgent(); ok {
 		_spec.SetField(usagelog.FieldUserAgent, field.TypeString, value)
 		_node.UserAgent = &value
+	}
+	if value, ok := _c.mutation.InboundRequestHeaders(); ok {
+		_spec.SetField(usagelog.FieldInboundRequestHeaders, field.TypeJSON, value)
+		_node.InboundRequestHeaders = value
 	}
 	if value, ok := _c.mutation.RequestHeaders(); ok {
 		_spec.SetField(usagelog.FieldRequestHeaders, field.TypeJSON, value)
@@ -1757,6 +1767,24 @@ func (u *UsageLogUpsert) UpdateUserAgent() *UsageLogUpsert {
 // ClearUserAgent clears the value of the "user_agent" field.
 func (u *UsageLogUpsert) ClearUserAgent() *UsageLogUpsert {
 	u.SetNull(usagelog.FieldUserAgent)
+	return u
+}
+
+// SetInboundRequestHeaders sets the "inbound_request_headers" field.
+func (u *UsageLogUpsert) SetInboundRequestHeaders(v map[string]string) *UsageLogUpsert {
+	u.Set(usagelog.FieldInboundRequestHeaders, v)
+	return u
+}
+
+// UpdateInboundRequestHeaders sets the "inbound_request_headers" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateInboundRequestHeaders() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldInboundRequestHeaders)
+	return u
+}
+
+// ClearInboundRequestHeaders clears the value of the "inbound_request_headers" field.
+func (u *UsageLogUpsert) ClearInboundRequestHeaders() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldInboundRequestHeaders)
 	return u
 }
 
@@ -2652,6 +2680,27 @@ func (u *UsageLogUpsertOne) UpdateUserAgent() *UsageLogUpsertOne {
 func (u *UsageLogUpsertOne) ClearUserAgent() *UsageLogUpsertOne {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearUserAgent()
+	})
+}
+
+// SetInboundRequestHeaders sets the "inbound_request_headers" field.
+func (u *UsageLogUpsertOne) SetInboundRequestHeaders(v map[string]string) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetInboundRequestHeaders(v)
+	})
+}
+
+// UpdateInboundRequestHeaders sets the "inbound_request_headers" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateInboundRequestHeaders() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateInboundRequestHeaders()
+	})
+}
+
+// ClearInboundRequestHeaders clears the value of the "inbound_request_headers" field.
+func (u *UsageLogUpsertOne) ClearInboundRequestHeaders() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearInboundRequestHeaders()
 	})
 }
 
@@ -3745,6 +3794,27 @@ func (u *UsageLogUpsertBulk) UpdateUserAgent() *UsageLogUpsertBulk {
 func (u *UsageLogUpsertBulk) ClearUserAgent() *UsageLogUpsertBulk {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearUserAgent()
+	})
+}
+
+// SetInboundRequestHeaders sets the "inbound_request_headers" field.
+func (u *UsageLogUpsertBulk) SetInboundRequestHeaders(v map[string]string) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetInboundRequestHeaders(v)
+	})
+}
+
+// UpdateInboundRequestHeaders sets the "inbound_request_headers" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateInboundRequestHeaders() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateInboundRequestHeaders()
+	})
+}
+
+// ClearInboundRequestHeaders clears the value of the "inbound_request_headers" field.
+func (u *UsageLogUpsertBulk) ClearInboundRequestHeaders() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearInboundRequestHeaders()
 	})
 }
 

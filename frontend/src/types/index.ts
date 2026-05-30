@@ -1240,7 +1240,10 @@ export interface UsageLog {
   // User-Agent
   user_agent: string | null
 
-  // Redacted request headers, admin-visible when enabled.
+  // Redacted client-to-sub2api request headers, admin-visible when enabled.
+  inbound_request_headers?: Record<string, string> | null
+
+  // Redacted sub2api-to-upstream request headers, admin-visible when enabled.
   request_headers?: Record<string, string> | null
 
   // Cache TTL Override

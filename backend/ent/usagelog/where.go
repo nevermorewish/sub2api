@@ -1735,6 +1735,16 @@ func UserAgentContainsFold(v string) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldContainsFold(FieldUserAgent, v))
 }
 
+// InboundRequestHeadersIsNil applies the IsNil predicate on the "inbound_request_headers" field.
+func InboundRequestHeadersIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldInboundRequestHeaders))
+}
+
+// InboundRequestHeadersNotNil applies the NotNil predicate on the "inbound_request_headers" field.
+func InboundRequestHeadersNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldInboundRequestHeaders))
+}
+
 // RequestHeadersIsNil applies the IsNil predicate on the "request_headers" field.
 func RequestHeadersIsNil() predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldIsNull(FieldRequestHeaders))

@@ -678,6 +678,18 @@ func (_u *UsageLogUpdate) ClearUserAgent() *UsageLogUpdate {
 	return _u
 }
 
+// SetInboundRequestHeaders sets the "inbound_request_headers" field.
+func (_u *UsageLogUpdate) SetInboundRequestHeaders(v map[string]string) *UsageLogUpdate {
+	_u.mutation.SetInboundRequestHeaders(v)
+	return _u
+}
+
+// ClearInboundRequestHeaders clears the value of the "inbound_request_headers" field.
+func (_u *UsageLogUpdate) ClearInboundRequestHeaders() *UsageLogUpdate {
+	_u.mutation.ClearInboundRequestHeaders()
+	return _u
+}
+
 // SetRequestHeaders sets the "request_headers" field.
 func (_u *UsageLogUpdate) SetRequestHeaders(v map[string]string) *UsageLogUpdate {
 	_u.mutation.SetRequestHeaders(v)
@@ -1229,6 +1241,12 @@ func (_u *UsageLogUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.UserAgentCleared() {
 		_spec.ClearField(usagelog.FieldUserAgent, field.TypeString)
+	}
+	if value, ok := _u.mutation.InboundRequestHeaders(); ok {
+		_spec.SetField(usagelog.FieldInboundRequestHeaders, field.TypeJSON, value)
+	}
+	if _u.mutation.InboundRequestHeadersCleared() {
+		_spec.ClearField(usagelog.FieldInboundRequestHeaders, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.RequestHeaders(); ok {
 		_spec.SetField(usagelog.FieldRequestHeaders, field.TypeJSON, value)
@@ -2104,6 +2122,18 @@ func (_u *UsageLogUpdateOne) ClearUserAgent() *UsageLogUpdateOne {
 	return _u
 }
 
+// SetInboundRequestHeaders sets the "inbound_request_headers" field.
+func (_u *UsageLogUpdateOne) SetInboundRequestHeaders(v map[string]string) *UsageLogUpdateOne {
+	_u.mutation.SetInboundRequestHeaders(v)
+	return _u
+}
+
+// ClearInboundRequestHeaders clears the value of the "inbound_request_headers" field.
+func (_u *UsageLogUpdateOne) ClearInboundRequestHeaders() *UsageLogUpdateOne {
+	_u.mutation.ClearInboundRequestHeaders()
+	return _u
+}
+
 // SetRequestHeaders sets the "request_headers" field.
 func (_u *UsageLogUpdateOne) SetRequestHeaders(v map[string]string) *UsageLogUpdateOne {
 	_u.mutation.SetRequestHeaders(v)
@@ -2685,6 +2715,12 @@ func (_u *UsageLogUpdateOne) sqlSave(ctx context.Context) (_node *UsageLog, err 
 	}
 	if _u.mutation.UserAgentCleared() {
 		_spec.ClearField(usagelog.FieldUserAgent, field.TypeString)
+	}
+	if value, ok := _u.mutation.InboundRequestHeaders(); ok {
+		_spec.SetField(usagelog.FieldInboundRequestHeaders, field.TypeJSON, value)
+	}
+	if _u.mutation.InboundRequestHeadersCleared() {
+		_spec.ClearField(usagelog.FieldInboundRequestHeaders, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.RequestHeaders(); ok {
 		_spec.SetField(usagelog.FieldRequestHeaders, field.TypeJSON, value)

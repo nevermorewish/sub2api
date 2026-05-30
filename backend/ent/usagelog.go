@@ -87,7 +87,9 @@ type UsageLog struct {
 	FirstTokenMs *int `json:"first_token_ms,omitempty"`
 	// UserAgent holds the value of the "user_agent" field.
 	UserAgent *string `json:"user_agent,omitempty"`
-	// 脱敏后的请求头快照
+	// 脱敏后的客户端到 sub2api 请求头快照
+	InboundRequestHeaders map[string]string `json:"inbound_request_headers,omitempty"`
+	// 脱敏后的 sub2api 到上游请求头快照
 	RequestHeaders map[string]string `json:"request_headers,omitempty"`
 	// IPAddress holds the value of the "ip_address" field.
 	IPAddress *string `json:"ip_address,omitempty"`
@@ -194,7 +196,7 @@ func (*UsageLog) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case usagelog.FieldRequestHeaders, usagelog.FieldImageSizeBreakdown:
+		case usagelog.FieldInboundRequestHeaders, usagelog.FieldRequestHeaders, usagelog.FieldImageSizeBreakdown:
 			values[i] = new([]byte)
 		case usagelog.FieldStream, usagelog.FieldCacheTTLOverridden:
 			values[i] = new(sql.NullBool)
@@ -430,6 +432,14 @@ func (_m *UsageLog) assignValues(columns []string, values []any) error {
 			} else if value.Valid {
 				_m.UserAgent = new(string)
 				*_m.UserAgent = value.String
+			}
+		case usagelog.FieldInboundRequestHeaders:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field inbound_request_headers", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.InboundRequestHeaders); err != nil {
+					return fmt.Errorf("unmarshal field inbound_request_headers: %w", err)
+				}
 			}
 		case usagelog.FieldRequestHeaders:
 			if value, ok := values[i].(*[]byte); !ok {
@@ -694,6 +704,9 @@ func (_m *UsageLog) String() string {
 		builder.WriteString("user_agent=")
 		builder.WriteString(*v)
 	}
+	builder.WriteString(", ")
+	builder.WriteString("inbound_request_headers=")
+	builder.WriteString(fmt.Sprintf("%v", _m.InboundRequestHeaders))
 	builder.WriteString(", ")
 	builder.WriteString("request_headers=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RequestHeaders))

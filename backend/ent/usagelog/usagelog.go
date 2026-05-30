@@ -78,6 +78,8 @@ const (
 	FieldFirstTokenMs = "first_token_ms"
 	// FieldUserAgent holds the string denoting the user_agent field in the database.
 	FieldUserAgent = "user_agent"
+	// FieldInboundRequestHeaders holds the string denoting the inbound_request_headers field in the database.
+	FieldInboundRequestHeaders = "inbound_request_headers"
 	// FieldRequestHeaders holds the string denoting the request_headers field in the database.
 	FieldRequestHeaders = "request_headers"
 	// FieldIPAddress holds the string denoting the ip_address field in the database.
@@ -186,6 +188,7 @@ var Columns = []string{
 	FieldDurationMs,
 	FieldFirstTokenMs,
 	FieldUserAgent,
+	FieldInboundRequestHeaders,
 	FieldRequestHeaders,
 	FieldIPAddress,
 	FieldErrorStatus,

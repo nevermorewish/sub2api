@@ -122,10 +122,14 @@ func (UsageLog) Fields() []ent.Field {
 			MaxLen(512).
 			Optional().
 			Nillable(),
+		field.JSON("inbound_request_headers", map[string]string{}).
+			Optional().
+			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
+			Comment("脱敏后的客户端到 sub2api 请求头快照"),
 		field.JSON("request_headers", map[string]string{}).
 			Optional().
 			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
-			Comment("脱敏后的请求头快照"),
+			Comment("脱敏后的 sub2api 到上游请求头快照"),
 		field.String("ip_address").
 			MaxLen(45). // 支持 IPv6
 			Optional().

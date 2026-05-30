@@ -22,14 +22,25 @@
             </button>
             <span v-else class="font-medium text-gray-900 dark:text-white">-</span>
             <span class="ml-1 text-gray-500 dark:text-gray-400">#{{ row.user_id }}</span>
-            <div v-if="hasRequestHeaders(row)" class="mt-1">
+            <div v-if="hasAnyRequestHeaders(row)" class="mt-1 flex flex-wrap gap-1">
               <button
+                v-if="hasInboundRequestHeaders(row)"
                 type="button"
                 class="inline-flex items-center gap-1 rounded border border-primary-200 px-2 py-1 text-xs font-medium text-primary-700 hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300 dark:hover:bg-primary-900/30"
-                @click="showHeaders(row)"
+                @click="showHeaders(row, 'inbound')"
               >
                 <Icon name="eye" size="xs" />
-                {{ t('usage.requestHeaders') }}
+                {{ t('usage.inboundRequestHeaders') }}
+                <span class="text-primary-500 dark:text-primary-400">({{ Object.keys(row.inbound_request_headers || {}).length }})</span>
+              </button>
+              <button
+                v-if="hasOutboundRequestHeaders(row)"
+                type="button"
+                class="inline-flex items-center gap-1 rounded border border-primary-200 px-2 py-1 text-xs font-medium text-primary-700 hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300 dark:hover:bg-primary-900/30"
+                @click="showHeaders(row, 'outbound')"
+              >
+                <Icon name="eye" size="xs" />
+                {{ t('usage.outboundRequestHeaders') }}
                 <span class="text-primary-500 dark:text-primary-400">({{ Object.keys(row.request_headers || {}).length }})</span>
               </button>
             </div>
@@ -201,12 +212,26 @@
           <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
         </template>
 
-        <template #cell-request_headers="{ row }">
+        <template #cell-inbound_request_headers="{ row }">
           <button
-            v-if="hasRequestHeaders(row)"
+            v-if="hasInboundRequestHeaders(row)"
             type="button"
             class="inline-flex items-center gap-1 rounded border border-primary-200 px-2 py-1 text-xs font-medium text-primary-700 hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300 dark:hover:bg-primary-900/30"
-            @click="showHeaders(row)"
+            @click="showHeaders(row, 'inbound')"
+          >
+            <Icon name="eye" size="xs" />
+            {{ t('usage.viewRequestHeaders') }}
+            <span class="text-primary-500 dark:text-primary-400">({{ Object.keys(row.inbound_request_headers || {}).length }})</span>
+          </button>
+          <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
+        </template>
+
+        <template #cell-request_headers="{ row }">
+          <button
+            v-if="hasOutboundRequestHeaders(row)"
+            type="button"
+            class="inline-flex items-center gap-1 rounded border border-primary-200 px-2 py-1 text-xs font-medium text-primary-700 hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300 dark:hover:bg-primary-900/30"
+            @click="showHeaders(row, 'outbound')"
           >
             <Icon name="eye" size="xs" />
             {{ t('usage.viewRequestHeaders') }}
@@ -421,7 +446,7 @@
       <div class="max-h-[80vh] w-full max-w-3xl overflow-hidden rounded-lg bg-white shadow-xl dark:bg-dark-800">
         <div class="flex items-center justify-between border-b border-gray-200 px-4 py-3 dark:border-dark-700">
           <div>
-            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ t('usage.requestHeaders') }}</h3>
+            <h3 class="text-sm font-semibold text-gray-900 dark:text-white">{{ headersModalTitle }}</h3>
             <p class="mt-0.5 text-xs text-gray-500 dark:text-gray-400">
               {{ headersModalCount }} {{ t('usage.requestHeadersCount') }}
             </p>
@@ -534,6 +559,7 @@ const tokenTooltipPosition = ref({ x: 0, y: 0 })
 const tokenTooltipData = ref<AdminUsageLog | null>(null)
 const headersModalVisible = ref(false)
 const headersModalData = ref<Record<string, string> | null>(null)
+const headersModalKind = ref<'inbound' | 'outbound'>('outbound')
 
 const getRequestTypeLabel = (row: AdminUsageLog): string => {
   const requestType = resolveUsageRequestType(row)
@@ -593,7 +619,9 @@ const hideTokenTooltip = () => {
   tokenTooltipData.value = null
 }
 
-const hasRequestHeaders = (row: AdminUsageLog): boolean => Object.keys(row.request_headers || {}).length > 0
+const hasInboundRequestHeaders = (row: AdminUsageLog): boolean => Object.keys(row.inbound_request_headers || {}).length > 0
+const hasOutboundRequestHeaders = (row: AdminUsageLog): boolean => Object.keys(row.request_headers || {}).length > 0
+const hasAnyRequestHeaders = (row: AdminUsageLog): boolean => hasInboundRequestHeaders(row) || hasOutboundRequestHeaders(row)
 
 const formattedHeaderEntries = computed<[string, string][]>(() => {
   if (!headersModalData.value) return []
@@ -601,6 +629,9 @@ const formattedHeaderEntries = computed<[string, string][]>(() => {
 })
 
 const headersModalCount = computed(() => formattedHeaderEntries.value.length)
+const headersModalTitle = computed(() =>
+  headersModalKind.value === 'inbound' ? t('usage.inboundRequestHeaders') : t('usage.outboundRequestHeaders')
+)
 
 const formattedHeaders = computed(() => {
   return formattedHeaderEntries.value
@@ -608,8 +639,9 @@ const formattedHeaders = computed(() => {
     .join('\n')
 })
 
-const showHeaders = (row: AdminUsageLog) => {
-  headersModalData.value = row.request_headers || null
+const showHeaders = (row: AdminUsageLog, kind: 'inbound' | 'outbound') => {
+  headersModalKind.value = kind
+  headersModalData.value = kind === 'inbound' ? row.inbound_request_headers || null : row.request_headers || null
   headersModalVisible.value = true
 }
 

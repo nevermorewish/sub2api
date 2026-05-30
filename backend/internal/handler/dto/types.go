@@ -510,7 +510,10 @@ type AdminUsageLog struct {
 	// IPAddress 用户请求 IP（仅管理员可见）
 	IPAddress *string `json:"ip_address,omitempty"`
 
-	// RequestHeaders 脱敏后的请求头快照（仅管理员可见，且仅在设置开启后写入）
+	// InboundRequestHeaders 脱敏后的 client -> sub2api 请求头快照（仅管理员可见，且仅在设置开启后写入）
+	InboundRequestHeaders map[string]string `json:"inbound_request_headers,omitempty"`
+
+	// RequestHeaders 脱敏后的 sub2api -> upstream 请求头快照（仅管理员可见，且仅在设置开启后写入）
 	RequestHeaders map[string]string `json:"request_headers,omitempty"`
 
 	// Account 最小账号信息（避免泄露敏感字段）
