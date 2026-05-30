@@ -99,15 +99,16 @@ func FullClaudeCodeMimicryBetas() []string {
 }
 
 // DefaultHeaders 是 Claude Code 客户端默认请求头。
+//
+// 来源：captures/claude-code-headers/cli_baseline_2026-05-30.redacted.json。
 var DefaultHeaders = map[string]string{
 	// Keep these in sync with recent Claude CLI traffic to reduce the chance
 	// that Claude Code-scoped OAuth credentials are rejected as "non-CLI" usage.
-	// 版本参考：对齐 Parrot (src/transform/cc_mimicry.py:49) 的 CLI_USER_AGENT。
 	"User-Agent":                                "claude-cli/2.1.156 (external, cli)",
 	"X-Stainless-Lang":                          "js",
 	"X-Stainless-Package-Version":               "0.94.0",
-	"X-Stainless-OS":                            "Linux",
-	"X-Stainless-Arch":                          "arm64",
+	"X-Stainless-OS":                            "Windows",
+	"X-Stainless-Arch":                          "x64",
 	"X-Stainless-Runtime":                       "node",
 	"X-Stainless-Runtime-Version":               "v24.3.0",
 	"X-Stainless-Retry-Count":                   "0",

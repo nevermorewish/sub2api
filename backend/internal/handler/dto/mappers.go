@@ -267,6 +267,11 @@ func AccountFromServiceShallow(a *service.Account) *Account {
 		if profileID := a.GetTLSFingerprintProfileID(); profileID > 0 {
 			out.TLSFingerprintProfileID = &profileID
 		}
+		// 统一请求头开关
+		if a.IsUnifiedRequestHeadersEnabled() {
+			enabled := true
+			out.UseUnifiedRequestHeaders = &enabled
+		}
 		// 会话ID伪装开关
 		if a.IsSessionIDMaskingEnabled() {
 			enabled := true

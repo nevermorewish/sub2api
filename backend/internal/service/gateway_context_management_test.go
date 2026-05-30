@@ -507,6 +507,89 @@ func TestBuildUpstreamRequest_OAuthTransparentHaikuWithRealCCBeta_PreservesField
 		"回归保护：真 CC + haiku + 客户端带 beta token 时，clear_thinking_20251015 功能不能静默失效")
 }
 
+func TestBuildUpstreamRequest_OAuthUnifiedHeaders_OverridesClientHeaders(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+	c.Request.Header.Set("User-Agent", "Go-http-client/2.0")
+	c.Request.Header.Set("X-Stainless-OS", "Linux")
+	c.Request.Header.Set("X-Stainless-Arch", "arm64")
+	c.Request.Header.Set("X-App", "custom-client")
+	c.Request.Header.Set("Anthropic-Beta", "custom-beta")
+
+	account := &Account{ID: 405, Platform: PlatformAnthropic, Type: AccountTypeOAuth,
+		Credentials: map[string]any{"access_token": "oauth-tok"},
+		Extra:       map[string]any{"use_unified_request_headers": true},
+		Status:      StatusActive, Schedulable: true,
+	}
+	body := []byte(`{"model":"claude-sonnet-4-6","messages":[]}`)
+	svc := &GatewayService{cfg: &config.Config{}}
+	req, err := svc.buildUpstreamRequest(
+		context.Background(), c, account, body,
+		"oauth-tok", "oauth", "claude-sonnet-4-6", true, false,
+	)
+	require.NoError(t, err)
+
+	require.Equal(t, claude.DefaultHeaders["User-Agent"], getHeaderRaw(req.Header, "User-Agent"))
+	require.Equal(t, claude.DefaultHeaders["X-Stainless-OS"], getHeaderRaw(req.Header, "X-Stainless-OS"))
+	require.Equal(t, claude.DefaultHeaders["X-Stainless-Arch"], getHeaderRaw(req.Header, "X-Stainless-Arch"))
+	require.Equal(t, claude.DefaultHeaders["X-App"], getHeaderRaw(req.Header, "x-app"))
+	require.Equal(t, "stream", getHeaderRaw(req.Header, "x-stainless-helper-method"))
+	require.Equal(t, claude.DefaultBetaHeader, getHeaderRaw(req.Header, "anthropic-beta"))
+}
+
+func TestBuildUpstreamRequest_OAuthUnifiedHeadersDisabled_PreservesClientHeaders(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+	c.Request.Header.Set("User-Agent", "Go-http-client/2.0")
+	c.Request.Header.Set("X-Stainless-OS", "Linux")
+	c.Request.Header.Set("X-Stainless-Arch", "arm64")
+
+	account := &Account{ID: 406, Platform: PlatformAnthropic, Type: AccountTypeOAuth,
+		Credentials: map[string]any{"access_token": "oauth-tok"},
+		Status:      StatusActive, Schedulable: true,
+	}
+	body := []byte(`{"model":"claude-sonnet-4-6","messages":[]}`)
+	svc := &GatewayService{cfg: &config.Config{}}
+	req, err := svc.buildUpstreamRequest(
+		context.Background(), c, account, body,
+		"oauth-tok", "oauth", "claude-sonnet-4-6", false, false,
+	)
+	require.NoError(t, err)
+
+	require.Equal(t, "Go-http-client/2.0", getHeaderRaw(req.Header, "User-Agent"))
+	require.Equal(t, "Linux", getHeaderRaw(req.Header, "X-Stainless-OS"))
+	require.Equal(t, "arm64", getHeaderRaw(req.Header, "X-Stainless-Arch"))
+	require.Empty(t, getHeaderRaw(req.Header, "x-stainless-helper-method"))
+}
+
+func TestBuildUpstreamRequest_OAuthUnifiedHeadersHaiku_KeepsHaikuBeta(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = httptest.NewRequest(http.MethodPost, "/v1/messages", nil)
+	c.Request.Header.Set("User-Agent", "Go-http-client/2.0")
+
+	account := &Account{ID: 407, Platform: PlatformAnthropic, Type: AccountTypeOAuth,
+		Credentials: map[string]any{"access_token": "oauth-tok"},
+		Extra:       map[string]any{"use_unified_request_headers": true},
+		Status:      StatusActive, Schedulable: true,
+	}
+	body := []byte(`{"model":"claude-haiku-4-5","messages":[]}`)
+	svc := &GatewayService{cfg: &config.Config{}}
+	req, err := svc.buildUpstreamRequest(
+		context.Background(), c, account, body,
+		"oauth-tok", "oauth", "claude-haiku-4-5", false, false,
+	)
+	require.NoError(t, err)
+
+	require.Equal(t, claude.DefaultHeaders["User-Agent"], getHeaderRaw(req.Header, "User-Agent"))
+	require.Equal(t, claude.HaikuBetaHeader, getHeaderRaw(req.Header, "anthropic-beta"))
+}
+
 // CCH 顺序语义测试：sanitize 必须在 signBillingHeaderCCH 之前，
 // 否则签名的 hash 与最终发送的 body 不一致，被 Anthropic 判 third-party。
 //

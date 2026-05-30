@@ -2357,6 +2357,29 @@
               <option v-for="p in tlsFingerprintProfiles" :key="p.id" :value="p.id">{{ p.name }}</option>
             </select>
           </div>
+          <div class="mt-4 flex items-center justify-between border-t border-gray-100 pt-3 dark:border-dark-600">
+            <div>
+              <label class="input-label mb-0">{{ t('admin.accounts.quotaControl.tlsFingerprint.unifiedHeaders') }}</label>
+              <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {{ t('admin.accounts.quotaControl.tlsFingerprint.unifiedHeadersHint') }}
+              </p>
+            </div>
+            <button
+              type="button"
+              @click="unifiedRequestHeadersEnabled = !unifiedRequestHeadersEnabled"
+              :class="[
+                'relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
+                unifiedRequestHeadersEnabled ? 'bg-primary-600' : 'bg-gray-200 dark:bg-dark-600'
+              ]"
+            >
+              <span
+                :class="[
+                  'pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out',
+                  unifiedRequestHeadersEnabled ? 'translate-x-5' : 'translate-x-0'
+                ]"
+              />
+            </button>
+          </div>
         </div>
 
         <!-- Session ID Masking -->
@@ -3562,6 +3585,7 @@ const umqModeOptions = computed(() => [
 const tlsFingerprintEnabled = ref(false)
 const tlsFingerprintProfileId = ref<number | null>(null)
 const tlsFingerprintProfiles = ref<{ id: number; name: string }[]>([])
+const unifiedRequestHeadersEnabled = ref(false)
 const sessionIdMaskingEnabled = ref(false)
 const cacheTTLOverrideEnabled = ref(false)
 const cacheTTLOverrideTarget = ref<string>('5m')
@@ -4253,6 +4277,7 @@ const resetForm = () => {
   userMsgQueueMode.value = ''
   tlsFingerprintEnabled.value = false
   tlsFingerprintProfileId.value = null
+  unifiedRequestHeadersEnabled.value = false
   sessionIdMaskingEnabled.value = false
   cacheTTLOverrideEnabled.value = false
   cacheTTLOverrideTarget.value = '5m'
@@ -5318,6 +5343,9 @@ const handleAnthropicExchange = async (authCode: string) => {
         extra.tls_fingerprint_profile_id = tlsFingerprintProfileId.value
       }
     }
+    if (unifiedRequestHeadersEnabled.value) {
+      extra.use_unified_request_headers = true
+    }
 
     // Add session ID masking settings
     if (sessionIdMaskingEnabled.value) {
@@ -5440,6 +5468,9 @@ const handleCookieAuth = async (sessionKey: string) => {
           if (tlsFingerprintProfileId.value) {
             extra.tls_fingerprint_profile_id = tlsFingerprintProfileId.value
           }
+        }
+        if (unifiedRequestHeadersEnabled.value) {
+          extra.use_unified_request_headers = true
         }
 
         // Add session ID masking settings

@@ -3675,7 +3675,9 @@ export default {
           label: 'TLS 指纹模拟',
           hint: '模拟 Node.js/Claude Code 客户端的 TLS 指纹',
           defaultProfile: '内置默认',
-          randomProfile: '随机'
+          randomProfile: '随机',
+          unifiedHeaders: '使用统一的请求头',
+          unifiedHeadersHint: '开启后按 Claude Code mimic 流程发送：请求头使用 DefaultHeaders，beta 使用 FullClaudeCodeMimicryBetas/HaikuBetaHeader；关闭后保留客户端原始请求头。'
         },
         sessionIdMasking: {
           label: '会话 ID 伪装',

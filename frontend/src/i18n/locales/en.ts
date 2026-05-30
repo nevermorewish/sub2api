@@ -3537,7 +3537,9 @@ export default {
           label: 'TLS Fingerprint Simulation',
           hint: 'Simulate Node.js/Claude Code client TLS fingerprint',
           defaultProfile: 'Built-in Default',
-          randomProfile: 'Random'
+          randomProfile: 'Random',
+          unifiedHeaders: 'Use Unified Request Headers',
+          unifiedHeadersHint: 'Send through the Claude Code mimic flow: DefaultHeaders for request headers and FullClaudeCodeMimicryBetas/HaikuBetaHeader for beta; when disabled, keep client request headers.'
         },
         sessionIdMasking: {
           label: 'Session ID Masking',
