@@ -22,6 +22,17 @@
             </button>
             <span v-else class="font-medium text-gray-900 dark:text-white">-</span>
             <span class="ml-1 text-gray-500 dark:text-gray-400">#{{ row.user_id }}</span>
+            <div v-if="hasRequestHeaders(row)" class="mt-1">
+              <button
+                type="button"
+                class="inline-flex items-center gap-1 rounded border border-primary-200 px-2 py-1 text-xs font-medium text-primary-700 hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300 dark:hover:bg-primary-900/30"
+                @click="showHeaders(row)"
+              >
+                <Icon name="eye" size="xs" />
+                {{ t('usage.requestHeaders') }}
+                <span class="text-primary-500 dark:text-primary-400">({{ Object.keys(row.request_headers || {}).length }})</span>
+              </button>
+            </div>
           </div>
         </template>
 
