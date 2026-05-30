@@ -313,7 +313,7 @@ func (h *OpenAIGatewayHandler) Images(c *gin.Context) {
 		if result != nil {
 			upstreamModel = result.UpstreamModel
 		}
-		h.submitMandatoryUsageRecordTask(func(ctx context.Context) {
+		h.submitMandatoryUsageRecordTask(c.Request.Context(), func(ctx context.Context) {
 			if err := h.gatewayService.RecordUsage(ctx, &service.OpenAIRecordUsageInput{
 				Result:             result,
 				APIKey:             apiKey,
@@ -381,7 +381,7 @@ func (h *OpenAIGatewayHandler) recordOpenAIImageFailedUsage(
 	if errorMessage == "" {
 		errorMessage = "image generation failed"
 	}
-	h.submitMandatoryUsageRecordTask(func(ctx context.Context) {
+	h.submitMandatoryUsageRecordTask(c.Request.Context(), func(ctx context.Context) {
 		if err := h.gatewayService.RecordFailedUsage(ctx, &service.OpenAIRecordFailedUsageInput{
 			APIKey:             apiKey,
 			User:               apiKey.User,
