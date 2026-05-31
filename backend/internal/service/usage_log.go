@@ -165,6 +165,8 @@ type UsageLog struct {
 	InboundRequestHeaders map[string]string
 	// RequestHeaders stores the redacted sub2api-to-upstream request headers.
 	RequestHeaders map[string]string
+	// TLSFingerprint stores a redacted upstream TLS fingerprint profile snapshot.
+	TLSFingerprint map[string]any
 
 	// Cache TTL Override 标记（管理员强制替换了缓存 TTL 计费）
 	CacheTTLOverridden bool

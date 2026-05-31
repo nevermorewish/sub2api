@@ -126,7 +126,9 @@ func (s *GatewayService) ForwardAsChatCompletions(
 	}
 
 	// 11. Send request
-	resp, err := s.httpUpstream.DoWithTLS(upstreamReq, proxyURL, account.ID, account.Concurrency, s.tlsFPProfileService.ResolveTLSProfile(account))
+	tlsProfile := s.tlsFPProfileService.ResolveTLSProfile(account)
+	tlsFingerprint := snapshotTLSFingerprintForUsage(tlsProfile)
+	resp, err := s.httpUpstream.DoWithTLS(upstreamReq, proxyURL, account.ID, account.Concurrency, tlsProfile)
 	if err != nil {
 		if resp != nil && resp.Body != nil {
 			_ = resp.Body.Close()
@@ -189,6 +191,10 @@ func (s *GatewayService) ForwardAsChatCompletions(
 		result, handleErr = s.handleCCStreamingFromAnthropic(resp, c, originalModel, mappedModel, reasoningEffort, startTime, includeUsage)
 	} else {
 		result, handleErr = s.handleCCBufferedFromAnthropic(resp, c, originalModel, mappedModel, reasoningEffort, startTime)
+	}
+	if result != nil {
+		result.RequestHeaders = s.snapshotUsageRequestHeaders(ctx, upstreamReq)
+		result.TLSFingerprint = tlsFingerprint
 	}
 
 	return result, handleErr

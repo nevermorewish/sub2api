@@ -20,6 +20,7 @@ import (
 // All slice fields use built-in defaults when empty.
 type Profile struct {
 	Name                string // Profile name for identification
+	ID                  int64  // Optional persisted profile ID for diagnostics
 	CipherSuites        []uint16
 	Curves              []uint16
 	PointFormats        []uint16

@@ -91,6 +91,8 @@ type UsageLog struct {
 	InboundRequestHeaders map[string]string `json:"inbound_request_headers,omitempty"`
 	// 脱敏后的 sub2api 到上游请求头快照
 	RequestHeaders map[string]string `json:"request_headers,omitempty"`
+	// 脱敏后的上游 TLS 指纹模板快照
+	TLSFingerprint map[string]interface{} `json:"tls_fingerprint,omitempty"`
 	// IPAddress holds the value of the "ip_address" field.
 	IPAddress *string `json:"ip_address,omitempty"`
 	// ErrorStatus holds the value of the "error_status" field.
@@ -196,7 +198,7 @@ func (*UsageLog) scanValues(columns []string) ([]any, error) {
 	values := make([]any, len(columns))
 	for i := range columns {
 		switch columns[i] {
-		case usagelog.FieldInboundRequestHeaders, usagelog.FieldRequestHeaders, usagelog.FieldImageSizeBreakdown:
+		case usagelog.FieldInboundRequestHeaders, usagelog.FieldRequestHeaders, usagelog.FieldTLSFingerprint, usagelog.FieldImageSizeBreakdown:
 			values[i] = new([]byte)
 		case usagelog.FieldStream, usagelog.FieldCacheTTLOverridden:
 			values[i] = new(sql.NullBool)
@@ -447,6 +449,14 @@ func (_m *UsageLog) assignValues(columns []string, values []any) error {
 			} else if value != nil && len(*value) > 0 {
 				if err := json.Unmarshal(*value, &_m.RequestHeaders); err != nil {
 					return fmt.Errorf("unmarshal field request_headers: %w", err)
+				}
+			}
+		case usagelog.FieldTLSFingerprint:
+			if value, ok := values[i].(*[]byte); !ok {
+				return fmt.Errorf("unexpected type %T for field tls_fingerprint", values[i])
+			} else if value != nil && len(*value) > 0 {
+				if err := json.Unmarshal(*value, &_m.TLSFingerprint); err != nil {
+					return fmt.Errorf("unmarshal field tls_fingerprint: %w", err)
 				}
 			}
 		case usagelog.FieldIPAddress:
@@ -710,6 +720,9 @@ func (_m *UsageLog) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("request_headers=")
 	builder.WriteString(fmt.Sprintf("%v", _m.RequestHeaders))
+	builder.WriteString(", ")
+	builder.WriteString("tls_fingerprint=")
+	builder.WriteString(fmt.Sprintf("%v", _m.TLSFingerprint))
 	builder.WriteString(", ")
 	if v := _m.IPAddress; v != nil {
 		builder.WriteString("ip_address=")

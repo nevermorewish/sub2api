@@ -130,6 +130,10 @@ func (UsageLog) Fields() []ent.Field {
 			Optional().
 			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
 			Comment("脱敏后的 sub2api 到上游请求头快照"),
+		field.JSON("tls_fingerprint", map[string]interface{}{}).
+			Optional().
+			SchemaType(map[string]string{dialect.Postgres: "jsonb"}).
+			Comment("脱敏后的上游 TLS 指纹模板快照"),
 		field.String("ip_address").
 			MaxLen(45). // 支持 IPv6
 			Optional().

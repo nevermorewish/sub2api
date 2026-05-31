@@ -702,6 +702,18 @@ func (_u *UsageLogUpdate) ClearRequestHeaders() *UsageLogUpdate {
 	return _u
 }
 
+// SetTLSFingerprint sets the "tls_fingerprint" field.
+func (_u *UsageLogUpdate) SetTLSFingerprint(v map[string]interface{}) *UsageLogUpdate {
+	_u.mutation.SetTLSFingerprint(v)
+	return _u
+}
+
+// ClearTLSFingerprint clears the value of the "tls_fingerprint" field.
+func (_u *UsageLogUpdate) ClearTLSFingerprint() *UsageLogUpdate {
+	_u.mutation.ClearTLSFingerprint()
+	return _u
+}
+
 // SetIPAddress sets the "ip_address" field.
 func (_u *UsageLogUpdate) SetIPAddress(v string) *UsageLogUpdate {
 	_u.mutation.SetIPAddress(v)
@@ -1253,6 +1265,12 @@ func (_u *UsageLogUpdate) sqlSave(ctx context.Context) (_node int, err error) {
 	}
 	if _u.mutation.RequestHeadersCleared() {
 		_spec.ClearField(usagelog.FieldRequestHeaders, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.TLSFingerprint(); ok {
+		_spec.SetField(usagelog.FieldTLSFingerprint, field.TypeJSON, value)
+	}
+	if _u.mutation.TLSFingerprintCleared() {
+		_spec.ClearField(usagelog.FieldTLSFingerprint, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.IPAddress(); ok {
 		_spec.SetField(usagelog.FieldIPAddress, field.TypeString, value)
@@ -2146,6 +2164,18 @@ func (_u *UsageLogUpdateOne) ClearRequestHeaders() *UsageLogUpdateOne {
 	return _u
 }
 
+// SetTLSFingerprint sets the "tls_fingerprint" field.
+func (_u *UsageLogUpdateOne) SetTLSFingerprint(v map[string]interface{}) *UsageLogUpdateOne {
+	_u.mutation.SetTLSFingerprint(v)
+	return _u
+}
+
+// ClearTLSFingerprint clears the value of the "tls_fingerprint" field.
+func (_u *UsageLogUpdateOne) ClearTLSFingerprint() *UsageLogUpdateOne {
+	_u.mutation.ClearTLSFingerprint()
+	return _u
+}
+
 // SetIPAddress sets the "ip_address" field.
 func (_u *UsageLogUpdateOne) SetIPAddress(v string) *UsageLogUpdateOne {
 	_u.mutation.SetIPAddress(v)
@@ -2727,6 +2757,12 @@ func (_u *UsageLogUpdateOne) sqlSave(ctx context.Context) (_node *UsageLog, err 
 	}
 	if _u.mutation.RequestHeadersCleared() {
 		_spec.ClearField(usagelog.FieldRequestHeaders, field.TypeJSON)
+	}
+	if value, ok := _u.mutation.TLSFingerprint(); ok {
+		_spec.SetField(usagelog.FieldTLSFingerprint, field.TypeJSON, value)
+	}
+	if _u.mutation.TLSFingerprintCleared() {
+		_spec.ClearField(usagelog.FieldTLSFingerprint, field.TypeJSON)
 	}
 	if value, ok := _u.mutation.IPAddress(); ok {
 		_spec.SetField(usagelog.FieldIPAddress, field.TypeString, value)

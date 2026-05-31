@@ -22,28 +22,6 @@
             </button>
             <span v-else class="font-medium text-gray-900 dark:text-white">-</span>
             <span class="ml-1 text-gray-500 dark:text-gray-400">#{{ row.user_id }}</span>
-            <div v-if="hasAnyRequestHeaders(row)" class="mt-1 flex flex-wrap gap-1">
-              <button
-                v-if="hasInboundRequestHeaders(row)"
-                type="button"
-                class="inline-flex items-center gap-1 rounded border border-primary-200 px-2 py-1 text-xs font-medium text-primary-700 hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300 dark:hover:bg-primary-900/30"
-                @click="showHeaders(row, 'inbound')"
-              >
-                <Icon name="eye" size="xs" />
-                {{ t('usage.inboundRequestHeaders') }}
-                <span class="text-primary-500 dark:text-primary-400">({{ Object.keys(row.inbound_request_headers || {}).length }})</span>
-              </button>
-              <button
-                v-if="hasOutboundRequestHeaders(row)"
-                type="button"
-                class="inline-flex items-center gap-1 rounded border border-primary-200 px-2 py-1 text-xs font-medium text-primary-700 hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300 dark:hover:bg-primary-900/30"
-                @click="showHeaders(row, 'outbound')"
-              >
-                <Icon name="eye" size="xs" />
-                {{ t('usage.outboundRequestHeaders') }}
-                <span class="text-primary-500 dark:text-primary-400">({{ Object.keys(row.request_headers || {}).length }})</span>
-              </button>
-            </div>
           </div>
         </template>
 
@@ -236,6 +214,20 @@
             <Icon name="eye" size="xs" />
             {{ t('usage.viewRequestHeaders') }}
             <span class="text-primary-500 dark:text-primary-400">({{ Object.keys(row.request_headers || {}).length }})</span>
+          </button>
+          <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
+        </template>
+
+        <template #cell-tls_fingerprint="{ row }">
+          <button
+            v-if="hasTLSFingerprint(row)"
+            type="button"
+            class="inline-flex items-center gap-1 rounded border border-primary-200 px-2 py-1 text-xs font-medium text-primary-700 hover:bg-primary-50 dark:border-primary-800 dark:text-primary-300 dark:hover:bg-primary-900/30"
+            @click="showHeaders(row, 'tls')"
+          >
+            <Icon name="eye" size="xs" />
+            {{ t('usage.viewRequestHeaders') }}
+            <span class="text-primary-500 dark:text-primary-400">({{ Object.keys(row.tls_fingerprint || {}).length }})</span>
           </button>
           <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
         </template>
@@ -558,8 +550,8 @@ const tokenTooltipVisible = ref(false)
 const tokenTooltipPosition = ref({ x: 0, y: 0 })
 const tokenTooltipData = ref<AdminUsageLog | null>(null)
 const headersModalVisible = ref(false)
-const headersModalData = ref<Record<string, string> | null>(null)
-const headersModalKind = ref<'inbound' | 'outbound'>('outbound')
+const headersModalData = ref<Record<string, unknown> | null>(null)
+const headersModalKind = ref<'inbound' | 'outbound' | 'tls'>('outbound')
 
 const getRequestTypeLabel = (row: AdminUsageLog): string => {
   const requestType = resolveUsageRequestType(row)
@@ -621,16 +613,26 @@ const hideTokenTooltip = () => {
 
 const hasInboundRequestHeaders = (row: AdminUsageLog): boolean => Object.keys(row.inbound_request_headers || {}).length > 0
 const hasOutboundRequestHeaders = (row: AdminUsageLog): boolean => Object.keys(row.request_headers || {}).length > 0
-const hasAnyRequestHeaders = (row: AdminUsageLog): boolean => hasInboundRequestHeaders(row) || hasOutboundRequestHeaders(row)
+const hasTLSFingerprint = (row: AdminUsageLog): boolean => Object.keys(row.tls_fingerprint || {}).length > 0
+const formatDiagnosticValue = (value: unknown): string => {
+  if (Array.isArray(value) || (value && typeof value === 'object')) return JSON.stringify(value)
+  return String(value)
+}
 
 const formattedHeaderEntries = computed<[string, string][]>(() => {
   if (!headersModalData.value) return []
-  return Object.entries(headersModalData.value).sort(([a], [b]) => a.localeCompare(b))
+  return Object.entries(headersModalData.value)
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([key, value]) => [key, formatDiagnosticValue(value)])
 })
 
 const headersModalCount = computed(() => formattedHeaderEntries.value.length)
 const headersModalTitle = computed(() =>
-  headersModalKind.value === 'inbound' ? t('usage.inboundRequestHeaders') : t('usage.outboundRequestHeaders')
+  headersModalKind.value === 'inbound'
+    ? t('usage.inboundRequestHeaders')
+    : headersModalKind.value === 'tls'
+      ? t('usage.tlsFingerprint')
+      : t('usage.outboundRequestHeaders')
 )
 
 const formattedHeaders = computed(() => {
@@ -639,9 +641,13 @@ const formattedHeaders = computed(() => {
     .join('\n')
 })
 
-const showHeaders = (row: AdminUsageLog, kind: 'inbound' | 'outbound') => {
+const showHeaders = (row: AdminUsageLog, kind: 'inbound' | 'outbound' | 'tls') => {
   headersModalKind.value = kind
-  headersModalData.value = kind === 'inbound' ? row.inbound_request_headers || null : row.request_headers || null
+  headersModalData.value = kind === 'inbound'
+    ? row.inbound_request_headers || null
+    : kind === 'tls'
+      ? row.tls_fingerprint || null
+      : row.request_headers || null
   headersModalVisible.value = true
 }
 

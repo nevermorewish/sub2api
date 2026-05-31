@@ -82,6 +82,8 @@ const (
 	FieldInboundRequestHeaders = "inbound_request_headers"
 	// FieldRequestHeaders holds the string denoting the request_headers field in the database.
 	FieldRequestHeaders = "request_headers"
+	// FieldTLSFingerprint holds the string denoting the tls_fingerprint field in the database.
+	FieldTLSFingerprint = "tls_fingerprint"
 	// FieldIPAddress holds the string denoting the ip_address field in the database.
 	FieldIPAddress = "ip_address"
 	// FieldErrorStatus holds the string denoting the error_status field in the database.
@@ -190,6 +192,7 @@ var Columns = []string{
 	FieldUserAgent,
 	FieldInboundRequestHeaders,
 	FieldRequestHeaders,
+	FieldTLSFingerprint,
 	FieldIPAddress,
 	FieldErrorStatus,
 	FieldErrorMessage,

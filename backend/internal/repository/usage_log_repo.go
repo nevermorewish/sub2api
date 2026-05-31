@@ -28,7 +28,7 @@ import (
 	gocache "github.com/patrickmn/go-cache"
 )
 
-const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, requested_model, upstream_model, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, image_output_tokens, image_output_cost, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, request_type, stream, openai_ws_mode, duration_ms, first_token_ms, user_agent, inbound_request_headers, request_headers, ip_address, image_count, image_size, image_input_size, image_output_size, image_size_source, image_size_breakdown, service_tier, reasoning_effort, inbound_endpoint, upstream_endpoint, error_status, error_message, cache_ttl_overridden, channel_id, model_mapping_chain, billing_tier, billing_mode, account_stats_cost, created_at"
+const usageLogSelectColumns = "id, user_id, api_key_id, account_id, request_id, model, requested_model, upstream_model, group_id, subscription_id, input_tokens, output_tokens, cache_creation_tokens, cache_read_tokens, cache_creation_5m_tokens, cache_creation_1h_tokens, image_output_tokens, image_output_cost, input_cost, output_cost, cache_creation_cost, cache_read_cost, total_cost, actual_cost, rate_multiplier, account_rate_multiplier, billing_type, request_type, stream, openai_ws_mode, duration_ms, first_token_ms, user_agent, inbound_request_headers, request_headers, tls_fingerprint, ip_address, image_count, image_size, image_input_size, image_output_size, image_size_source, image_size_breakdown, service_tier, reasoning_effort, inbound_endpoint, upstream_endpoint, error_status, error_message, cache_ttl_overridden, channel_id, model_mapping_chain, billing_tier, billing_mode, account_stats_cost, created_at"
 
 // usageLogInsertArgTypes must stay in the same order as:
 //  1. prepareUsageLogInsert().args
@@ -72,6 +72,7 @@ var usageLogInsertArgTypes = [...]string{
 	"text",        // user_agent
 	"jsonb",       // inbound_request_headers
 	"jsonb",       // request_headers
+	"jsonb",       // tls_fingerprint
 	"text",        // ip_address
 	"integer",     // image_count
 	"text",        // image_size
@@ -393,6 +394,7 @@ func (r *usageLogRepository) createSingle(ctx context.Context, sqlq sqlExecutor,
 			user_agent,
 			inbound_request_headers,
 			request_headers,
+			tls_fingerprint,
 			ip_address,
 			image_count,
 			image_size,
@@ -419,7 +421,7 @@ func (r *usageLogRepository) createSingle(ctx context.Context, sqlq sqlExecutor,
 			$10, $11, $12, $13,
 			$14, $15, $16, $17,
 			$18, $19, $20, $21, $22, $23,
-			$24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54
+			$24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55
 		)
 		ON CONFLICT (request_id, api_key_id) DO NOTHING
 		RETURNING id, created_at
@@ -839,6 +841,7 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 			user_agent,
 			inbound_request_headers,
 			request_headers,
+			tls_fingerprint,
 			ip_address,
 			image_count,
 			image_size,
@@ -924,6 +927,7 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 				user_agent,
 				inbound_request_headers,
 				request_headers,
+				tls_fingerprint,
 				ip_address,
 				image_count,
 				image_size,
@@ -980,6 +984,7 @@ func buildUsageLogBatchInsertQuery(keys []string, preparedByKey map[string]usage
 				user_agent,
 				inbound_request_headers,
 				request_headers,
+				tls_fingerprint,
 				ip_address,
 				image_count,
 				image_size,
@@ -1076,6 +1081,7 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			user_agent,
 			inbound_request_headers,
 			request_headers,
+			tls_fingerprint,
 			ip_address,
 			image_count,
 			image_size,
@@ -1158,6 +1164,7 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			user_agent,
 			inbound_request_headers,
 			request_headers,
+			tls_fingerprint,
 			ip_address,
 			image_count,
 			image_size,
@@ -1214,6 +1221,7 @@ func buildUsageLogBestEffortInsertQuery(preparedList []usageLogInsertPrepared) (
 			user_agent,
 			inbound_request_headers,
 			request_headers,
+			tls_fingerprint,
 			ip_address,
 			image_count,
 			image_size,
@@ -1278,6 +1286,7 @@ func execUsageLogInsertNoResult(ctx context.Context, sqlq sqlExecutor, prepared 
 			user_agent,
 			inbound_request_headers,
 			request_headers,
+			tls_fingerprint,
 			ip_address,
 			image_count,
 			image_size,
@@ -1304,7 +1313,7 @@ func execUsageLogInsertNoResult(ctx context.Context, sqlq sqlExecutor, prepared 
 			$10, $11, $12, $13,
 			$14, $15, $16, $17,
 			$18, $19, $20, $21, $22, $23,
-			$24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54
+			$24, $25, $26, $27, $28, $29, $30, $31, $32, $33, $34, $35, $36, $37, $38, $39, $40, $41, $42, $43, $44, $45, $46, $47, $48, $49, $50, $51, $52, $53, $54, $55
 		)
 		ON CONFLICT (request_id, api_key_id) DO NOTHING
 	`, prepared.args...)
@@ -1331,6 +1340,7 @@ func prepareUsageLogInsert(log *service.UsageLog) usageLogInsertPrepared {
 	userAgent := nullString(log.UserAgent)
 	inboundRequestHeaders := nullStringStringMapJSON(log.InboundRequestHeaders)
 	requestHeaders := nullStringStringMapJSON(log.RequestHeaders)
+	tlsFingerprint := nullAnyMapJSON(log.TLSFingerprint)
 	ipAddress := nullString(log.IPAddress)
 	imageSize := nullString(log.ImageSize)
 	imageInputSize := nullString(log.ImageInputSize)
@@ -1398,6 +1408,7 @@ func prepareUsageLogInsert(log *service.UsageLog) usageLogInsertPrepared {
 			userAgent,
 			inboundRequestHeaders,
 			requestHeaders,
+			tlsFingerprint,
 			ipAddress,
 			log.ImageCount,
 			imageSize,
@@ -4272,6 +4283,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		userAgent             sql.NullString
 		inboundRequestHeaders sql.NullString
 		requestHeaders        sql.NullString
+		tlsFingerprint        sql.NullString
 		ipAddress             sql.NullString
 		imageCount            int
 		imageSize             sql.NullString
@@ -4330,6 +4342,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 		&userAgent,
 		&inboundRequestHeaders,
 		&requestHeaders,
+		&tlsFingerprint,
 		&ipAddress,
 		&imageCount,
 		&imageSize,
@@ -4413,6 +4426,7 @@ func scanUsageLog(scanner interface{ Scan(...any) error }) (*service.UsageLog, e
 	}
 	log.InboundRequestHeaders = stringStringMapFromNullJSON(inboundRequestHeaders)
 	log.RequestHeaders = stringStringMapFromNullJSON(requestHeaders)
+	log.TLSFingerprint = anyMapFromNullJSON(tlsFingerprint)
 	if ipAddress.Valid {
 		log.IPAddress = &ipAddress.String
 	}
@@ -4623,6 +4637,17 @@ func nullStringStringMapJSON(v map[string]string) any {
 	return string(payload)
 }
 
+func nullAnyMapJSON(v map[string]any) any {
+	if len(v) == 0 {
+		return nil
+	}
+	payload, err := json.Marshal(v)
+	if err != nil {
+		return nil
+	}
+	return string(payload)
+}
+
 func stringIntMapFromNullJSON(v sql.NullString) map[string]int {
 	if !v.Valid || strings.TrimSpace(v.String) == "" {
 		return nil
@@ -4642,6 +4667,20 @@ func stringStringMapFromNullJSON(v sql.NullString) map[string]string {
 		return nil
 	}
 	var out map[string]string
+	if err := json.Unmarshal([]byte(v.String), &out); err != nil {
+		return nil
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func anyMapFromNullJSON(v sql.NullString) map[string]any {
+	if !v.Valid || strings.TrimSpace(v.String) == "" {
+		return nil
+	}
+	var out map[string]any
 	if err := json.Unmarshal([]byte(v.String), &out); err != nil {
 		return nil
 	}

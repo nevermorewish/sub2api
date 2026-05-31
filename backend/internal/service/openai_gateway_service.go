@@ -244,6 +244,7 @@ type OpenAIForwardResult struct {
 	ImageSizeSource    string
 	ImageSizeBreakdown map[string]int
 	RequestHeaders     map[string]string
+	TLSFingerprint     map[string]any
 }
 
 type OpenAIWSRetryMetricsSnapshot struct {

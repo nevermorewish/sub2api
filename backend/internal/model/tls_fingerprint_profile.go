@@ -39,6 +39,7 @@ func (p *TLSFingerprintProfile) Validate() error {
 // 空切片字段会在 dialer 中 fallback 到内置默认值
 func (p *TLSFingerprintProfile) ToTLSProfile() *tlsfingerprint.Profile {
 	return &tlsfingerprint.Profile{
+		ID:                  p.ID,
 		Name:                p.Name,
 		EnableGREASE:        p.EnableGREASE,
 		CipherSuites:        p.CipherSuites,

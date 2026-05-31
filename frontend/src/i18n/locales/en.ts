@@ -939,6 +939,7 @@ export default {
     requestHeaders: 'Request Headers',
     inboundRequestHeaders: 'Inbound Headers',
     outboundRequestHeaders: 'Outbound Headers',
+    tlsFingerprint: 'TLS Fingerprint',
     viewRequestHeaders: 'View',
     requestHeadersCount: 'headers'
   },

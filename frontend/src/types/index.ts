@@ -1247,6 +1247,9 @@ export interface UsageLog {
   // Redacted sub2api-to-upstream request headers, admin-visible when enabled.
   request_headers?: Record<string, string> | null
 
+  // Redacted upstream TLS fingerprint profile snapshot, admin-visible when enabled.
+  tls_fingerprint?: Record<string, unknown> | null
+
   // Cache TTL Override
   cache_ttl_overridden: boolean
 

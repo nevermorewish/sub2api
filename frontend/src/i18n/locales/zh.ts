@@ -943,6 +943,7 @@ export default {
     requestHeaders: '请求头',
     inboundRequestHeaders: '进来请求头',
     outboundRequestHeaders: '发出请求头',
+    tlsFingerprint: 'TLS 指纹',
     viewRequestHeaders: '查看',
     requestHeadersCount: '个请求头'
   },

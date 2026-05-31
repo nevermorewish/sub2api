@@ -657,6 +657,7 @@ func UsageLogFromServiceAdmin(l *service.UsageLog) *AdminUsageLog {
 		IPAddress:             l.IPAddress,
 		InboundRequestHeaders: l.InboundRequestHeaders,
 		RequestHeaders:        l.RequestHeaders,
+		TLSFingerprint:        l.TLSFingerprint,
 		Account:               AccountSummaryFromService(l.Account),
 	}
 }

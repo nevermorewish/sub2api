@@ -28,6 +28,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/ctxkey"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/logger"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/tlsfingerprint"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/usagestats"
 	"github.com/Wei-Shaw/sub2api/internal/util/responseheaders"
 	"github.com/Wei-Shaw/sub2api/internal/util/urlvalidator"
@@ -310,6 +311,47 @@ func (s *GatewayService) SnapshotUsageRequestHeaders(ctx context.Context, header
 		return nil
 	}
 	return snapshotRequestHeadersForUsage(header)
+}
+
+func snapshotTLSFingerprintForUsage(profile *tlsfingerprint.Profile) map[string]any {
+	if profile == nil {
+		return nil
+	}
+	out := map[string]any{
+		"name":          strings.TrimSpace(profile.Name),
+		"enable_grease": profile.EnableGREASE,
+	}
+	if profile.ID > 0 {
+		out["id"] = profile.ID
+	}
+	if len(profile.CipherSuites) > 0 {
+		out["cipher_suites"] = profile.CipherSuites
+	}
+	if len(profile.Curves) > 0 {
+		out["curves"] = profile.Curves
+	}
+	if len(profile.PointFormats) > 0 {
+		out["point_formats"] = profile.PointFormats
+	}
+	if len(profile.SignatureAlgorithms) > 0 {
+		out["signature_algorithms"] = profile.SignatureAlgorithms
+	}
+	if len(profile.ALPNProtocols) > 0 {
+		out["alpn_protocols"] = profile.ALPNProtocols
+	}
+	if len(profile.SupportedVersions) > 0 {
+		out["supported_versions"] = profile.SupportedVersions
+	}
+	if len(profile.KeyShareGroups) > 0 {
+		out["key_share_groups"] = profile.KeyShareGroups
+	}
+	if len(profile.PSKModes) > 0 {
+		out["psk_modes"] = profile.PSKModes
+	}
+	if len(profile.Extensions) > 0 {
+		out["extensions"] = profile.Extensions
+	}
+	return out
 }
 
 func extractSystemPreviewFromBody(body []byte) string {
@@ -600,6 +642,7 @@ type ForwardResult struct {
 	ImageSizeBreakdown    map[string]int
 	InboundRequestHeaders map[string]string
 	RequestHeaders        map[string]string
+	TLSFingerprint        map[string]any
 }
 
 // UpstreamFailoverError indicates an upstream error that should trigger account failover.
@@ -4687,6 +4730,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 
 	// 解析 TLS 指纹 profile（同一请求生命周期内不变，避免重试循环中重复解析）
 	tlsProfile := s.tlsFPProfileService.ResolveTLSProfile(account)
+	tlsFingerprint := snapshotTLSFingerprintForUsage(tlsProfile)
 
 	// 调试日志：记录即将转发的账号信息
 	logger.LegacyPrintf("service.gateway", "[Forward] Using account: ID=%d Name=%s Platform=%s Type=%s TLSFingerprint=%v Proxy=%s",
@@ -5129,6 +5173,7 @@ func (s *GatewayService) Forward(ctx context.Context, c *gin.Context, account *A
 		FirstTokenMs:     firstTokenMs,
 		ClientDisconnect: clientDisconnect,
 		RequestHeaders:   requestHeaders,
+		TLSFingerprint:   tlsFingerprint,
 	}, nil
 }
 
@@ -5189,6 +5234,8 @@ func (s *GatewayService) forwardAnthropicAPIKeyPassthroughWithInput(
 
 	var resp *http.Response
 	var requestHeaders map[string]string
+	tlsProfile := s.tlsFPProfileService.ResolveTLSProfile(account)
+	tlsFingerprint := snapshotTLSFingerprintForUsage(tlsProfile)
 	retryStart := time.Now()
 	for attempt := 1; attempt <= maxRetryAttempts; attempt++ {
 		upstreamCtx, releaseUpstreamCtx := detachStreamUpstreamContext(ctx, input.RequestStream)
@@ -5199,7 +5246,7 @@ func (s *GatewayService) forwardAnthropicAPIKeyPassthroughWithInput(
 		}
 		requestHeaders = s.snapshotUsageRequestHeaders(ctx, upstreamReq)
 
-		resp, err = s.httpUpstream.DoWithTLS(upstreamReq, proxyURL, account.ID, account.Concurrency, s.tlsFPProfileService.ResolveTLSProfile(account))
+		resp, err = s.httpUpstream.DoWithTLS(upstreamReq, proxyURL, account.ID, account.Concurrency, tlsProfile)
 		if err != nil {
 			if resp != nil && resp.Body != nil {
 				_ = resp.Body.Close()
@@ -5381,6 +5428,7 @@ func (s *GatewayService) forwardAnthropicAPIKeyPassthroughWithInput(
 		FirstTokenMs:     firstTokenMs,
 		ClientDisconnect: clientDisconnect,
 		RequestHeaders:   requestHeaders,
+		TLSFingerprint:   tlsFingerprint,
 	}, nil
 }
 
@@ -9119,6 +9167,7 @@ func (s *GatewayService) buildRecordUsageLog(
 		UserAgent:             optionalTrimmedStringPtr(input.UserAgent),
 		InboundRequestHeaders: input.InboundRequestHeaders,
 		RequestHeaders:        result.RequestHeaders,
+		TLSFingerprint:        result.TLSFingerprint,
 		IPAddress:             optionalTrimmedStringPtr(input.IPAddress),
 		GroupID:               apiKey.GroupID,
 		SubscriptionID:        optionalSubscriptionID(subscription),

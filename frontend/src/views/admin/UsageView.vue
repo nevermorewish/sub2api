@@ -460,11 +460,11 @@ const getRequestTypeLabel = (log: AdminUsageLog): string => {
   return t('usage.unknown')
 }
 
-const formatRequestHeadersForExport = (headers: Record<string, string> | null | undefined): string => {
-  if (!headers || Object.keys(headers).length === 0) return ''
-  return Object.entries(headers)
+const formatRecordForExport = (record: Record<string, unknown> | null | undefined): string => {
+  if (!record || Object.keys(record).length === 0) return ''
+  return Object.entries(record)
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([key, value]) => `${key}: ${value}`)
+    .map(([key, value]) => `${key}: ${Array.isArray(value) || (value && typeof value === 'object') ? JSON.stringify(value) : String(value)}`)
     .join('\n')
 }
 
@@ -485,7 +485,7 @@ const exportToExcel = async () => {
       t('admin.usage.cacheReadCost'), t('admin.usage.cacheCreationCost'),
       t('usage.rate'), t('usage.accountMultiplier'), t('usage.original'), t('usage.userBilled'), t('usage.accountBilled'),
       t('usage.firstToken'), t('usage.duration'),
-      t('admin.usage.requestId'), t('usage.userAgent'), t('usage.inboundRequestHeaders'), t('usage.outboundRequestHeaders'), t('admin.usage.ipAddress')
+      t('admin.usage.requestId'), t('usage.userAgent'), t('usage.inboundRequestHeaders'), t('usage.outboundRequestHeaders'), t('usage.tlsFingerprint'), t('admin.usage.ipAddress')
     ]
     const ws = XLSX.utils.aoa_to_sheet([headers])
     while (true) {
@@ -504,7 +504,7 @@ const exportToExcel = async () => {
         log.rate_multiplier?.toPrecision(4) || '1.00', (log.account_rate_multiplier ?? 1).toPrecision(4),
         log.total_cost?.toFixed(6) || '0.000000', log.actual_cost?.toFixed(6) || '0.000000',
         ((log.account_stats_cost ?? log.total_cost) * (log.account_rate_multiplier ?? 1)).toFixed(6), log.first_token_ms ?? '', log.duration_ms,
-        log.request_id || '', log.user_agent || '', formatRequestHeadersForExport(log.inbound_request_headers), formatRequestHeadersForExport(log.request_headers), log.ip_address || ''
+        log.request_id || '', log.user_agent || '', formatRecordForExport(log.inbound_request_headers), formatRecordForExport(log.request_headers), formatRecordForExport(log.tls_fingerprint), log.ip_address || ''
       ])
       if (rows.length) {
         XLSX.utils.sheet_add_aoa(ws, rows, { origin: -1 })
@@ -533,6 +533,7 @@ const allColumns = computed(() => [
   { key: 'user', label: t('admin.usage.user'), sortable: false },
   { key: 'inbound_request_headers', label: t('usage.inboundRequestHeaders'), sortable: false },
   { key: 'request_headers', label: t('usage.outboundRequestHeaders'), sortable: false },
+  { key: 'tls_fingerprint', label: t('usage.tlsFingerprint'), sortable: false },
   { key: 'api_key', label: t('usage.apiKeyFilter'), sortable: false },
   { key: 'account', label: t('admin.usage.account'), sortable: false },
   { key: 'model', label: t('usage.model'), sortable: true },
@@ -583,7 +584,7 @@ const loadSavedColumns = () => {
     const saved = localStorage.getItem(HIDDEN_COLUMNS_KEY)
     if (saved) {
       (JSON.parse(saved) as string[])
-        .filter((key) => key !== 'request_headers' && key !== 'inbound_request_headers')
+        .filter((key) => key !== 'request_headers' && key !== 'inbound_request_headers' && key !== 'tls_fingerprint')
         .forEach((key) => {
         hiddenColumns.add(key)
       })

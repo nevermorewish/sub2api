@@ -1755,6 +1755,16 @@ func RequestHeadersNotNil() predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldNotNull(FieldRequestHeaders))
 }
 
+// TLSFingerprintIsNil applies the IsNil predicate on the "tls_fingerprint" field.
+func TLSFingerprintIsNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldIsNull(FieldTLSFingerprint))
+}
+
+// TLSFingerprintNotNil applies the NotNil predicate on the "tls_fingerprint" field.
+func TLSFingerprintNotNil() predicate.UsageLog {
+	return predicate.UsageLog(sql.FieldNotNull(FieldTLSFingerprint))
+}
+
 // IPAddressEQ applies the EQ predicate on the "ip_address" field.
 func IPAddressEQ(v string) predicate.UsageLog {
 	return predicate.UsageLog(sql.FieldEQ(FieldIPAddress, v))

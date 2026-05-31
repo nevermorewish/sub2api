@@ -34495,6 +34495,7 @@ type UsageLogMutation struct {
 	user_agent                  *string
 	inbound_request_headers     *map[string]string
 	request_headers             *map[string]string
+	tls_fingerprint             *map[string]interface{}
 	ip_address                  *string
 	error_status                *string
 	error_message               *string
@@ -36391,6 +36392,55 @@ func (m *UsageLogMutation) ResetRequestHeaders() {
 	delete(m.clearedFields, usagelog.FieldRequestHeaders)
 }
 
+// SetTLSFingerprint sets the "tls_fingerprint" field.
+func (m *UsageLogMutation) SetTLSFingerprint(value map[string]interface{}) {
+	m.tls_fingerprint = &value
+}
+
+// TLSFingerprint returns the value of the "tls_fingerprint" field in the mutation.
+func (m *UsageLogMutation) TLSFingerprint() (r map[string]interface{}, exists bool) {
+	v := m.tls_fingerprint
+	if v == nil {
+		return
+	}
+	return *v, true
+}
+
+// OldTLSFingerprint returns the old "tls_fingerprint" field's value of the UsageLog entity.
+// If the UsageLog object wasn't provided to the builder, the object is fetched from the database.
+// An error is returned if the mutation operation is not UpdateOne, or the database query fails.
+func (m *UsageLogMutation) OldTLSFingerprint(ctx context.Context) (v map[string]interface{}, err error) {
+	if !m.op.Is(OpUpdateOne) {
+		return v, errors.New("OldTLSFingerprint is only allowed on UpdateOne operations")
+	}
+	if m.id == nil || m.oldValue == nil {
+		return v, errors.New("OldTLSFingerprint requires an ID field in the mutation")
+	}
+	oldValue, err := m.oldValue(ctx)
+	if err != nil {
+		return v, fmt.Errorf("querying old value for OldTLSFingerprint: %w", err)
+	}
+	return oldValue.TLSFingerprint, nil
+}
+
+// ClearTLSFingerprint clears the value of the "tls_fingerprint" field.
+func (m *UsageLogMutation) ClearTLSFingerprint() {
+	m.tls_fingerprint = nil
+	m.clearedFields[usagelog.FieldTLSFingerprint] = struct{}{}
+}
+
+// TLSFingerprintCleared returns if the "tls_fingerprint" field was cleared in this mutation.
+func (m *UsageLogMutation) TLSFingerprintCleared() bool {
+	_, ok := m.clearedFields[usagelog.FieldTLSFingerprint]
+	return ok
+}
+
+// ResetTLSFingerprint resets all changes to the "tls_fingerprint" field.
+func (m *UsageLogMutation) ResetTLSFingerprint() {
+	m.tls_fingerprint = nil
+	delete(m.clearedFields, usagelog.FieldTLSFingerprint)
+}
+
 // SetIPAddress sets the "ip_address" field.
 func (m *UsageLogMutation) SetIPAddress(s string) {
 	m.ip_address = &s
@@ -37080,7 +37130,7 @@ func (m *UsageLogMutation) Type() string {
 // order to get all numeric fields that were incremented/decremented, call
 // AddedFields().
 func (m *UsageLogMutation) Fields() []string {
-	fields := make([]string, 0, 45)
+	fields := make([]string, 0, 46)
 	if m.user != nil {
 		fields = append(fields, usagelog.FieldUserID)
 	}
@@ -37182,6 +37232,9 @@ func (m *UsageLogMutation) Fields() []string {
 	}
 	if m.request_headers != nil {
 		fields = append(fields, usagelog.FieldRequestHeaders)
+	}
+	if m.tls_fingerprint != nil {
+		fields = append(fields, usagelog.FieldTLSFingerprint)
 	}
 	if m.ip_address != nil {
 		fields = append(fields, usagelog.FieldIPAddress)
@@ -37292,6 +37345,8 @@ func (m *UsageLogMutation) Field(name string) (ent.Value, bool) {
 		return m.InboundRequestHeaders()
 	case usagelog.FieldRequestHeaders:
 		return m.RequestHeaders()
+	case usagelog.FieldTLSFingerprint:
+		return m.TLSFingerprint()
 	case usagelog.FieldIPAddress:
 		return m.IPAddress()
 	case usagelog.FieldErrorStatus:
@@ -37391,6 +37446,8 @@ func (m *UsageLogMutation) OldField(ctx context.Context, name string) (ent.Value
 		return m.OldInboundRequestHeaders(ctx)
 	case usagelog.FieldRequestHeaders:
 		return m.OldRequestHeaders(ctx)
+	case usagelog.FieldTLSFingerprint:
+		return m.OldTLSFingerprint(ctx)
 	case usagelog.FieldIPAddress:
 		return m.OldIPAddress(ctx)
 	case usagelog.FieldErrorStatus:
@@ -37659,6 +37716,13 @@ func (m *UsageLogMutation) SetField(name string, value ent.Value) error {
 			return fmt.Errorf("unexpected type %T for field %s", value, name)
 		}
 		m.SetRequestHeaders(v)
+		return nil
+	case usagelog.FieldTLSFingerprint:
+		v, ok := value.(map[string]interface{})
+		if !ok {
+			return fmt.Errorf("unexpected type %T for field %s", value, name)
+		}
+		m.SetTLSFingerprint(v)
 		return nil
 	case usagelog.FieldIPAddress:
 		v, ok := value.(string)
@@ -38040,6 +38104,9 @@ func (m *UsageLogMutation) ClearedFields() []string {
 	if m.FieldCleared(usagelog.FieldRequestHeaders) {
 		fields = append(fields, usagelog.FieldRequestHeaders)
 	}
+	if m.FieldCleared(usagelog.FieldTLSFingerprint) {
+		fields = append(fields, usagelog.FieldTLSFingerprint)
+	}
 	if m.FieldCleared(usagelog.FieldIPAddress) {
 		fields = append(fields, usagelog.FieldIPAddress)
 	}
@@ -38119,6 +38186,9 @@ func (m *UsageLogMutation) ClearField(name string) error {
 		return nil
 	case usagelog.FieldRequestHeaders:
 		m.ClearRequestHeaders()
+		return nil
+	case usagelog.FieldTLSFingerprint:
+		m.ClearTLSFingerprint()
 		return nil
 	case usagelog.FieldIPAddress:
 		m.ClearIPAddress()
@@ -38253,6 +38323,9 @@ func (m *UsageLogMutation) ResetField(name string) error {
 		return nil
 	case usagelog.FieldRequestHeaders:
 		m.ResetRequestHeaders()
+		return nil
+	case usagelog.FieldTLSFingerprint:
+		m.ResetTLSFingerprint()
 		return nil
 	case usagelog.FieldIPAddress:
 		m.ResetIPAddress()

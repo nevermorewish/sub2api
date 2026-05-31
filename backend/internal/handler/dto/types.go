@@ -517,6 +517,9 @@ type AdminUsageLog struct {
 	// RequestHeaders 脱敏后的 sub2api -> upstream 请求头快照（仅管理员可见，且仅在设置开启后写入）
 	RequestHeaders map[string]string `json:"request_headers,omitempty"`
 
+	// TLSFingerprint 脱敏后的上游 TLS 指纹模板快照（仅管理员可见）。
+	TLSFingerprint map[string]any `json:"tls_fingerprint,omitempty"`
+
 	// Account 最小账号信息（避免泄露敏感字段）
 	Account *AccountSummary `json:"account,omitempty"`
 }

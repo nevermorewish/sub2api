@@ -447,6 +447,12 @@ func (_c *UsageLogCreate) SetRequestHeaders(v map[string]string) *UsageLogCreate
 	return _c
 }
 
+// SetTLSFingerprint sets the "tls_fingerprint" field.
+func (_c *UsageLogCreate) SetTLSFingerprint(v map[string]interface{}) *UsageLogCreate {
+	_c.mutation.SetTLSFingerprint(v)
+	return _c
+}
+
 // SetIPAddress sets the "ip_address" field.
 func (_c *UsageLogCreate) SetIPAddress(v string) *UsageLogCreate {
 	_c.mutation.SetIPAddress(v)
@@ -1024,6 +1030,10 @@ func (_c *UsageLogCreate) createSpec() (*UsageLog, *sqlgraph.CreateSpec) {
 	if value, ok := _c.mutation.RequestHeaders(); ok {
 		_spec.SetField(usagelog.FieldRequestHeaders, field.TypeJSON, value)
 		_node.RequestHeaders = value
+	}
+	if value, ok := _c.mutation.TLSFingerprint(); ok {
+		_spec.SetField(usagelog.FieldTLSFingerprint, field.TypeJSON, value)
+		_node.TLSFingerprint = value
 	}
 	if value, ok := _c.mutation.IPAddress(); ok {
 		_spec.SetField(usagelog.FieldIPAddress, field.TypeString, value)
@@ -1803,6 +1813,24 @@ func (u *UsageLogUpsert) UpdateRequestHeaders() *UsageLogUpsert {
 // ClearRequestHeaders clears the value of the "request_headers" field.
 func (u *UsageLogUpsert) ClearRequestHeaders() *UsageLogUpsert {
 	u.SetNull(usagelog.FieldRequestHeaders)
+	return u
+}
+
+// SetTLSFingerprint sets the "tls_fingerprint" field.
+func (u *UsageLogUpsert) SetTLSFingerprint(v map[string]interface{}) *UsageLogUpsert {
+	u.Set(usagelog.FieldTLSFingerprint, v)
+	return u
+}
+
+// UpdateTLSFingerprint sets the "tls_fingerprint" field to the value that was provided on create.
+func (u *UsageLogUpsert) UpdateTLSFingerprint() *UsageLogUpsert {
+	u.SetExcluded(usagelog.FieldTLSFingerprint)
+	return u
+}
+
+// ClearTLSFingerprint clears the value of the "tls_fingerprint" field.
+func (u *UsageLogUpsert) ClearTLSFingerprint() *UsageLogUpsert {
+	u.SetNull(usagelog.FieldTLSFingerprint)
 	return u
 }
 
@@ -2722,6 +2750,27 @@ func (u *UsageLogUpsertOne) UpdateRequestHeaders() *UsageLogUpsertOne {
 func (u *UsageLogUpsertOne) ClearRequestHeaders() *UsageLogUpsertOne {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearRequestHeaders()
+	})
+}
+
+// SetTLSFingerprint sets the "tls_fingerprint" field.
+func (u *UsageLogUpsertOne) SetTLSFingerprint(v map[string]interface{}) *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetTLSFingerprint(v)
+	})
+}
+
+// UpdateTLSFingerprint sets the "tls_fingerprint" field to the value that was provided on create.
+func (u *UsageLogUpsertOne) UpdateTLSFingerprint() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateTLSFingerprint()
+	})
+}
+
+// ClearTLSFingerprint clears the value of the "tls_fingerprint" field.
+func (u *UsageLogUpsertOne) ClearTLSFingerprint() *UsageLogUpsertOne {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearTLSFingerprint()
 	})
 }
 
@@ -3836,6 +3885,27 @@ func (u *UsageLogUpsertBulk) UpdateRequestHeaders() *UsageLogUpsertBulk {
 func (u *UsageLogUpsertBulk) ClearRequestHeaders() *UsageLogUpsertBulk {
 	return u.Update(func(s *UsageLogUpsert) {
 		s.ClearRequestHeaders()
+	})
+}
+
+// SetTLSFingerprint sets the "tls_fingerprint" field.
+func (u *UsageLogUpsertBulk) SetTLSFingerprint(v map[string]interface{}) *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.SetTLSFingerprint(v)
+	})
+}
+
+// UpdateTLSFingerprint sets the "tls_fingerprint" field to the value that was provided on create.
+func (u *UsageLogUpsertBulk) UpdateTLSFingerprint() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.UpdateTLSFingerprint()
+	})
+}
+
+// ClearTLSFingerprint clears the value of the "tls_fingerprint" field.
+func (u *UsageLogUpsertBulk) ClearTLSFingerprint() *UsageLogUpsertBulk {
+	return u.Update(func(s *UsageLogUpsert) {
+		s.ClearTLSFingerprint()
 	})
 }
 

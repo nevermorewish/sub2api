@@ -75,6 +75,7 @@ func TestUsageLogRepositoryCreateSyncRequestTypeAndLegacyFields(t *testing.T) {
 			sqlmock.AnyArg(), // user_agent
 			sqlmock.AnyArg(), // inbound_request_headers
 			sqlmock.AnyArg(), // request_headers
+			sqlmock.AnyArg(), // tls_fingerprint
 			sqlmock.AnyArg(), // ip_address
 			log.ImageCount,
 			sqlmock.AnyArg(), // image_size
@@ -161,8 +162,9 @@ func TestUsageLogRepositoryCreate_PersistsServiceTier(t *testing.T) {
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(), // inbound_request_headers
-			sqlmock.AnyArg(),
-			sqlmock.AnyArg(),
+			sqlmock.AnyArg(), // request_headers
+			sqlmock.AnyArg(), // tls_fingerprint
+			sqlmock.AnyArg(), // ip_address
 			log.ImageCount,
 			sqlmock.AnyArg(),
 			sqlmock.AnyArg(), // image_input_size
@@ -267,11 +269,11 @@ func TestPrepareUsageLogInsert_PersistsImageSizeMetadata(t *testing.T) {
 		CreatedAt:          time.Date(2025, 1, 6, 12, 0, 0, 0, time.UTC),
 	})
 
-	require.Equal(t, sql.NullString{String: imageSize, Valid: true}, prepared.args[36])
-	require.Equal(t, sql.NullString{String: inputSize, Valid: true}, prepared.args[37])
-	require.Equal(t, sql.NullString{String: outputSize, Valid: true}, prepared.args[38])
-	require.Equal(t, sql.NullString{String: source, Valid: true}, prepared.args[39])
-	breakdownJSON, ok := prepared.args[40].(string)
+	require.Equal(t, sql.NullString{String: imageSize, Valid: true}, prepared.args[37])
+	require.Equal(t, sql.NullString{String: inputSize, Valid: true}, prepared.args[38])
+	require.Equal(t, sql.NullString{String: outputSize, Valid: true}, prepared.args[39])
+	require.Equal(t, sql.NullString{String: source, Valid: true}, prepared.args[40])
+	breakdownJSON, ok := prepared.args[41].(string)
 	require.True(t, ok)
 	require.JSONEq(t, `{"1K":1,"4K":1}`, breakdownJSON)
 }
@@ -632,8 +634,9 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullInt64{},
 			sql.NullString{},
 			sql.NullString{}, // inbound_request_headers
-			sql.NullString{},
-			sql.NullString{},
+			sql.NullString{}, // request_headers
+			sql.NullString{}, // tls_fingerprint
+			sql.NullString{}, // ip_address
 			2,
 			sql.NullString{Valid: true, String: "4K"},
 			sql.NullString{Valid: true, String: "1024x1024"},
@@ -704,8 +707,9 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullInt64{},
 			sql.NullString{},
 			sql.NullString{}, // inbound_request_headers
-			sql.NullString{},
-			sql.NullString{},
+			sql.NullString{}, // request_headers
+			sql.NullString{}, // tls_fingerprint
+			sql.NullString{}, // ip_address
 			0,
 			sql.NullString{},
 			sql.NullString{}, // image_input_size
@@ -760,8 +764,9 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullInt64{},
 			sql.NullString{},
 			sql.NullString{}, // inbound_request_headers
-			sql.NullString{},
-			sql.NullString{},
+			sql.NullString{}, // request_headers
+			sql.NullString{}, // tls_fingerprint
+			sql.NullString{}, // ip_address
 			0,
 			sql.NullString{},
 			sql.NullString{}, // image_input_size
@@ -816,8 +821,9 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 			sql.NullInt64{},
 			sql.NullString{},
 			sql.NullString{}, // inbound_request_headers
-			sql.NullString{},
-			sql.NullString{},
+			sql.NullString{}, // request_headers
+			sql.NullString{}, // tls_fingerprint
+			sql.NullString{}, // ip_address
 			0,
 			sql.NullString{},
 			sql.NullString{}, // image_input_size
@@ -841,6 +847,61 @@ func TestScanUsageLogRequestTypeAndLegacyFallback(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, log.ServiceTier)
 		require.Equal(t, "priority", *log.ServiceTier)
+	})
+
+	t.Run("tls_fingerprint_is_scanned", func(t *testing.T) {
+		now := time.Now().UTC()
+		log, err := scanUsageLog(usageLogScannerStub{values: []any{
+			int64(5),
+			int64(14),
+			int64(24),
+			int64(34),
+			sql.NullString{Valid: true, String: "req-tls-fingerprint"},
+			"claude-sonnet-4",
+			sql.NullString{Valid: true, String: "claude-sonnet-4"},
+			sql.NullString{},
+			sql.NullInt64{},
+			sql.NullInt64{},
+			1, 2, 0, 0, 0, 0,
+			0, 0.0,
+			0.1, 0.2, 0.0, 0.0, 0.3, 0.3,
+			1.0,
+			sql.NullFloat64{},
+			int16(service.BillingTypeBalance),
+			int16(service.RequestTypeSync),
+			false,
+			false,
+			sql.NullInt64{},
+			sql.NullInt64{},
+			sql.NullString{},
+			sql.NullString{}, // inbound_request_headers
+			sql.NullString{}, // request_headers
+			sql.NullString{Valid: true, String: `{"id":7,"name":"Node 24","enable_grease":true,"alpn_protocols":["http/1.1"]}`},
+			sql.NullString{}, // ip_address
+			0,
+			sql.NullString{},
+			sql.NullString{},
+			sql.NullString{},
+			sql.NullString{},
+			sql.NullString{},
+			sql.NullString{},
+			sql.NullString{},
+			sql.NullString{},
+			sql.NullString{},
+			sql.NullString{},
+			sql.NullString{},
+			false,
+			sql.NullInt64{},
+			sql.NullString{},
+			sql.NullString{},
+			sql.NullString{},
+			sql.NullFloat64{},
+			now,
+		}})
+		require.NoError(t, err)
+		require.Equal(t, "Node 24", log.TLSFingerprint["name"])
+		require.Equal(t, true, log.TLSFingerprint["enable_grease"])
+		require.Equal(t, float64(7), log.TLSFingerprint["id"])
 	})
 
 }
