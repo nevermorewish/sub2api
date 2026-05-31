@@ -302,6 +302,7 @@ func (h *OpenAIGatewayHandler) Images(c *gin.Context) {
 
 		userAgent := c.GetHeader("User-Agent")
 		clientIP := ip.GetClientIP(c)
+		inboundRequestHeaders := h.gatewayService.SnapshotUsageRequestHeaders(c.Request.Context(), c.Request.Header)
 		requestPayloadHash := service.HashUsageRequestPayload(body)
 		if parsed.Multipart {
 			requestPayloadHash = service.HashUsageRequestPayload([]byte(parsed.StickySessionSeed()))
@@ -315,18 +316,19 @@ func (h *OpenAIGatewayHandler) Images(c *gin.Context) {
 		}
 		h.submitMandatoryUsageRecordTask(c.Request.Context(), func(ctx context.Context) {
 			if err := h.gatewayService.RecordUsage(ctx, &service.OpenAIRecordUsageInput{
-				Result:             result,
-				APIKey:             apiKey,
-				User:               apiKey.User,
-				Account:            account,
-				Subscription:       subscription,
-				InboundEndpoint:    inboundEndpoint,
-				UpstreamEndpoint:   upstreamEndpoint,
-				UserAgent:          userAgent,
-				IPAddress:          clientIP,
-				RequestPayloadHash: requestPayloadHash,
-				APIKeyService:      h.apiKeyService,
-				ChannelUsageFields: channelMapping.ToUsageFields(parsed.Model, upstreamModel),
+				Result:                result,
+				APIKey:                apiKey,
+				User:                  apiKey.User,
+				Account:               account,
+				Subscription:          subscription,
+				InboundEndpoint:       inboundEndpoint,
+				UpstreamEndpoint:      upstreamEndpoint,
+				UserAgent:             userAgent,
+				IPAddress:             clientIP,
+				InboundRequestHeaders: inboundRequestHeaders,
+				RequestPayloadHash:    requestPayloadHash,
+				APIKeyService:         h.apiKeyService,
+				ChannelUsageFields:    channelMapping.ToUsageFields(parsed.Model, upstreamModel),
 			}); err != nil {
 				logger.L().With(
 					zap.String("component", "handler.openai_gateway.images"),

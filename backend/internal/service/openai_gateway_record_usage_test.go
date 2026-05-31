@@ -373,6 +373,47 @@ func TestOpenAIGatewayServiceRecordUsage_IncludesEndpointMetadata(t *testing.T) 
 	require.Equal(t, "/v1/responses", *usageRepo.lastLog.UpstreamEndpoint)
 }
 
+func TestOpenAIGatewayServiceRecordUsage_IncludesRequestDiagnostics(t *testing.T) {
+	usageRepo := &openAIRecordUsageLogRepoStub{inserted: true}
+	userRepo := &openAIRecordUsageUserRepoStub{}
+	subRepo := &openAIRecordUsageSubRepoStub{}
+	svc := newOpenAIRecordUsageServiceForTest(usageRepo, userRepo, subRepo, nil)
+
+	inboundHeaders := map[string]string{
+		"user-agent":    "claude-cli",
+		"authorization": "Bearer [redacted]",
+	}
+	outboundHeaders := map[string]string{
+		"anthropic-version": "2023-06-01",
+		"user-agent":        "sub2api",
+	}
+	tlsFingerprint := map[string]any{
+		"name":          "Node 24",
+		"enable_grease": true,
+	}
+
+	err := svc.RecordUsage(context.Background(), &OpenAIRecordUsageInput{
+		Result: &OpenAIForwardResult{
+			RequestID:      "resp_request_diagnostics",
+			Model:          "gpt-5.1",
+			Usage:          OpenAIUsage{InputTokens: 8, OutputTokens: 2},
+			Duration:       time.Second,
+			RequestHeaders: outboundHeaders,
+			TLSFingerprint: tlsFingerprint,
+		},
+		APIKey:                &APIKey{ID: 1003, Group: &Group{RateMultiplier: 1}},
+		User:                  &User{ID: 2003},
+		Account:               &Account{ID: 3003},
+		InboundRequestHeaders: inboundHeaders,
+	})
+
+	require.NoError(t, err)
+	require.NotNil(t, usageRepo.lastLog)
+	require.Equal(t, inboundHeaders, usageRepo.lastLog.InboundRequestHeaders)
+	require.Equal(t, outboundHeaders, usageRepo.lastLog.RequestHeaders)
+	require.Equal(t, tlsFingerprint, usageRepo.lastLog.TLSFingerprint)
+}
+
 func TestOpenAIGatewayServiceRecordUsage_FallsBackToGroupDefaultRateOnResolverError(t *testing.T) {
 	groupID := int64(12)
 	groupRate := 1.6

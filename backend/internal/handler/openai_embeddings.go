@@ -211,22 +211,24 @@ func (h *OpenAIGatewayHandler) Embeddings(c *gin.Context) {
 		h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, true, nil)
 		userAgent := c.GetHeader("User-Agent")
 		clientIP := ip.GetClientIP(c)
+		inboundRequestHeaders := h.gatewayService.SnapshotUsageRequestHeaders(c.Request.Context(), c.Request.Header)
 		inboundEndpoint := GetInboundEndpoint(c)
 		upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
 
 		h.submitOpenAIUsageRecordTask(c.Request.Context(), result, func(ctx context.Context) {
 			if err := h.gatewayService.RecordUsage(ctx, &service.OpenAIRecordUsageInput{
-				Result:             result,
-				APIKey:             apiKey,
-				User:               apiKey.User,
-				Account:            account,
-				Subscription:       subscription,
-				InboundEndpoint:    inboundEndpoint,
-				UpstreamEndpoint:   upstreamEndpoint,
-				UserAgent:          userAgent,
-				IPAddress:          clientIP,
-				APIKeyService:      h.apiKeyService,
-				ChannelUsageFields: channelMapping.ToUsageFields(reqModel, result.UpstreamModel),
+				Result:                result,
+				APIKey:                apiKey,
+				User:                  apiKey.User,
+				Account:               account,
+				Subscription:          subscription,
+				InboundEndpoint:       inboundEndpoint,
+				UpstreamEndpoint:      upstreamEndpoint,
+				UserAgent:             userAgent,
+				IPAddress:             clientIP,
+				InboundRequestHeaders: inboundRequestHeaders,
+				APIKeyService:         h.apiKeyService,
+				ChannelUsageFields:    channelMapping.ToUsageFields(reqModel, result.UpstreamModel),
 			}); err != nil {
 				logger.L().With(
 					zap.String("component", "handler.openai_gateway.embeddings"),

@@ -4289,6 +4289,10 @@ func (s *OpenAIGatewayService) snapshotUsageRequestHeaders(ctx context.Context, 
 	return snapshotRequestHeadersForUsage(headers)
 }
 
+func (s *OpenAIGatewayService) SnapshotUsageRequestHeaders(ctx context.Context, headers http.Header) map[string]string {
+	return s.snapshotUsageRequestHeaders(ctx, headers)
+}
+
 func (s *OpenAIGatewayService) handleErrorResponse(
 	ctx context.Context,
 	resp *http.Response,
@@ -5657,17 +5661,18 @@ func (s *OpenAIGatewayService) replaceModelInResponseBody(body []byte, fromModel
 
 // OpenAIRecordUsageInput input for recording usage
 type OpenAIRecordUsageInput struct {
-	Result             *OpenAIForwardResult
-	APIKey             *APIKey
-	User               *User
-	Account            *Account
-	Subscription       *UserSubscription
-	InboundEndpoint    string
-	UpstreamEndpoint   string
-	UserAgent          string // 请求的 User-Agent
-	IPAddress          string // 请求的客户端 IP 地址
-	RequestPayloadHash string
-	APIKeyService      APIKeyQuotaUpdater
+	Result                *OpenAIForwardResult
+	APIKey                *APIKey
+	User                  *User
+	Account               *Account
+	Subscription          *UserSubscription
+	InboundEndpoint       string
+	UpstreamEndpoint      string
+	UserAgent             string // 请求的 User-Agent
+	IPAddress             string // 请求的客户端 IP 地址
+	InboundRequestHeaders map[string]string
+	RequestPayloadHash    string
+	APIKeyService         APIKeyQuotaUpdater
 	ChannelUsageFields
 }
 
@@ -5930,7 +5935,9 @@ func (s *OpenAIGatewayService) RecordUsage(ctx context.Context, input *OpenAIRec
 	if input.UserAgent != "" {
 		usageLog.UserAgent = &input.UserAgent
 	}
+	usageLog.InboundRequestHeaders = input.InboundRequestHeaders
 	usageLog.RequestHeaders = result.RequestHeaders
+	usageLog.TLSFingerprint = result.TLSFingerprint
 
 	// 添加 IPAddress
 	if input.IPAddress != "" {

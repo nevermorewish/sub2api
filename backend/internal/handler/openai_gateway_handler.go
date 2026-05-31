@@ -459,6 +459,7 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 		// 捕获请求信息（用于异步记录，避免在 goroutine 中访问 gin.Context）
 		userAgent := c.GetHeader("User-Agent")
 		clientIP := ip.GetClientIP(c)
+		inboundRequestHeaders := h.gatewayService.SnapshotUsageRequestHeaders(c.Request.Context(), c.Request.Header)
 		requestPayloadHash := service.HashUsageRequestPayload(body)
 		inboundEndpoint := GetInboundEndpoint(c)
 		upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
@@ -466,18 +467,19 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 		// 使用量记录通过有界 worker 池提交，避免请求热路径创建无界 goroutine。
 		h.submitOpenAIUsageRecordTask(c.Request.Context(), result, func(ctx context.Context) {
 			if err := h.gatewayService.RecordUsage(ctx, &service.OpenAIRecordUsageInput{
-				Result:             result,
-				APIKey:             apiKey,
-				User:               apiKey.User,
-				Account:            account,
-				Subscription:       subscription,
-				InboundEndpoint:    inboundEndpoint,
-				UpstreamEndpoint:   upstreamEndpoint,
-				UserAgent:          userAgent,
-				IPAddress:          clientIP,
-				RequestPayloadHash: requestPayloadHash,
-				APIKeyService:      h.apiKeyService,
-				ChannelUsageFields: channelMapping.ToUsageFields(reqModel, result.UpstreamModel),
+				Result:                result,
+				APIKey:                apiKey,
+				User:                  apiKey.User,
+				Account:               account,
+				Subscription:          subscription,
+				InboundEndpoint:       inboundEndpoint,
+				UpstreamEndpoint:      upstreamEndpoint,
+				UserAgent:             userAgent,
+				IPAddress:             clientIP,
+				InboundRequestHeaders: inboundRequestHeaders,
+				RequestPayloadHash:    requestPayloadHash,
+				APIKeyService:         h.apiKeyService,
+				ChannelUsageFields:    channelMapping.ToUsageFields(reqModel, result.UpstreamModel),
 			}); err != nil {
 				logger.L().With(
 					zap.String("component", "handler.openai_gateway.responses"),
@@ -845,24 +847,26 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 
 		userAgent := c.GetHeader("User-Agent")
 		clientIP := ip.GetClientIP(c)
+		inboundRequestHeaders := h.gatewayService.SnapshotUsageRequestHeaders(c.Request.Context(), c.Request.Header)
 		requestPayloadHash := service.HashUsageRequestPayload(body)
 		inboundEndpoint := GetInboundEndpoint(c)
 		upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
 
 		h.submitOpenAIUsageRecordTask(c.Request.Context(), result, func(ctx context.Context) {
 			if err := h.gatewayService.RecordUsage(ctx, &service.OpenAIRecordUsageInput{
-				Result:             result,
-				APIKey:             apiKey,
-				User:               apiKey.User,
-				Account:            account,
-				Subscription:       subscription,
-				InboundEndpoint:    inboundEndpoint,
-				UpstreamEndpoint:   upstreamEndpoint,
-				UserAgent:          userAgent,
-				IPAddress:          clientIP,
-				RequestPayloadHash: requestPayloadHash,
-				APIKeyService:      h.apiKeyService,
-				ChannelUsageFields: channelMappingMsg.ToUsageFields(reqModel, result.UpstreamModel),
+				Result:                result,
+				APIKey:                apiKey,
+				User:                  apiKey.User,
+				Account:               account,
+				Subscription:          subscription,
+				InboundEndpoint:       inboundEndpoint,
+				UpstreamEndpoint:      upstreamEndpoint,
+				UserAgent:             userAgent,
+				IPAddress:             clientIP,
+				InboundRequestHeaders: inboundRequestHeaders,
+				RequestPayloadHash:    requestPayloadHash,
+				APIKeyService:         h.apiKeyService,
+				ChannelUsageFields:    channelMappingMsg.ToUsageFields(reqModel, result.UpstreamModel),
 			}); err != nil {
 				logger.L().With(
 					zap.String("component", "handler.openai_gateway.messages"),
@@ -1451,22 +1455,24 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 					h.gatewayService.UpdateCodexUsageSnapshotFromHeaders(ctx, account.ID, result.ResponseHeaders)
 				}
 				h.gatewayService.ReportOpenAIAccountScheduleResult(account.ID, true, result.FirstTokenMs)
+				inboundRequestHeaders := h.gatewayService.SnapshotUsageRequestHeaders(ctx, c.Request.Header)
 				inboundEndpoint := GetInboundEndpoint(c)
 				upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
 				h.submitOpenAIUsageRecordTask(ctx, result, func(taskCtx context.Context) {
 					if err := h.gatewayService.RecordUsage(taskCtx, &service.OpenAIRecordUsageInput{
-						Result:             result,
-						APIKey:             apiKey,
-						User:               apiKey.User,
-						Account:            account,
-						Subscription:       subscription,
-						InboundEndpoint:    inboundEndpoint,
-						UpstreamEndpoint:   upstreamEndpoint,
-						UserAgent:          userAgent,
-						IPAddress:          clientIP,
-						RequestPayloadHash: service.HashUsageRequestPayload(firstMessage),
-						APIKeyService:      h.apiKeyService,
-						ChannelUsageFields: channelMappingWS.ToUsageFields(reqModel, result.UpstreamModel),
+						Result:                result,
+						APIKey:                apiKey,
+						User:                  apiKey.User,
+						Account:               account,
+						Subscription:          subscription,
+						InboundEndpoint:       inboundEndpoint,
+						UpstreamEndpoint:      upstreamEndpoint,
+						UserAgent:             userAgent,
+						IPAddress:             clientIP,
+						InboundRequestHeaders: inboundRequestHeaders,
+						RequestPayloadHash:    service.HashUsageRequestPayload(firstMessage),
+						APIKeyService:         h.apiKeyService,
+						ChannelUsageFields:    channelMappingWS.ToUsageFields(reqModel, result.UpstreamModel),
 					}); err != nil {
 						reqLog.Error("openai.websocket_record_usage_failed",
 							zap.Int64("account_id", account.ID),
