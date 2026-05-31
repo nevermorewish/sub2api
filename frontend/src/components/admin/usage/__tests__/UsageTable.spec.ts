@@ -39,6 +39,10 @@ const messages: Record<string, string> = {
   'usage.imageSizeUnknown': 'unknown',
   'usage.imageUnitPrice': 'Per-image price',
   'usage.imageTotalPrice': 'Image total price',
+  'usage.inboundRequestHeaders': 'Inbound Headers',
+  'usage.outboundRequestHeaders': 'Outbound Headers',
+  'usage.tlsFingerprint': 'TLS Fingerprint',
+  'usage.requestHeadersCount': 'items',
   'admin.usage.billingModeToken': 'Token',
   'admin.usage.billingModePerRequest': 'Per request',
   'admin.usage.billingModeImage': 'Image',
@@ -54,7 +58,7 @@ vi.mock('vue-i18n', async () => {
   }
 })
 
-const DataTableStub = {
+const CoreColumnsDataTableStub = {
   props: ['data'],
   template: `
     <div>
@@ -63,6 +67,23 @@ const DataTableStub = {
         <slot name="cell-billing_mode" :row="row" />
         <slot name="cell-tokens" :row="row" />
         <slot name="cell-cost" :row="row" />
+      </div>
+    </div>
+  `,
+}
+
+const ColumnDataTableStub = {
+  props: ['data', 'columns'],
+  template: `
+    <div>
+      <div v-for="row in data" :key="row.request_id">
+        <div
+          v-for="column in columns"
+          :key="column.key"
+          :data-col="column.key"
+        >
+          <slot :name="'cell-' + column.key" :row="row" :value="row[column.key]" />
+        </div>
       </div>
     </div>
   `,
@@ -135,7 +156,7 @@ describe('admin UsageTable tooltip', () => {
       },
       global: {
         stubs: {
-          DataTable: DataTableStub,
+          DataTable: CoreColumnsDataTableStub,
           EmptyState: true,
           Icon: true,
           Teleport: true,
@@ -186,7 +207,7 @@ describe('admin UsageTable tooltip', () => {
       },
       global: {
         stubs: {
-          DataTable: DataTableStub,
+          DataTable: CoreColumnsDataTableStub,
           EmptyState: true,
           Icon: true,
           Teleport: true,
@@ -258,7 +279,7 @@ describe('admin UsageTable tooltip', () => {
       },
       global: {
         stubs: {
-          DataTable: DataTableStub,
+          DataTable: CoreColumnsDataTableStub,
           EmptyState: true,
           Icon: true,
           Teleport: true,
@@ -302,7 +323,7 @@ describe('admin UsageTable tooltip', () => {
       },
       global: {
         stubs: {
-          DataTable: DataTableStub,
+          DataTable: CoreColumnsDataTableStub,
           EmptyState: true,
           Icon: true,
           Teleport: true,
@@ -319,5 +340,71 @@ describe('admin UsageTable tooltip', () => {
     expect(text).toContain('Per-image price')
     expect(text).toContain('not recorded')
     expect(text).not.toContain('(2K)')
+  })
+
+  it('renders request diagnostics in their own columns instead of the user column', async () => {
+    const row = {
+      request_id: 'req-admin-headers-1',
+      user_id: 42,
+      user: { email: 'user@example.com' },
+      inbound_request_headers: {
+        'x-client': 'cli',
+      },
+      request_headers: {
+        'anthropic-version': '2023-06-01',
+        'user-agent': 'claude-cli',
+      },
+      tls_fingerprint: {
+        ja3: '771,4865-4866,0-23,29-23,0',
+      },
+    }
+
+    const wrapper = mount(UsageTable, {
+      props: {
+        data: [row],
+        loading: false,
+        columns: [
+          { key: 'user', label: 'User' },
+          { key: 'inbound_request_headers', label: 'Inbound Headers' },
+          { key: 'request_headers', label: 'Outbound Headers' },
+          { key: 'tls_fingerprint', label: 'TLS Fingerprint' },
+        ],
+      },
+      global: {
+        stubs: {
+          DataTable: ColumnDataTableStub,
+          EmptyState: true,
+          Icon: true,
+          Teleport: true,
+        },
+      },
+    })
+
+    const userColumn = wrapper.get('[data-col="user"]')
+    const inboundColumn = wrapper.get('[data-col="inbound_request_headers"]')
+    const outboundColumn = wrapper.get('[data-col="request_headers"]')
+    const tlsColumn = wrapper.get('[data-col="tls_fingerprint"]')
+
+    expect(userColumn.findAll('button')).toHaveLength(1)
+    expect(userColumn.text()).toContain('user@example.com')
+    expect(userColumn.text()).not.toContain('Inbound Headers')
+    expect(userColumn.text()).not.toContain('Outbound Headers')
+
+    expect(inboundColumn.text()).toContain('Inbound Headers')
+    expect(inboundColumn.text()).toContain('(1)')
+    expect(outboundColumn.text()).toContain('Outbound Headers')
+    expect(outboundColumn.text()).toContain('(2)')
+    expect(tlsColumn.text()).toContain('TLS Fingerprint')
+    expect(tlsColumn.text()).toContain('(1)')
+
+    await outboundColumn.get('button').trigger('click')
+    await nextTick()
+
+    const text = wrapper.text()
+    expect(text).toContain('Outbound Headers')
+    expect(text).toContain('anthropic-version')
+    expect(text).toContain('2023-06-01')
+    expect(text).toContain('user-agent')
+    expect(text).toContain('claude-cli')
   })
 })

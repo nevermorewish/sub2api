@@ -198,7 +198,7 @@
             @click="showHeaders(row, 'inbound')"
           >
             <Icon name="eye" size="xs" />
-            {{ t('usage.viewRequestHeaders') }}
+            {{ t('usage.inboundRequestHeaders') }}
             <span class="text-primary-500 dark:text-primary-400">({{ Object.keys(row.inbound_request_headers || {}).length }})</span>
           </button>
           <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
@@ -212,7 +212,7 @@
             @click="showHeaders(row, 'outbound')"
           >
             <Icon name="eye" size="xs" />
-            {{ t('usage.viewRequestHeaders') }}
+            {{ t('usage.outboundRequestHeaders') }}
             <span class="text-primary-500 dark:text-primary-400">({{ Object.keys(row.request_headers || {}).length }})</span>
           </button>
           <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
@@ -226,7 +226,7 @@
             @click="showHeaders(row, 'tls')"
           >
             <Icon name="eye" size="xs" />
-            {{ t('usage.viewRequestHeaders') }}
+            {{ t('usage.tlsFingerprint') }}
             <span class="text-primary-500 dark:text-primary-400">({{ Object.keys(row.tls_fingerprint || {}).length }})</span>
           </button>
           <span v-else class="text-sm text-gray-400 dark:text-gray-500">-</span>
