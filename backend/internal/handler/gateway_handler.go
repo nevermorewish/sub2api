@@ -897,6 +897,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			// 捕获请求信息（用于异步记录，避免在 goroutine 中访问 gin.Context）
 			userAgent := c.GetHeader("User-Agent")
 			clientIP := ip.GetClientIP(c)
+			inboundRequestHeaders := h.gatewayService.SnapshotUsageRequestHeaders(c.Request.Context(), c.Request.Header)
 			requestPayloadHash := service.HashUsageRequestPayload(body)
 			inboundEndpoint := GetInboundEndpoint(c)
 			upstreamEndpoint := GetUpstreamEndpoint(c, account.Platform)
@@ -909,21 +910,22 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 			quotaPlatform := service.QuotaPlatform(c.Request.Context(), currentAPIKey)
 			h.submitUsageRecordTask(c.Request.Context(), func(ctx context.Context) {
 				if err := h.gatewayService.RecordUsage(ctx, &service.RecordUsageInput{
-					Result:             result,
-					ParsedRequest:      parsedReq,
-					QuotaPlatform:      quotaPlatform,
-					APIKey:             currentAPIKey,
-					User:               currentAPIKey.User,
-					Account:            account,
-					Subscription:       currentSubscription,
-					InboundEndpoint:    inboundEndpoint,
-					UpstreamEndpoint:   upstreamEndpoint,
-					UserAgent:          userAgent,
-					IPAddress:          clientIP,
-					RequestPayloadHash: requestPayloadHash,
-					ForceCacheBilling:  fs.ForceCacheBilling,
-					APIKeyService:      h.apiKeyService,
-					ChannelUsageFields: channelMapping.ToUsageFields(reqModel, result.UpstreamModel),
+					Result:                result,
+					ParsedRequest:         parsedReq,
+					QuotaPlatform:         quotaPlatform,
+					APIKey:                currentAPIKey,
+					User:                  currentAPIKey.User,
+					Account:               account,
+					Subscription:          currentSubscription,
+					InboundEndpoint:       inboundEndpoint,
+					UpstreamEndpoint:      upstreamEndpoint,
+					UserAgent:             userAgent,
+					IPAddress:             clientIP,
+					InboundRequestHeaders: inboundRequestHeaders,
+					RequestPayloadHash:    requestPayloadHash,
+					ForceCacheBilling:     fs.ForceCacheBilling,
+					APIKeyService:         h.apiKeyService,
+					ChannelUsageFields:    channelMapping.ToUsageFields(reqModel, result.UpstreamModel),
 				}); err != nil {
 					logger.L().With(
 						zap.String("component", "handler.gateway.messages"),
