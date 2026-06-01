@@ -20,6 +20,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	utls "github.com/refraction-networking/utls"
 )
 
 // TestDialerBasicConnection tests that the dialer can establish TLS connections.
@@ -55,8 +57,8 @@ func TestDialerBasicConnection(t *testing.T) {
 
 // TestJA3Fingerprint verifies the JA3/JA4 fingerprint matches expected value.
 // This test uses tls.peet.ws to verify the fingerprint.
-// Expected JA3 hash: 44f88fca027f27bab4bb08d4af15f23e (Node.js 24.x)
-// Expected JA4: t13d1714h1_5b57614c22b0_7baf387fc6ff
+// Expected JA3 hash: d871d02cecbde59abbf8f4806134addf (Claude Code Node.js 24.x)
+// Expected JA4: t13d1714h1_5b57614c22b0_43ade6aba3df
 func TestJA3Fingerprint(t *testing.T) {
 	skipNetworkTest(t)
 
@@ -107,8 +109,8 @@ func TestJA3Fingerprint(t *testing.T) {
 	t.Logf("PeetPrint: %s", fpResp.TLS.PeetPrint)
 	t.Logf("PeetPrint Hash: %s", fpResp.TLS.PeetPrintHash)
 
-	// Verify JA3 hash matches expected value (Node.js 24.x default)
-	expectedJA3Hash := "44f88fca027f27bab4bb08d4af15f23e"
+	// Verify JA3 hash matches expected value (Claude Code Node.js 24.x default)
+	expectedJA3Hash := "d871d02cecbde59abbf8f4806134addf"
 	if fpResp.TLS.JA3Hash == expectedJA3Hash {
 		t.Logf("✓ JA3 hash matches expected value: %s", expectedJA3Hash)
 	} else {
@@ -143,8 +145,8 @@ func TestJA3Fingerprint(t *testing.T) {
 		t.Logf("Warning: JA3 does not contain expected TLS 1.3 cipher suites")
 	}
 
-	// Verify extension list (14 extensions, Node.js 24.x order)
-	expectedExtensions := "0-65037-23-65281-10-11-35-16-5-13-18-51-45-43"
+	// Verify extension list (14 extensions, captured Claude Code Node.js 24.x order)
+	expectedExtensions := "0-23-65281-10-11-35-16-5-13-18-51-45-43-21"
 	if strings.Contains(fpResp.TLS.JA3, expectedExtensions) {
 		t.Logf("✓ JA3 contains expected extension list: %s", expectedExtensions)
 	} else {
@@ -264,6 +266,24 @@ func TestBuildClientHelloSpec(t *testing.T) {
 	}
 }
 
+func TestBuildClientHelloSpecUsesCapturedNode24ExtensionOrder(t *testing.T) {
+	spec := buildClientHelloSpecFromProfile(&Profile{Name: "captured_node24"})
+
+	if len(spec.Extensions) != len(defaultExtensionOrder) {
+		t.Fatalf("extensions length = %d, want %d", len(spec.Extensions), len(defaultExtensionOrder))
+	}
+
+	if _, ok := spec.Extensions[len(spec.Extensions)-1].(*utls.UtlsPaddingExtension); !ok {
+		t.Fatalf("last extension = %T, want *utls.UtlsPaddingExtension for extension 21", spec.Extensions[len(spec.Extensions)-1])
+	}
+
+	for _, ext := range spec.Extensions {
+		if _, ok := ext.(*utls.GREASEEncryptedClientHelloExtension); ok {
+			t.Fatal("default captured Node 24 profile must not include ECH extension 65037")
+		}
+	}
+}
+
 // TestToUTLSCurves tests curve ID conversion.
 func TestToUTLSCurves(t *testing.T) {
 	input := []uint16{0x001d, 0x0017, 0x0018}
@@ -296,9 +316,9 @@ func TestAllProfiles(t *testing.T) {
 
 	profiles := []TestProfileExpectation{
 		{
-			// Default profile (Node.js 24.x)
-			// JA3 Hash: 44f88fca027f27bab4bb08d4af15f23e
-			// JA4: t13d1714h1_5b57614c22b0_7baf387fc6ff
+			// Default profile (Claude Code Node.js 24.x)
+			// JA3 Hash: d871d02cecbde59abbf8f4806134addf
+			// JA4: t13d1714h1_5b57614c22b0_43ade6aba3df
 			Profile: &Profile{
 				Name:         "default_node_v24",
 				EnableGREASE: false,

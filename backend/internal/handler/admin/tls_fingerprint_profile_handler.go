@@ -5,6 +5,7 @@ import (
 
 	"github.com/Wei-Shaw/sub2api/internal/model"
 	"github.com/Wei-Shaw/sub2api/internal/pkg/response"
+	"github.com/Wei-Shaw/sub2api/internal/pkg/tlsfingerprint"
 	"github.com/Wei-Shaw/sub2api/internal/service"
 	"github.com/gin-gonic/gin"
 )
@@ -49,6 +50,28 @@ type UpdateTLSFingerprintProfileRequest struct {
 	KeyShareGroups      []uint16 `json:"key_share_groups"`
 	PSKModes            []uint16 `json:"psk_modes"`
 	Extensions          []uint16 `json:"extensions"`
+}
+
+type GenerateTLSFingerprintProfileRequest struct {
+	Name            string   `json:"name"`
+	Description     *string  `json:"description"`
+	Runtime         string   `json:"runtime"`
+	RuntimeVersion  string   `json:"runtime_version"`
+	NodeMajor       int      `json:"node_major"`
+	OpenSSLVersion  string   `json:"openssl_version"`
+	Transport       string   `json:"transport"`
+	HTTPClient      string   `json:"http_client"`
+	WebSocketClient string   `json:"websocket_client"`
+	ProxyMode       string   `json:"proxy_mode"`
+	MTLSEnabled     bool     `json:"mtls_enabled"`
+	CustomCAEnabled bool     `json:"custom_ca_enabled"`
+	ALPNProtocols   []string `json:"alpn_protocols"`
+	EnableGREASE    *bool    `json:"enable_grease"`
+}
+
+type GenerateTLSFingerprintProfileResponse struct {
+	Profile *model.TLSFingerprintProfile `json:"profile"`
+	Notes   []string                     `json:"notes"`
 }
 
 // List 获取所有模板
@@ -122,6 +145,51 @@ func (h *TLSFingerprintProfileHandler) Create(c *gin.Context) {
 	}
 
 	response.Success(c, created)
+}
+
+// POST /api/v1/admin/tls-fingerprint-profiles/generate
+func (h *TLSFingerprintProfileHandler) Generate(c *gin.Context) {
+	var req GenerateTLSFingerprintProfileRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.BadRequest(c, "Invalid request: "+err.Error())
+		return
+	}
+
+	generated := tlsfingerprint.GenerateProfileTemplate(tlsfingerprint.GenerateOptions{
+		Name:            req.Name,
+		Runtime:         req.Runtime,
+		RuntimeVersion:  req.RuntimeVersion,
+		NodeMajor:       req.NodeMajor,
+		OpenSSLVersion:  req.OpenSSLVersion,
+		Transport:       req.Transport,
+		HTTPClient:      req.HTTPClient,
+		WebSocketClient: req.WebSocketClient,
+		ProxyMode:       req.ProxyMode,
+		MTLSEnabled:     req.MTLSEnabled,
+		CustomCAEnabled: req.CustomCAEnabled,
+		ALPNProtocols:   req.ALPNProtocols,
+		EnableGREASE:    req.EnableGREASE,
+	})
+
+	profile := &model.TLSFingerprintProfile{
+		Name:                generated.Profile.Name,
+		Description:         req.Description,
+		EnableGREASE:        generated.Profile.EnableGREASE,
+		CipherSuites:        generated.Profile.CipherSuites,
+		Curves:              generated.Profile.Curves,
+		PointFormats:        generated.Profile.PointFormats,
+		SignatureAlgorithms: generated.Profile.SignatureAlgorithms,
+		ALPNProtocols:       generated.Profile.ALPNProtocols,
+		SupportedVersions:   generated.Profile.SupportedVersions,
+		KeyShareGroups:      generated.Profile.KeyShareGroups,
+		PSKModes:            generated.Profile.PSKModes,
+		Extensions:          generated.Profile.Extensions,
+	}
+
+	response.Success(c, GenerateTLSFingerprintProfileResponse{
+		Profile: profile,
+		Notes:   generated.Notes,
+	})
 }
 
 // Update 更新模板（支持部分更新）

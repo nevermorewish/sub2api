@@ -11,10 +11,16 @@
         <p class="text-sm text-gray-500 dark:text-gray-400">
           {{ t('admin.tlsFingerprintProfiles.description') }}
         </p>
-        <button @click="showCreateModal = true" class="btn btn-primary btn-sm">
-          <Icon name="plus" size="sm" class="mr-1" />
-          {{ t('admin.tlsFingerprintProfiles.createProfile') }}
-        </button>
+        <div class="flex items-center gap-2">
+          <button @click="openGenerateModal" class="btn btn-secondary btn-sm">
+            <Icon name="sparkles" size="sm" class="mr-1" />
+            {{ t('admin.tlsFingerprintProfiles.createFromParams') }}
+          </button>
+          <button @click="openCreateModal" class="btn btn-primary btn-sm">
+            <Icon name="plus" size="sm" class="mr-1" />
+            {{ t('admin.tlsFingerprintProfiles.createProfile') }}
+          </button>
+        </div>
       </div>
 
       <!-- Profiles Table -->
@@ -149,8 +155,6 @@
             </p>
           </div>
         </div>
-
-        <hr class="border-gray-200 dark:border-dark-600" />
 
         <!-- Basic Info -->
         <div class="grid grid-cols-2 gap-4">
@@ -312,6 +316,129 @@
       </template>
     </BaseDialog>
 
+    <!-- Generate from Parameters Modal -->
+    <BaseDialog
+      :show="showGenerateModal"
+      :title="t('admin.tlsFingerprintProfiles.createFromParams')"
+      width="wide"
+      :z-index="60"
+      @close="closeGenerateModal"
+    >
+      <form @submit.prevent="handleGenerateSubmit" class="space-y-4">
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          {{ t('admin.tlsFingerprintProfiles.form.generateFromParamsHint') }}
+        </p>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="input-label">{{ t('admin.tlsFingerprintProfiles.form.name') }}</label>
+            <input
+              v-model="generatorForm.name"
+              type="text"
+              required
+              class="input"
+              :placeholder="t('admin.tlsFingerprintProfiles.form.namePlaceholder')"
+            />
+          </div>
+          <div>
+            <label class="input-label">{{ t('admin.tlsFingerprintProfiles.form.description') }}</label>
+            <input
+              v-model="generatorForm.description"
+              type="text"
+              class="input"
+              :placeholder="t('admin.tlsFingerprintProfiles.form.descriptionPlaceholder')"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div>
+            <label class="input-label text-xs">{{ t('admin.tlsFingerprintProfiles.form.runtime') }}</label>
+            <select v-model="generatorForm.runtime" class="input text-sm">
+              <option value="node">Node.js</option>
+              <option value="bun">Bun</option>
+            </select>
+          </div>
+          <div>
+            <label class="input-label text-xs">{{ t('admin.tlsFingerprintProfiles.form.runtimeVersion') }}</label>
+            <input v-model="generatorForm.runtime_version" type="text" class="input text-sm" placeholder="v24.3.0" />
+          </div>
+          <div>
+            <label class="input-label text-xs">{{ t('admin.tlsFingerprintProfiles.form.nodeMajor') }}</label>
+            <input v-model.number="generatorForm.node_major" type="number" min="0" class="input text-sm" placeholder="24" />
+          </div>
+          <div>
+            <label class="input-label text-xs">{{ t('admin.tlsFingerprintProfiles.form.openSSLVersion') }}</label>
+            <input v-model="generatorForm.openssl_version" type="text" class="input text-sm" placeholder="3.x" />
+          </div>
+          <div>
+            <label class="input-label text-xs">{{ t('admin.tlsFingerprintProfiles.form.transport') }}</label>
+            <select v-model="generatorForm.transport" class="input text-sm">
+              <option value="fetch">fetch</option>
+              <option value="websocket">WebSocket</option>
+              <option value="h2">HTTP/2</option>
+            </select>
+          </div>
+          <div>
+            <label class="input-label text-xs">{{ t('admin.tlsFingerprintProfiles.form.httpClient') }}</label>
+            <input v-model="generatorForm.http_client" type="text" class="input text-sm" placeholder="undici/fetch" />
+          </div>
+          <div>
+            <label class="input-label text-xs">{{ t('admin.tlsFingerprintProfiles.form.webSocketClient') }}</label>
+            <input v-model="generatorForm.websocket_client" type="text" class="input text-sm" placeholder="ws" />
+          </div>
+          <div>
+            <label class="input-label text-xs">{{ t('admin.tlsFingerprintProfiles.form.proxyMode') }}</label>
+            <select v-model="generatorForm.proxy_mode" class="input text-sm">
+              <option value="none">none</option>
+              <option value="http_connect">HTTP CONNECT</option>
+              <option value="socks5">SOCKS5</option>
+            </select>
+          </div>
+          <div>
+            <label class="input-label text-xs">{{ t('admin.tlsFingerprintProfiles.form.greaseMode') }}</label>
+            <select v-model="generatorForm.enable_grease" class="input text-sm">
+              <option value="auto">{{ t('admin.tlsFingerprintProfiles.form.greaseAuto') }}</option>
+              <option value="true">{{ t('common.enabled') }}</option>
+              <option value="false">{{ t('common.disabled') }}</option>
+            </select>
+          </div>
+          <div class="col-span-2">
+            <label class="input-label text-xs">{{ t('admin.tlsFingerprintProfiles.form.alpnOverride') }}</label>
+            <input v-model="generatorForm.alpn_protocols" type="text" class="input text-sm" placeholder="h2, http/1.1" />
+          </div>
+          <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input v-model="generatorForm.mtls_enabled" type="checkbox" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+            {{ t('admin.tlsFingerprintProfiles.form.mtlsEnabled') }}
+          </label>
+          <label class="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input v-model="generatorForm.custom_ca_enabled" type="checkbox" class="rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+            {{ t('admin.tlsFingerprintProfiles.form.customCAEnabled') }}
+          </label>
+        </div>
+
+        <div v-if="generatedNotes.length" class="rounded bg-amber-50 p-2 text-xs text-amber-800 dark:bg-amber-900/20 dark:text-amber-300">
+          <div class="font-medium">{{ t('admin.tlsFingerprintProfiles.form.generationNotes') }}</div>
+          <ul class="mt-1 list-disc space-y-1 pl-4">
+            <li v-for="note in generatedNotes" :key="note">{{ note }}</li>
+          </ul>
+        </div>
+      </form>
+
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <button @click="closeGenerateModal" type="button" class="btn btn-secondary">
+            {{ t('common.cancel') }}
+          </button>
+          <button @click="handleGenerateSubmit" :disabled="generating" class="btn btn-primary">
+            <Icon v-if="generating" name="refresh" size="sm" class="mr-1 animate-spin" />
+            <Icon v-else name="sparkles" size="sm" class="mr-1" />
+            {{ t('admin.tlsFingerprintProfiles.form.generateAndCreate') }}
+          </button>
+        </div>
+      </template>
+    </BaseDialog>
+
     <!-- Delete Confirmation -->
     <ConfirmDialog
       :show="showDeleteDialog"
@@ -355,10 +482,13 @@ const loading = ref(false)
 const submitting = ref(false)
 const showCreateModal = ref(false)
 const showEditModal = ref(false)
+const showGenerateModal = ref(false)
 const showDeleteDialog = ref(false)
 const editingProfile = ref<TLSFingerprintProfile | null>(null)
 const deletingProfile = ref<TLSFingerprintProfile | null>(null)
 const yamlInput = ref('')
+const generating = ref(false)
+const generatedNotes = ref<string[]>([])
 
 // Raw string inputs for array fields
 const fieldInputs = reactive({
@@ -377,6 +507,23 @@ const form = reactive({
   name: '',
   description: null as string | null,
   enable_grease: false
+})
+
+const generatorForm = reactive({
+  name: '',
+  description: '',
+  runtime: 'node',
+  runtime_version: '',
+  node_major: 24,
+  openssl_version: '',
+  transport: 'fetch',
+  http_client: 'undici/fetch',
+  websocket_client: 'ws',
+  proxy_mode: 'none',
+  mtls_enabled: false,
+  custom_ca_enabled: false,
+  alpn_protocols: '',
+  enable_grease: 'auto'
 })
 
 // Load profiles when dialog opens
@@ -412,6 +559,24 @@ const resetForm = () => {
   fieldInputs.psk_modes = ''
   fieldInputs.extensions = ''
   yamlInput.value = ''
+}
+
+const resetGeneratorForm = () => {
+  generatedNotes.value = []
+  generatorForm.name = ''
+  generatorForm.description = ''
+  generatorForm.runtime = 'node'
+  generatorForm.runtime_version = ''
+  generatorForm.node_major = 24
+  generatorForm.openssl_version = ''
+  generatorForm.transport = 'fetch'
+  generatorForm.http_client = 'undici/fetch'
+  generatorForm.websocket_client = 'ws'
+  generatorForm.proxy_mode = 'none'
+  generatorForm.mtls_enabled = false
+  generatorForm.custom_ca_enabled = false
+  generatorForm.alpn_protocols = ''
+  generatorForm.enable_grease = 'auto'
 }
 
 /**
@@ -516,6 +681,21 @@ const closeFormModal = () => {
   resetForm()
 }
 
+const openCreateModal = () => {
+  resetForm()
+  showCreateModal.value = true
+}
+
+const openGenerateModal = () => {
+  resetGeneratorForm()
+  showGenerateModal.value = true
+}
+
+const closeGenerateModal = () => {
+  showGenerateModal.value = false
+  resetGeneratorForm()
+}
+
 // Parse a comma-separated string of numbers supporting both hex (0x...) and decimal
 const parseNumericArray = (input: string): number[] => {
   if (!input.trim()) return []
@@ -536,17 +716,22 @@ const parseStringArray = (input: string): string[] => {
     .filter(s => s.length > 0)
 }
 
-// Format a number as hex with 0x prefix and 4-digit padding
-const formatHex = (n: number): string => '0x' + n.toString(16).padStart(4, '0')
+const buildProfilePayload = (profile: TLSFingerprintProfile) => ({
+  name: profile.name,
+  description: profile.description ?? null,
+  enable_grease: profile.enable_grease,
+  cipher_suites: profile.cipher_suites ?? [],
+  curves: profile.curves ?? [],
+  point_formats: profile.point_formats ?? [],
+  signature_algorithms: profile.signature_algorithms ?? [],
+  alpn_protocols: profile.alpn_protocols ?? [],
+  supported_versions: profile.supported_versions ?? [],
+  key_share_groups: profile.key_share_groups ?? [],
+  psk_modes: profile.psk_modes ?? [],
+  extensions: profile.extensions ?? []
+})
 
-// Format numeric arrays for display in textarea (null-safe)
-const formatNumericArray = (arr: number[] | null | undefined): string => (arr ?? []).map(formatHex).join(', ')
-
-// For point_formats and psk_modes (uint8), show as plain numbers (null-safe)
-const formatPlainNumericArray = (arr: number[] | null | undefined): string => (arr ?? []).join(', ')
-
-const handleEdit = (profile: TLSFingerprintProfile) => {
-  editingProfile.value = profile
+const applyProfileToForm = (profile: TLSFingerprintProfile) => {
   form.name = profile.name
   form.description = profile.description
   form.enable_grease = profile.enable_grease
@@ -559,6 +744,66 @@ const handleEdit = (profile: TLSFingerprintProfile) => {
   fieldInputs.key_share_groups = formatPlainNumericArray(profile.key_share_groups)
   fieldInputs.psk_modes = formatPlainNumericArray(profile.psk_modes)
   fieldInputs.extensions = formatNumericArray(profile.extensions)
+}
+
+const buildGenerateRequest = () => {
+  const enableGREASE =
+    generatorForm.enable_grease === 'auto' ? undefined : generatorForm.enable_grease === 'true'
+
+  return {
+    name: generatorForm.name.trim() || undefined,
+    description: generatorForm.description.trim() || null,
+    runtime: generatorForm.runtime,
+    runtime_version: generatorForm.runtime_version.trim() || undefined,
+    node_major: generatorForm.node_major || undefined,
+    openssl_version: generatorForm.openssl_version.trim() || undefined,
+    transport: generatorForm.transport,
+    http_client: generatorForm.http_client.trim() || undefined,
+    websocket_client: generatorForm.websocket_client.trim() || undefined,
+    proxy_mode: generatorForm.proxy_mode,
+    mtls_enabled: generatorForm.mtls_enabled,
+    custom_ca_enabled: generatorForm.custom_ca_enabled,
+    alpn_protocols: parseStringArray(generatorForm.alpn_protocols),
+    enable_grease: enableGREASE
+  }
+}
+
+const handleGenerateSubmit = async () => {
+  if (!generatorForm.name.trim()) {
+    appStore.showError(t('admin.tlsFingerprintProfiles.form.name') + ' ' + t('common.required'))
+    return
+  }
+
+  generating.value = true
+  try {
+    const result = await adminAPI.tlsFingerprintProfiles.generate(buildGenerateRequest())
+    generatedNotes.value = result.notes ?? []
+
+    await adminAPI.tlsFingerprintProfiles.create(buildProfilePayload(result.profile))
+    appStore.showSuccess(t('admin.tlsFingerprintProfiles.generateCreateSuccess'))
+    closeGenerateModal()
+    loadProfiles()
+  } catch (error: any) {
+    appStore.showError(error.response?.data?.detail || t('admin.tlsFingerprintProfiles.form.generateCreateFailed'))
+    console.error('Error generating TLS fingerprint profile:', error)
+  } finally {
+    generating.value = false
+  }
+}
+
+// Format a number as hex with 0x prefix and 4-digit padding
+const formatHex = (n: number): string => '0x' + n.toString(16).padStart(4, '0')
+
+// Format numeric arrays for display in textarea (null-safe)
+const formatNumericArray = (arr: number[] | null | undefined): string => (arr ?? []).map(formatHex).join(', ')
+
+// For point_formats and psk_modes (uint8), show as plain numbers (null-safe)
+const formatPlainNumericArray = (arr: number[] | null | undefined): string => (arr ?? []).join(', ')
+
+const handleEdit = (profile: TLSFingerprintProfile) => {
+  editingProfile.value = profile
+  generatedNotes.value = []
+  applyProfileToForm(profile)
   showEditModal.value = true
 }
 

@@ -40,8 +40,8 @@ func skipIfExternalServiceUnavailable(t *testing.T, err error) {
 
 // TestJA3Fingerprint verifies the JA3/JA4 fingerprint matches expected value.
 // This test uses tls.peet.ws to verify the fingerprint.
-// Expected JA3 hash: 44f88fca027f27bab4bb08d4af15f23e (Node.js 24.x)
-// Expected JA4: t13d1714h1_5b57614c22b0_7baf387fc6ff
+// Expected JA3 hash: d871d02cecbde59abbf8f4806134addf (Claude Code Node.js 24.x)
+// Expected JA4: t13d1714h1_5b57614c22b0_43ade6aba3df
 func TestJA3Fingerprint(t *testing.T) {
 	if testing.Short() {
 		t.Skip("skipping integration test in short mode")
@@ -88,7 +88,7 @@ func TestJA3Fingerprint(t *testing.T) {
 	t.Logf("JA3 Hash: %s", fpResp.TLS.JA3Hash)
 	t.Logf("JA4: %s", fpResp.TLS.JA4)
 
-	expectedJA3Hash := "44f88fca027f27bab4bb08d4af15f23e"
+	expectedJA3Hash := "d871d02cecbde59abbf8f4806134addf"
 	if fpResp.TLS.JA3Hash == expectedJA3Hash {
 		t.Logf("✓ JA3 hash matches: %s", expectedJA3Hash)
 	} else {

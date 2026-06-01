@@ -62,6 +62,34 @@ export interface UpdateProfileRequest {
   extensions?: number[]
 }
 
+/**
+ * Parameterized TLS fingerprint template generation request
+ */
+export interface GenerateProfileRequest {
+  name?: string
+  description?: string | null
+  runtime?: string
+  runtime_version?: string
+  node_major?: number
+  openssl_version?: string
+  transport?: string
+  http_client?: string
+  websocket_client?: string
+  proxy_mode?: string
+  mtls_enabled?: boolean
+  custom_ca_enabled?: boolean
+  alpn_protocols?: string[]
+  enable_grease?: boolean
+}
+
+/**
+ * Generated profile response. The profile is not saved until create/update.
+ */
+export interface GenerateProfileResponse {
+  profile: TLSFingerprintProfile
+  notes: string[]
+}
+
 export async function list(): Promise<TLSFingerprintProfile[]> {
   const { data } = await apiClient.get<TLSFingerprintProfile[]>('/admin/tls-fingerprint-profiles')
   return data
@@ -82,6 +110,11 @@ export async function update(id: number, updates: UpdateProfileRequest): Promise
   return data
 }
 
+export async function generate(request: GenerateProfileRequest): Promise<GenerateProfileResponse> {
+  const { data } = await apiClient.post<GenerateProfileResponse>('/admin/tls-fingerprint-profiles/generate', request)
+  return data
+}
+
 export async function deleteProfile(id: number): Promise<{ message: string }> {
   const { data } = await apiClient.delete<{ message: string }>(`/admin/tls-fingerprint-profiles/${id}`)
   return data
@@ -92,6 +125,7 @@ export const tlsFingerprintProfileAPI = {
   getById,
   create,
   update,
+  generate,
   delete: deleteProfile
 }
 

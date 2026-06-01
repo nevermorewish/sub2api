@@ -53,10 +53,11 @@ type SOCKS5ProxyDialer struct {
 	proxyURL *url.URL
 }
 
-// Default TLS fingerprint values captured from Claude Code (Node.js 24.x)
-// Captured via tls-fingerprint-web capture server
-// JA3 Hash: 44f88fca027f27bab4bb08d4af15f23e
-// JA4:      t13d1714h1_5b57614c22b0_7baf387fc6ff
+// Default TLS fingerprint values captured from Claude Code (Node.js 24.x).
+// Captured via tls-fingerprint-web capture server from Claude Code on
+// Windows x64 / Node.js v24.3.0.
+// JA3 Hash: d871d02cecbde59abbf8f4806134addf
+// JA4:      t13d1714h1_5b57614c22b0_43ade6aba3df
 var (
 	// defaultCipherSuites contains the 17 cipher suites from Node.js 24.x
 	// Order is critical for JA3 fingerprint matching
@@ -308,11 +309,10 @@ func toUTLSCurves(curves []uint16) []utls.CurveID {
 	return result
 }
 
-// defaultExtensionOrder is the Node.js 24.x extension order.
+// defaultExtensionOrder is the captured Claude Code Node.js 24.x extension order.
 // Used when Profile.Extensions is empty.
 var defaultExtensionOrder = []uint16{
 	0,     // server_name
-	65037, // encrypted_client_hello
 	23,    // extended_master_secret
 	65281, // renegotiation_info
 	10,    // supported_groups
@@ -325,6 +325,7 @@ var defaultExtensionOrder = []uint16{
 	51,    // key_share
 	45,    // psk_key_exchange_modes
 	43,    // supported_versions
+	21,    // padding
 }
 
 // isGREASEValue checks if a uint16 value matches the TLS GREASE pattern (0x?a?a).
@@ -417,6 +418,8 @@ func buildClientHelloSpecFromProfile(profile *Profile) *utls.ClientHelloSpec {
 			extensions = append(extensions, &utls.ALPNExtension{AlpnProtocols: alpnProtocols})
 		case 18: // signed_certificate_timestamp
 			extensions = append(extensions, &utls.SCTExtension{})
+		case 21: // padding
+			extensions = append(extensions, &utls.UtlsPaddingExtension{GetPaddingLen: utls.BoringPaddingStyle})
 		case 23: // extended_master_secret
 			extensions = append(extensions, &utls.ExtendedMasterSecretExtension{})
 		case 35: // session_ticket
