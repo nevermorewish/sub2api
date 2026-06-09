@@ -1,26 +1,26 @@
 services:
-  sub2api:
+  sub2api-deepseek:
     image: crpi-dzjyl2rfnlfugj1m.cn-shanghai.personal.cr.aliyuncs.com/frogclaw/sub2api:deepseek
-    container_name: sub2api
+    container_name: sub2api-deepseek
     restart: unless-stopped
     ulimits:
       nofile:
         soft: 100000
         hard: 100000
     ports:
-      - "0.0.0.0:8080:8080"
+      - "0.0.0.0:8070:8070"
     volumes:
       - ./data:/app/data
     environment:
       AUTO_SETUP: "true"
 
       SERVER_HOST: 0.0.0.0
-      SERVER_PORT: "8080"
+      SERVER_PORT: "8070"
       SERVER_MODE: release
       RUN_MODE: standard
       TZ: Asia/Shanghai
 
-      DATABASE_HOST: postgres
+      DATABASE_HOST: postgres-deepseek
       DATABASE_PORT: "5432"
       DATABASE_USER: sub2api
       DATABASE_PASSWORD: 326c6f470cd9bdba1e593eaef158cb4d797118a6ee2f08dcbd671e8afe300b24
@@ -31,7 +31,7 @@ services:
       DATABASE_CONN_MAX_LIFETIME_MINUTES: "30"
       DATABASE_CONN_MAX_IDLE_TIME_MINUTES: "5"
 
-      REDIS_HOST: redis
+      REDIS_HOST: redis-deepseek
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ""
       REDIS_DB: "0"
@@ -68,22 +68,22 @@ services:
       GATEWAY_IMAGE_CONCURRENCY_WAIT_TIMEOUT_SECONDS: "30"
       GATEWAY_IMAGE_CONCURRENCY_MAX_WAITING_REQUESTS: "100"
     depends_on:
-      postgres:
+      postgres-deepseek:
         condition: service_healthy
-      redis:
+      redis-deepseek:
         condition: service_healthy
     networks:
-      - sub2api-network
+      - sub2api-network-deepseek
     healthcheck:
-      test: ["CMD", "wget", "-q", "-T", "5", "-O", "/dev/null", "http://localhost:8080/health"]
+      test: ["CMD", "wget", "-q", "-T", "5", "-O", "/dev/null", "http://localhost:8070/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 30s
 
-  postgres:
+  postgres-deepseek:
     image: postgres:18-alpine
-    container_name: sub2api-postgres
+    container_name: sub2api-postgres-deepseek
     restart: unless-stopped
     ulimits:
       nofile:
@@ -98,7 +98,7 @@ services:
       PGDATA: /var/lib/postgresql/data
       TZ: Asia/Shanghai
     networks:
-      - sub2api-network
+      - sub2api-network-deepseek
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U sub2api -d sub2api"]
       interval: 10s
@@ -106,9 +106,9 @@ services:
       retries: 5
       start_period: 10s
 
-  redis:
+  redis-deepseek:
     image: redis:8-alpine
-    container_name: sub2api-redis
+    container_name: sub2api-redis-deepseek
     restart: unless-stopped
     ulimits:
       nofile:
@@ -124,7 +124,7 @@ services:
     environment:
       TZ: Asia/Shanghai
     networks:
-      - sub2api-network
+      - sub2api-network-deepseek
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -133,5 +133,5 @@ services:
       start_period: 5s
 
 networks:
-  sub2api-network:
+  sub2api-network-deepseek:
     driver: bridge
