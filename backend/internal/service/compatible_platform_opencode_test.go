@@ -3,6 +3,8 @@
 package service
 
 import (
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/tidwall/gjson"
@@ -29,6 +31,35 @@ func TestOpenCodeCompatibleProviderPreset_Routes(t *testing.T) {
 	}
 	if got := preset.BuildMessagesURL(baseURL, "QWEN3.7-MAX"); got != wantMessages {
 		t.Fatalf("BuildMessagesURL(qwen) = %q, want %q", got, wantMessages)
+	}
+}
+
+func TestOpenCodeCompatibleProviderPreset_PatchMessagesHeaders(t *testing.T) {
+	preset := opencodeCompatibleProviderPreset()
+	if preset.PatchMessagesHeaders == nil {
+		t.Fatal("PatchMessagesHeaders is nil, want a rewrite to x-api-key")
+	}
+
+	account := &Account{
+		Platform: PlatformOpenCode,
+		Type:     AccountTypeAPIKey,
+		Credentials: map[string]any{
+			"api_key": "sk-opencode-key",
+		},
+	}
+	req := httptest.NewRequest(http.MethodPost, "https://opencode.ai/zen/go/v1/messages", nil)
+	req.Header.Set("Authorization", "Bearer sk-opencode-key")
+
+	preset.PatchMessagesHeaders(req, account, "qwen3.7-max")
+
+	if got := req.Header.Get("Authorization"); got != "" {
+		t.Fatalf("Authorization header = %q, want empty (should be removed)", got)
+	}
+	if got := req.Header.Get("x-api-key"); got != "sk-opencode-key" {
+		t.Fatalf("x-api-key = %q, want %q", got, "sk-opencode-key")
+	}
+	if got := req.Header.Get("anthropic-version"); got != "2023-06-01" {
+		t.Fatalf("anthropic-version = %q, want %q", got, "2023-06-01")
 	}
 }
 

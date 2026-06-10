@@ -1289,11 +1289,16 @@ func (s *AccountTestService) testCompatibleAccountConnection(c *gin.Context, acc
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Authorization", "Bearer "+token)
 		req.ContentLength = int64(len(payloadBytes))
-		if preset.SupportsResponses {
+		switch {
+		case useNativeMessages:
+			if preset.PatchMessagesHeaders != nil {
+				preset.PatchMessagesHeaders(req, account, testModelID)
+			}
+		case preset.SupportsResponses:
 			if preset.PatchResponsesHeaders != nil {
 				preset.PatchResponsesHeaders(req, account, testModelID)
 			}
-		} else {
+		default:
 			if preset.PatchChatHeaders != nil {
 				preset.PatchChatHeaders(req, account, testModelID)
 			}

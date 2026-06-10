@@ -1,6 +1,7 @@
 package service
 
 import (
+	"net/http"
 	"strings"
 
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
@@ -38,6 +39,10 @@ func opencodeCompatibleProviderPreset() CompatibleProviderPreset {
 		// On OpenCode the minimax-*/qwen* models are messages-only: the
 		// chat/completions (oa-compat) format rejects them outright.
 		RequiresNativeMessages: isOpencodeNativeMessagesModel,
+		// The native /v1/messages endpoint authenticates via the Anthropic-style
+		// x-api-key header, not Authorization: Bearer. Without this the upstream
+		// rejects the request with "Missing API key."
+		PatchMessagesHeaders: opencodePatchMessagesHeaders,
 		BuildChatURL: func(baseURL, _ string) string {
 			return strings.TrimRight(baseURL, "/") + "/v1/chat/completions"
 		},
@@ -58,4 +63,28 @@ func opencodeCompatibleProviderPreset() CompatibleProviderPreset {
 func isOpencodeNativeMessagesModel(model string) bool {
 	m := strings.ToLower(strings.TrimSpace(model))
 	return strings.HasPrefix(m, "minimax-") || strings.HasPrefix(m, "qwen")
+}
+
+// opencodePatchMessagesHeaders rewrites the auth for the native /v1/messages
+// endpoint: OpenCode expects the Anthropic-style x-api-key header (plus
+// anthropic-version) rather than Authorization: Bearer. The shared compatible
+// gateway sets Bearer auth before invoking this patch, so we move the token
+// over to x-api-key and drop the Authorization header.
+func opencodePatchMessagesHeaders(req *http.Request, account *Account, _ string) {
+	if req == nil || account == nil {
+		return
+	}
+	token := getCompatibleAuthToken(account, CompatibleAuthBearer)
+	if token == "" {
+		if auth := strings.TrimSpace(req.Header.Get("Authorization")); strings.HasPrefix(auth, "Bearer ") {
+			token = strings.TrimSpace(strings.TrimPrefix(auth, "Bearer "))
+		}
+	}
+	req.Header.Del("Authorization")
+	if token != "" {
+		req.Header.Set("x-api-key", token)
+	}
+	if strings.TrimSpace(req.Header.Get("anthropic-version")) == "" {
+		req.Header.Set("anthropic-version", "2023-06-01")
+	}
 }
