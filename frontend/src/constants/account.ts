@@ -29,6 +29,7 @@ export const OPENCODE_GO_CHAT_MODELS = [
   'mimo-v2.5-pro'
 ] as const
 export const OPENCODE_GO_MESSAGES_MODELS = [
+  'minimax-m3',
   'minimax-m2.7',
   'minimax-m2.5',
   'qwen3.7-max',

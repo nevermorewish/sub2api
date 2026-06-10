@@ -6,7 +6,7 @@ import (
 	"github.com/Wei-Shaw/sub2api/internal/pkg/claude"
 )
 
-// OpenCode aggregator (https://opencode.ai/zen/go) exposes 13 models behind two upstream endpoints:
+// OpenCode aggregator (https://opencode.ai/zen/go) exposes 14 models behind two upstream endpoints:
 //   - /v1/messages         : minimax-* and qwen* models (Anthropic-style native)
 //   - /v1/chat/completions : everything else (OpenAI-compatible)
 func opencodeCompatibleProviderPreset() CompatibleProviderPreset {
@@ -23,6 +23,7 @@ func opencodeCompatibleProviderPreset() CompatibleProviderPreset {
 			{ID: "deepseek-v4-flash", Type: "model", DisplayName: "DeepSeek V4 Flash"},
 			{ID: "mimo-v2.5", Type: "model", DisplayName: "MiMo V2.5"},
 			{ID: "mimo-v2.5-pro", Type: "model", DisplayName: "MiMo V2.5 Pro"},
+			{ID: "minimax-m3", Type: "model", DisplayName: "MiniMax M3"},
 			{ID: "minimax-m2.7", Type: "model", DisplayName: "MiniMax M2.7"},
 			{ID: "minimax-m2.5", Type: "model", DisplayName: "MiniMax M2.5"},
 			{ID: "qwen3.7-max", Type: "model", DisplayName: "Qwen3.7 Max"},

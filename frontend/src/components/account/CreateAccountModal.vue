@@ -3254,7 +3254,7 @@ const platformOptions = computed<PlatformSearchOption[]>(() => [
   {
     value: 'opencode',
     label: 'OpenCode',
-    subtitle: '聚合 13 个模型',
+    subtitle: '聚合 14 个模型',
     searchTerms: ['opencode', 'aggregator', '聚合'],
     activeClass: 'border-teal-200 bg-white shadow-sm dark:border-teal-900/50 dark:bg-dark-600',
     iconActiveClass: 'bg-teal-50 text-teal-600 dark:bg-teal-900/30 dark:text-teal-300',
