@@ -51,6 +51,18 @@ var (
 		Mode:                    "chat",
 		SupportsPromptCaching:   true,
 	}
+	// claude-fable-5 是本部署的私有模型代号，Anthropic 上游定价仓库不会包含它，
+	// 故按业务要求静态兜底：定价为 claude-opus-4-8 的 2 倍。
+	claudeFable5FallbackPricing = &LiteLLMModelPricing{
+		InputCostPerToken:                   1e-05,    // $10 per MTok (2x opus-4-8)
+		OutputCostPerToken:                  5e-05,    // $50 per MTok (2x opus-4-8)
+		CacheCreationInputTokenCost:         1.25e-05, // $12.5 per MTok (2x opus-4-8)
+		CacheCreationInputTokenCostAbove1hr: 2e-05,    // $20 per MTok (2x opus-4-8)
+		CacheReadInputTokenCost:             1e-06,    // $1 per MTok (2x opus-4-8)
+		LiteLLMProvider:                     "anthropic",
+		Mode:                                "chat",
+		SupportsPromptCaching:               true,
+	}
 )
 
 // LiteLLMModelPricing LiteLLM价格数据结构
@@ -660,6 +672,14 @@ func (s *PricingService) extractBaseName(model string) string {
 
 // matchByModelFamily 基于模型系列匹配
 func (s *PricingService) matchByModelFamily(model string) *LiteLLMModelPricing {
+	// claude-fable-5 是本部署的私有模型代号，不含 opus/sonnet/haiku 系列关键字，
+	// 无法被下方 families 归类，故在此显式返回静态兜底定价（2x opus-4-8）。
+	if strings.Contains(model, "fable") {
+		logger.With(zap.String("component", "service.pricing")).
+			Info(fmt.Sprintf("[Pricing] Claude fallback matched %s -> %s", model, "claude-fable-5(static)"))
+		return claudeFable5FallbackPricing
+	}
+
 	// modelFamily 定义一个模型系列的匹配和定价查找规则。
 	type modelFamily struct {
 		name    string   // 系列名称
