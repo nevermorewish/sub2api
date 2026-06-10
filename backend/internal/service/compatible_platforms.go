@@ -33,6 +33,12 @@ type CompatibleProviderPreset struct {
 	SupportsChat          bool
 	SupportsResponses     bool
 	SupportsMessages      func(model string) bool
+	// RequiresNativeMessages reports models that can ONLY be served via the
+	// Anthropic-native /v1/messages endpoint — the oa-compat chat/completions
+	// format rejects them. Unlike SupportsMessages (which is also true for
+	// platforms where chat works fine), this gates probes/tests that must avoid
+	// the chat endpoint entirely. Optional; nil means no model is messages-only.
+	RequiresNativeMessages func(model string) bool
 	BuildChatURL          func(baseURL, upstreamModel string) string
 	BuildResponsesURL     func(baseURL, upstreamModel string) string
 	BuildMessagesURL      func(baseURL, upstreamModel string) string

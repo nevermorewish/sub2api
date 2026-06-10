@@ -1214,27 +1214,46 @@ func (s *AccountTestService) testCompatibleAccountConnection(c *gin.Context, acc
 		return s.sendErrorAndEnd(c, fmt.Sprintf("Invalid base URL: %s", err.Error()))
 	}
 
+	// Some compatible platforms (e.g. OpenCode) expose certain models only via the
+	// Anthropic-native /v1/messages endpoint. Probing those with the oa-compat
+	// chat/completions format makes the upstream reject the model, so route the
+	// test through the native messages endpoint for messages-only models.
+	useNativeMessages := preset.RequiresNativeMessages != nil && preset.RequiresNativeMessages(testModelID)
+
 	var apiURL string
 	var payloadBytes []byte
 	upstreamKind := compatibleUpstreamChat
-	if preset.SupportsResponses {
+	switch {
+	case useNativeMessages:
+		apiURL = preset.BuildMessagesURL(normalizedBaseURL, testModelID)
+		payload := createCompatibleMessagesTestPayload(testModelID)
+		payloadBytes, _ = json.Marshal(payload)
+		upstreamKind = compatibleUpstreamMessages
+	case preset.SupportsResponses:
 		apiURL = preset.BuildResponsesURL(normalizedBaseURL, testModelID)
 		payload := createOpenAITestPayload(testModelID, false)
 		payloadBytes, _ = json.Marshal(payload)
 		upstreamKind = compatibleUpstreamResponses
-	} else {
+	default:
 		apiURL = preset.BuildChatURL(normalizedBaseURL, testModelID)
 		payload := createCompatibleChatTestPayload(testModelID)
 		payloadBytes, _ = json.Marshal(payload)
 	}
 
-	if preset.SupportsResponses {
+	switch {
+	case useNativeMessages:
+		if preset.PatchMessagesBody != nil {
+			if payloadBytes, err = preset.PatchMessagesBody(payloadBytes, account, testModelID); err != nil {
+				return s.sendErrorAndEnd(c, fmt.Sprintf("Failed to patch request body: %s", err.Error()))
+			}
+		}
+	case preset.SupportsResponses:
 		if preset.PatchResponsesBody != nil {
 			if payloadBytes, err = preset.PatchResponsesBody(payloadBytes, account, testModelID); err != nil {
 				return s.sendErrorAndEnd(c, fmt.Sprintf("Failed to patch request body: %s", err.Error()))
 			}
 		}
-	} else {
+	default:
 		if preset.PatchChatBody != nil {
 			if payloadBytes, err = preset.PatchChatBody(payloadBytes, account, testModelID); err != nil {
 				return s.sendErrorAndEnd(c, fmt.Sprintf("Failed to patch request body: %s", err.Error()))
@@ -1301,10 +1320,33 @@ func (s *AccountTestService) testCompatibleAccountConnection(c *gin.Context, acc
 		return s.sendErrorAndEnd(c, "No upstream response")
 	}
 	defer func() { _ = resp.Body.Close() }()
-	if preset.SupportsResponses {
+	switch {
+	case useNativeMessages:
+		return s.processClaudeStream(c, resp.Body)
+	case preset.SupportsResponses:
 		return s.processOpenAIStream(c, resp.Body)
+	default:
+		return s.processChatCompletionsStream(c, resp.Body)
 	}
-	return s.processChatCompletionsStream(c, resp.Body)
+}
+
+func createCompatibleMessagesTestPayload(modelID string) map[string]any {
+	return map[string]any{
+		"model":  modelID,
+		"stream": true,
+		"messages": []map[string]any{
+			{
+				"role": "user",
+				"content": []map[string]any{
+					{
+						"type": "text",
+						"text": "hi",
+					},
+				},
+			},
+		},
+		"max_tokens": 256,
+	}
 }
 
 func createCompatibleChatTestPayload(modelID string) map[string]any {

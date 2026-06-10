@@ -47,3 +47,71 @@ func TestAccountTestService_CompatibleAccountFallsBackToRelayChatEndpoint(t *tes
 	require.Equal(t, "https://relay.example.com/v1/chat/completions", upstream.requests[1].URL.String())
 	require.Contains(t, recorder.Body.String(), "test_complete")
 }
+
+func TestAccountTestService_OpenCodeNativeMessagesModelUsesMessagesEndpoint(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctx, recorder := newTestContext()
+
+	upstream := &queuedHTTPUpstream{
+		responses: []*http.Response{
+			newJSONResponse(http.StatusOK, "data: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"hi\"}}\n\ndata: {\"type\":\"message_stop\"}\n\n"),
+		},
+	}
+	svc := &AccountTestService{
+		httpUpstream: upstream,
+		cfg: &config.Config{
+			Security: config.SecurityConfig{
+				URLAllowlist: config.URLAllowlistConfig{},
+			},
+		},
+	}
+	account := &Account{
+		ID:          11,
+		Platform:    PlatformOpenCode,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"api_key": "test-key",
+		},
+	}
+
+	err := svc.testCompatibleAccountConnection(ctx, account, "qwen3.7-max")
+	require.NoError(t, err)
+	require.Len(t, upstream.requests, 1)
+	require.Equal(t, "https://opencode.ai/zen/go/v1/messages", upstream.requests[0].URL.String())
+	require.Contains(t, recorder.Body.String(), "test_complete")
+}
+
+func TestAccountTestService_OpenCodeChatModelUsesChatEndpoint(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	ctx, recorder := newTestContext()
+
+	upstream := &queuedHTTPUpstream{
+		responses: []*http.Response{
+			newJSONResponse(http.StatusOK, "data: {\"id\":\"chatcmpl-1\",\"object\":\"chat.completion.chunk\",\"model\":\"glm-5\",\"choices\":[{\"index\":0,\"delta\":{\"content\":\"hi\"},\"finish_reason\":null}]}\n\ndata: [DONE]\n\n"),
+		},
+	}
+	svc := &AccountTestService{
+		httpUpstream: upstream,
+		cfg: &config.Config{
+			Security: config.SecurityConfig{
+				URLAllowlist: config.URLAllowlistConfig{},
+			},
+		},
+	}
+	account := &Account{
+		ID:          12,
+		Platform:    PlatformOpenCode,
+		Type:        AccountTypeAPIKey,
+		Concurrency: 1,
+		Credentials: map[string]any{
+			"api_key": "test-key",
+		},
+	}
+
+	err := svc.testCompatibleAccountConnection(ctx, account, "glm-5")
+	require.NoError(t, err)
+	require.Len(t, upstream.requests, 1)
+	require.Equal(t, "https://opencode.ai/zen/go/v1/chat/completions", upstream.requests[0].URL.String())
+	require.Contains(t, recorder.Body.String(), "test_complete")
+}

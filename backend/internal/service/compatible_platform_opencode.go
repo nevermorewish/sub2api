@@ -35,6 +35,9 @@ func opencodeCompatibleProviderPreset() CompatibleProviderPreset {
 		SupportsChat:      true,
 		SupportsResponses: false,
 		SupportsMessages:  isOpencodeNativeMessagesModel,
+		// On OpenCode the minimax-*/qwen* models are messages-only: the
+		// chat/completions (oa-compat) format rejects them outright.
+		RequiresNativeMessages: isOpencodeNativeMessagesModel,
 		BuildChatURL: func(baseURL, _ string) string {
 			return strings.TrimRight(baseURL, "/") + "/v1/chat/completions"
 		},
