@@ -118,7 +118,7 @@ func convertResponsesInputToAnthropic(inputRaw json.RawMessage) (json.RawMessage
 
 	for _, item := range items {
 		switch {
-		case item.Role == "system":
+		case isResponsesSystemInstructionRole(item.Role):
 			// System prompt → Anthropic system field
 			text := extractTextFromContent(item.Content)
 			if text != "" {
@@ -196,6 +196,11 @@ func convertResponsesInputToAnthropic(inputRaw json.RawMessage) (json.RawMessage
 	messages = mergeConsecutiveMessages(messages)
 
 	return system, messages, nil
+}
+
+func isResponsesSystemInstructionRole(role string) bool {
+	role = strings.TrimSpace(role)
+	return strings.EqualFold(role, "system") || strings.EqualFold(role, "developer")
 }
 
 // extractTextFromContent extracts text from a content field that may be a
