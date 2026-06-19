@@ -464,6 +464,8 @@ func TestAccountSupportsOpenAIImageCapability_OAuthSupportsNative(t *testing.T) 
 
 	require.True(t, account.SupportsOpenAIImageCapability(OpenAIImagesCapabilityBasic))
 	require.True(t, account.SupportsOpenAIImageCapability(OpenAIImagesCapabilityNative))
+	require.True(t, account.SupportsOpenAIImageCapability(OpenAIImagesCapabilityCodex))
+	require.False(t, (&Account{Platform: PlatformOpenAI, Type: AccountTypeAPIKey}).SupportsOpenAIImageCapability(OpenAIImagesCapabilityCodex))
 }
 
 func TestAccountSupportsOpenAIEndpointCapability(t *testing.T) {

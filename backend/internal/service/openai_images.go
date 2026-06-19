@@ -47,6 +47,7 @@ type OpenAIImagesCapability string
 const (
 	OpenAIImagesCapabilityBasic  OpenAIImagesCapability = "images-basic"
 	OpenAIImagesCapabilityNative OpenAIImagesCapability = "images-native"
+	OpenAIImagesCapabilityCodex  OpenAIImagesCapability = "images-codex"
 )
 
 type OpenAIImagesUpload struct {

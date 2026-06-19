@@ -664,6 +664,11 @@ func normalizeOpenAIResponsesImageGenerationTools(reqBody map[string]any) bool {
 			delete(toolMap, "compression")
 			modified = true
 		}
+		if normalizedSize := normalizeOpenAIResponsesImageToolSize(toolMap); normalizedSize != "" {
+			toolMap["size"] = normalizedSize
+			delete(toolMap, "resolution")
+			modified = true
+		}
 	}
 	return modified
 }
@@ -757,6 +762,15 @@ func validateOpenAIResponsesImageModel(reqBody map[string]any, model string) err
 	return fmt.Errorf("/v1/responses image_generation requests require a Responses-capable text model; image-only model %q is not allowed", model)
 }
 
+func normalizeOpenAIResponsesImageToolSize(toolMap map[string]any) string {
+	if len(toolMap) == 0 {
+		return ""
+	}
+	size := strings.TrimSpace(firstNonEmptyString(toolMap["size"]))
+	resolution := strings.TrimSpace(firstNonEmptyString(toolMap["resolution"]))
+	return normalizeOpenAIImagesAPIBSize(size, resolution)
+}
+
 func normalizeOpenAIResponsesImageOnlyModel(reqBody map[string]any) bool {
 	if len(reqBody) == 0 {
 		return false
@@ -765,6 +779,7 @@ func normalizeOpenAIResponsesImageOnlyModel(reqBody map[string]any) bool {
 	if !isOpenAIImageGenerationModel(imageModel) {
 		return false
 	}
+	toolModel := imageModel
 
 	modified := false
 	tools, _ := reqBody["tools"].([]any)
@@ -782,7 +797,7 @@ func normalizeOpenAIResponsesImageOnlyModel(reqBody map[string]any) bool {
 	if imageToolIndex < 0 {
 		tools = append(tools, map[string]any{
 			"type":  "image_generation",
-			"model": imageModel,
+			"model": toolModel,
 		})
 		imageToolIndex = len(tools) - 1
 		reqBody["tools"] = tools
@@ -791,7 +806,7 @@ func normalizeOpenAIResponsesImageOnlyModel(reqBody map[string]any) bool {
 
 	if toolMap, ok := tools[imageToolIndex].(map[string]any); ok {
 		if strings.TrimSpace(firstNonEmptyString(toolMap["model"])) == "" {
-			toolMap["model"] = imageModel
+			toolMap["model"] = toolModel
 			modified = true
 		}
 		for _, key := range []string{
@@ -811,6 +826,18 @@ func normalizeOpenAIResponsesImageOnlyModel(reqBody map[string]any) bool {
 				delete(reqBody, key)
 				modified = true
 			}
+		}
+		if value, exists := reqBody["resolution"]; exists && value != nil {
+			if _, toolHas := toolMap["resolution"]; !toolHas {
+				toolMap["resolution"] = value
+			}
+			delete(reqBody, "resolution")
+			modified = true
+		}
+		if normalizedSize := normalizeOpenAIResponsesImageToolSize(toolMap); normalizedSize != "" {
+			toolMap["size"] = normalizedSize
+			delete(toolMap, "resolution")
+			modified = true
 		}
 	}
 

@@ -1129,6 +1129,20 @@ func (s *OpenAIGatewayService) SelectAccountWithSchedulerForCapability(
 	return s.selectAccountWithScheduler(ctx, groupID, previousResponseID, sessionHash, requestedModel, excludedIDs, requiredTransport, requiredCapability, "", requireCompact)
 }
 
+func (s *OpenAIGatewayService) SelectAccountWithSchedulerForImageCapability(
+	ctx context.Context,
+	groupID *int64,
+	previousResponseID string,
+	sessionHash string,
+	requestedModel string,
+	excludedIDs map[int64]struct{},
+	requiredTransport OpenAIUpstreamTransport,
+	requiredCapability OpenAIEndpointCapability,
+	requireCompact bool,
+) (*AccountSelectionResult, OpenAIAccountScheduleDecision, error) {
+	return s.selectAccountWithScheduler(ctx, groupID, previousResponseID, sessionHash, requestedModel, excludedIDs, requiredTransport, requiredCapability, OpenAIImagesCapabilityCodex, requireCompact)
+}
+
 func (s *OpenAIGatewayService) SelectAccountWithSchedulerForImages(
 	ctx context.Context,
 	groupID *int64,
@@ -1137,15 +1151,8 @@ func (s *OpenAIGatewayService) SelectAccountWithSchedulerForImages(
 	excludedIDs map[int64]struct{},
 	requiredCapability OpenAIImagesCapability,
 ) (*AccountSelectionResult, OpenAIAccountScheduleDecision, error) {
-	selection, decision, err := s.selectAccountWithScheduler(ctx, groupID, "", sessionHash, requestedModel, excludedIDs, OpenAIUpstreamTransportHTTPSSE, "", requiredCapability, false)
-	if err == nil && selection != nil && selection.Account != nil {
-		return selection, decision, nil
-	}
-	// 如果要求 native 能力（如指定了模型）但没有可用的 APIKey 账号，回退到 basic（OAuth 账号）
-	if requiredCapability == OpenAIImagesCapabilityNative {
-		return s.selectAccountWithScheduler(ctx, groupID, "", sessionHash, requestedModel, excludedIDs, OpenAIUpstreamTransportHTTPSSE, "", OpenAIImagesCapabilityBasic, false)
-	}
-	return selection, decision, err
+	_ = requiredCapability
+	return s.selectAccountWithScheduler(ctx, groupID, "", sessionHash, requestedModel, excludedIDs, OpenAIUpstreamTransportHTTPSSE, "", OpenAIImagesCapabilityCodex, false)
 }
 
 func (s *OpenAIGatewayService) selectAccountWithScheduler(

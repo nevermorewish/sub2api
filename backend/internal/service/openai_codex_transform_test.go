@@ -545,6 +545,29 @@ func TestNormalizeOpenAIResponsesImageGenerationTools_RewritesLegacyFields(t *te
 	require.False(t, hasCompression)
 }
 
+func TestNormalizeOpenAIResponsesImageGenerationTools_Normalizes4KSize(t *testing.T) {
+	reqBody := map[string]any{
+		"tools": []any{
+			map[string]any{
+				"type":       "image_generation",
+				"model":      "gpt-image-2",
+				"size":       "16:9",
+				"resolution": "4k",
+			},
+		},
+	}
+
+	modified := normalizeOpenAIResponsesImageGenerationTools(reqBody)
+	require.True(t, modified)
+
+	tools, ok := reqBody["tools"].([]any)
+	require.True(t, ok)
+	first, ok := tools[0].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "3840x2160", first["size"])
+	require.NotContains(t, first, "resolution")
+}
+
 func TestEnsureOpenAIResponsesImageGenerationTool_NoTools(t *testing.T) {
 	reqBody := map[string]any{
 		"model": "gpt-5.4",
@@ -781,6 +804,30 @@ func TestNormalizeOpenAIResponsesImageOnlyModel_BuildsImageToolRequest(t *testin
 	choice, ok := reqBody["tool_choice"].(map[string]any)
 	require.True(t, ok)
 	require.Equal(t, "image_generation", choice["type"])
+}
+
+func TestNormalizeOpenAIResponsesImageOnlyModel_GPTImage2UsesCodexToolAndKeeps4K(t *testing.T) {
+	reqBody := map[string]any{
+		"model":      "gpt-image-2",
+		"prompt":     "draw a cat",
+		"size":       "16:9",
+		"resolution": "4k",
+	}
+
+	modified := normalizeOpenAIResponsesImageOnlyModel(reqBody)
+
+	require.True(t, modified)
+	require.Equal(t, openAIImagesResponsesMainModel, reqBody["model"])
+	require.Equal(t, "draw a cat", reqBody["input"])
+	tools, ok := reqBody["tools"].([]any)
+	require.True(t, ok)
+	require.Len(t, tools, 1)
+	tool, ok := tools[0].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "image_generation", tool["type"])
+	require.Equal(t, "gpt-image-2", tool["model"])
+	require.Equal(t, "3840x2160", tool["size"])
+	require.NotContains(t, tool, "resolution")
 }
 
 func TestNormalizeOpenAIResponsesImageOnlyModel_PreservesExistingImageTool(t *testing.T) {
