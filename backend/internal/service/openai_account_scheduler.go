@@ -1140,6 +1140,7 @@ func (s *OpenAIGatewayService) SelectAccountWithSchedulerForImageCapability(
 	requiredCapability OpenAIEndpointCapability,
 	requireCompact bool,
 ) (*AccountSelectionResult, OpenAIAccountScheduleDecision, error) {
+	requestedModel = normalizeOpenAIImageScheduleRequestedModel(requestedModel)
 	return s.selectAccountWithScheduler(ctx, groupID, previousResponseID, sessionHash, requestedModel, excludedIDs, requiredTransport, requiredCapability, OpenAIImagesCapabilityCodex, requireCompact)
 }
 
@@ -1152,7 +1153,16 @@ func (s *OpenAIGatewayService) SelectAccountWithSchedulerForImages(
 	requiredCapability OpenAIImagesCapability,
 ) (*AccountSelectionResult, OpenAIAccountScheduleDecision, error) {
 	_ = requiredCapability
+	requestedModel = normalizeOpenAIImageScheduleRequestedModel(requestedModel)
 	return s.selectAccountWithScheduler(ctx, groupID, "", sessionHash, requestedModel, excludedIDs, OpenAIUpstreamTransportHTTPSSE, "", OpenAIImagesCapabilityCodex, false)
+}
+
+func normalizeOpenAIImageScheduleRequestedModel(requestedModel string) string {
+	requestedModel = strings.TrimSpace(requestedModel)
+	if isOpenAIImageGenerationModel(requestedModel) {
+		return openAIImagesResponsesMainModel
+	}
+	return requestedModel
 }
 
 func (s *OpenAIGatewayService) selectAccountWithScheduler(
