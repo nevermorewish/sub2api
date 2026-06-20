@@ -3,7 +3,11 @@ package service
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"errors"
+	"image"
+	"image/color"
+	"image/png"
 	"io"
 	"mime/multipart"
 	"net/http"
@@ -680,6 +684,78 @@ func TestOpenAIGatewayServiceForwardImages_OAuthPassesNAndReturnsAllImages(t *te
 	require.Equal(t, "aW1hZ2UtMw==", gjson.Get(rec.Body.String(), "data.2.b64_json").String())
 	require.Equal(t, "draw a cat 1", gjson.Get(rec.Body.String(), "data.0.revised_prompt").String())
 	require.Equal(t, "draw a cat 3", gjson.Get(rec.Body.String(), "data.2.revised_prompt").String())
+}
+
+func TestOpenAIGatewayServiceForwardImages_OAuthResizesReturnedImageToRequestedSize(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	body := []byte(`{"model":"gpt-image-2","prompt":"draw a cat","size":"3840x2160","response_format":"b64_json"}`)
+
+	req := httptest.NewRequest(http.MethodPost, "/v1/images/generations", bytes.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	c, _ := gin.CreateTestContext(rec)
+	c.Request = req
+	c.Set("api_key", &APIKey{ID: 42})
+
+	var source bytes.Buffer
+	sourceImage := image.NewRGBA(image.Rect(0, 0, 16, 9))
+	for y := 0; y < 9; y++ {
+		for x := 0; x < 16; x++ {
+			sourceImage.Set(x, y, color.RGBA{R: uint8(x * 10), G: uint8(y * 20), B: 120, A: 255})
+		}
+	}
+	require.NoError(t, png.Encode(&source, sourceImage))
+	sourceB64 := base64.StdEncoding.EncodeToString(source.Bytes())
+
+	svc := &OpenAIGatewayService{}
+	parsed, err := svc.ParseOpenAIImagesRequest(c, body)
+	require.NoError(t, err)
+
+	upstream := &httpUpstreamRecorder{
+		resp: &http.Response{
+			StatusCode: http.StatusOK,
+			Header: http.Header{
+				"Content-Type": []string{"text/event-stream"},
+				"X-Request-Id": []string{"req_img_resize"},
+			},
+			Body: io.NopCloser(strings.NewReader(
+				"data: {\"type\":\"response.completed\",\"response\":{\"created_at\":1710000000,\"tool_usage\":{\"image_gen\":{\"images\":1}},\"output\":[{\"type\":\"image_generation_call\",\"result\":\"" + sourceB64 + "\",\"revised_prompt\":\"draw a cat\",\"output_format\":\"png\",\"size\":\"16x9\"}]}}\n\n" +
+					"data: [DONE]\n\n",
+			)),
+		},
+	}
+	svc.httpUpstream = upstream
+
+	account := &Account{
+		ID:       1,
+		Name:     "openai-oauth",
+		Platform: PlatformOpenAI,
+		Type:     AccountTypeOAuth,
+		Credentials: map[string]any{
+			"access_token":       "token-123",
+			"chatgpt_account_id": "acct-123",
+		},
+	}
+
+	result, err := svc.ForwardImages(context.Background(), c, account, body, parsed, "")
+	require.NoError(t, err)
+	require.NotNil(t, result)
+	require.Equal(t, "4K", result.ImageSize)
+	require.Equal(t, "3840x2160", result.ImageInputSize)
+	require.Equal(t, []string{"3840x2160"}, result.ImageOutputSizes)
+	require.NotNil(t, upstream.lastReq)
+	require.Equal(t, "3840x2160", gjson.GetBytes(upstream.lastBody, "tools.0.size").String())
+
+	require.Equal(t, http.StatusOK, rec.Code)
+	require.Equal(t, "3840x2160", gjson.Get(rec.Body.String(), "size").String())
+	resizedB64 := gjson.Get(rec.Body.String(), "data.0.b64_json").String()
+	require.NotEqual(t, sourceB64, resizedB64)
+	resizedBytes, err := base64.StdEncoding.DecodeString(resizedB64)
+	require.NoError(t, err)
+	resized, _, err := image.Decode(bytes.NewReader(resizedBytes))
+	require.NoError(t, err)
+	require.Equal(t, 3840, resized.Bounds().Dx())
+	require.Equal(t, 2160, resized.Bounds().Dy())
 }
 
 func TestOpenAIGatewayServiceForwardImages_OAuthNonStreamModerationBlockedReturnsClientError(t *testing.T) {

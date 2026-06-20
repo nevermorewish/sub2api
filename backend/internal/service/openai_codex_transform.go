@@ -3,6 +3,7 @@ package service
 import (
 	"encoding/json"
 	"fmt"
+	"regexp"
 	"strings"
 )
 
@@ -664,10 +665,13 @@ func normalizeOpenAIResponsesImageGenerationTools(reqBody map[string]any) bool {
 			delete(toolMap, "compression")
 			modified = true
 		}
-		if normalizedSize := normalizeOpenAIResponsesImageToolSize(toolMap); normalizedSize != "" {
-			toolMap["size"] = normalizedSize
-			delete(toolMap, "resolution")
+		if applyOpenAIResponsesImageToolInferredSize(toolMap, reqBody) {
 			modified = true
+		}
+		if size, resolution, ok := normalizeOpenAIResponsesImageToolSize(toolMap); ok {
+			if applyOpenAIResponsesImageToolSize(toolMap, size, resolution) {
+				modified = true
+			}
 		}
 	}
 	return modified
@@ -762,13 +766,172 @@ func validateOpenAIResponsesImageModel(reqBody map[string]any, model string) err
 	return fmt.Errorf("/v1/responses image_generation requests require a Responses-capable text model; image-only model %q is not allowed", model)
 }
 
-func normalizeOpenAIResponsesImageToolSize(toolMap map[string]any) string {
+func normalizeOpenAIResponsesImageToolSize(toolMap map[string]any) (string, string, bool) {
 	if len(toolMap) == 0 {
-		return ""
+		return "", "", false
 	}
 	size := strings.TrimSpace(firstNonEmptyString(toolMap["size"]))
 	resolution := strings.TrimSpace(firstNonEmptyString(toolMap["resolution"]))
-	return normalizeOpenAIImagesAPIBSize(size, resolution)
+	normalizedResolution := normalizeOpenAIImagesResolution(resolution)
+	if normalizedResolution == "" {
+		if tier, ok := openAIImagesResolutionAlias(size); ok {
+			normalizedResolution = tier
+			size = ""
+		}
+	}
+	if normalizedResolution == "" {
+		if _, _, ok := parseImageBillingDimensions(size); ok {
+			return size, "", true
+		}
+		return "", "", false
+	}
+	if normalizedSize := normalizeOpenAIImagesAPIBSize(size, normalizedResolution); normalizedSize != "" {
+		return normalizedSize, normalizedResolution, true
+	}
+	return "", "", false
+}
+
+func applyOpenAIResponsesImageToolSize(toolMap map[string]any, size string, _ string) bool {
+	modified := false
+	if strings.TrimSpace(firstNonEmptyString(toolMap["size"])) != size {
+		toolMap["size"] = size
+		modified = true
+	}
+	if _, ok := toolMap["resolution"]; ok {
+		delete(toolMap, "resolution")
+		modified = true
+	}
+	return modified
+}
+
+func applyOpenAIResponsesImageToolInferredSize(toolMap map[string]any, reqBody map[string]any) bool {
+	if len(toolMap) == 0 || strings.TrimSpace(firstNonEmptyString(toolMap["size"])) != "" {
+		return false
+	}
+	size, _ := inferOpenAIResponsesImageSizeFromRequest(reqBody)
+	if size == "" {
+		return false
+	}
+	toolMap["size"] = size
+	return true
+}
+
+var openAIResponsesImageDimensionRE = regexp.MustCompile(`(?i)\b([1-9][0-9]{2,4})\s*x\s*([1-9][0-9]{2,4})\b`)
+
+func inferOpenAIResponsesImageSizeFromRequest(reqBody map[string]any) (string, string) {
+	if len(reqBody) == 0 {
+		return "", ""
+	}
+	size := strings.TrimSpace(firstNonEmptyString(reqBody["size"]))
+	resolution := strings.TrimSpace(firstNonEmptyString(reqBody["resolution"]))
+	if normalizedSize, normalizedResolution, ok := normalizeOpenAIResponsesImageSizeParts(size, resolution); ok {
+		return normalizedSize, normalizedResolution
+	}
+	for _, path := range []string{
+		"extra_fields.image_size",
+		"extra_fields.imageSize",
+		"extra_fields.size",
+		"extra_fields.resolution",
+	} {
+		value := strings.TrimSpace(stringFromMapPath(reqBody, path))
+		if normalizedSize, normalizedResolution, ok := normalizeOpenAIResponsesImageSizeParts(value, ""); ok {
+			return normalizedSize, normalizedResolution
+		}
+	}
+
+	text := strings.Join(collectOpenAIResponsesTextValues(reqBody["input"]), "\n")
+	if text == "" {
+		text = strings.Join(collectOpenAIResponsesTextValues(reqBody["messages"]), "\n")
+	}
+	if text == "" {
+		text = strings.TrimSpace(firstNonEmptyString(reqBody["prompt"]))
+	}
+	return inferOpenAIImageSizeFromText(text)
+}
+
+func inferOpenAIImageSizeFromText(text string) (string, string) {
+	text = strings.ToLower(strings.TrimSpace(text))
+	if text == "" {
+		return "", ""
+	}
+	if match := openAIResponsesImageDimensionRE.FindStringSubmatch(text); len(match) == 3 {
+		size := match[1] + "x" + match[2]
+		if _, _, ok := parseImageBillingDimensions(size); ok {
+			return size, ""
+		}
+	}
+	if !strings.Contains(text, "4k") {
+		return "", ""
+	}
+	resolution := "4k"
+	size := "16:9"
+	switch {
+	case strings.Contains(text, "9:16") || strings.Contains(text, "portrait") || strings.Contains(text, "vertical"):
+		size = "9:16"
+	case strings.Contains(text, "1:1") || strings.Contains(text, "square"):
+		size = "1:1"
+	default:
+	}
+	if normalizedSize, normalizedResolution, ok := normalizeOpenAIResponsesImageSizeParts(size, resolution); ok {
+		return normalizedSize, normalizedResolution
+	}
+	return "", ""
+}
+
+func normalizeOpenAIResponsesImageSizeParts(size string, resolution string) (string, string, bool) {
+	toolMap := map[string]any{}
+	if strings.TrimSpace(size) != "" {
+		toolMap["size"] = strings.TrimSpace(size)
+	}
+	if strings.TrimSpace(resolution) != "" {
+		toolMap["resolution"] = strings.TrimSpace(resolution)
+	}
+	return normalizeOpenAIResponsesImageToolSize(toolMap)
+}
+
+func stringFromMapPath(values map[string]any, path string) string {
+	var current any = values
+	for _, part := range strings.Split(path, ".") {
+		m, ok := current.(map[string]any)
+		if !ok {
+			return ""
+		}
+		current = m[part]
+	}
+	return firstNonEmptyString(current)
+}
+
+func collectOpenAIResponsesTextValues(value any) []string {
+	var out []string
+	collectOpenAIResponsesTextValuesInto(value, &out)
+	return out
+}
+
+func collectOpenAIResponsesTextValuesInto(value any, out *[]string) {
+	switch v := value.(type) {
+	case string:
+		if trimmed := strings.TrimSpace(v); trimmed != "" {
+			*out = append(*out, trimmed)
+		}
+	case []any:
+		for _, item := range v {
+			collectOpenAIResponsesTextValuesInto(item, out)
+		}
+	case map[string]any:
+		typ := strings.TrimSpace(firstNonEmptyString(v["type"]))
+		switch typ {
+		case "input_text", "text":
+			if text := strings.TrimSpace(firstNonEmptyString(v["text"])); text != "" {
+				*out = append(*out, text)
+			}
+		case "message":
+			collectOpenAIResponsesTextValuesInto(v["content"], out)
+		default:
+			for _, key := range []string{"text", "content"} {
+				collectOpenAIResponsesTextValuesInto(v[key], out)
+			}
+		}
+	}
 }
 
 func normalizeOpenAIResponsesImageOnlyModel(reqBody map[string]any) bool {
@@ -834,10 +997,13 @@ func normalizeOpenAIResponsesImageOnlyModel(reqBody map[string]any) bool {
 			delete(reqBody, "resolution")
 			modified = true
 		}
-		if normalizedSize := normalizeOpenAIResponsesImageToolSize(toolMap); normalizedSize != "" {
-			toolMap["size"] = normalizedSize
-			delete(toolMap, "resolution")
+		if applyOpenAIResponsesImageToolInferredSize(toolMap, reqBody) {
 			modified = true
+		}
+		if size, resolution, ok := normalizeOpenAIResponsesImageToolSize(toolMap); ok {
+			if applyOpenAIResponsesImageToolSize(toolMap, size, resolution) {
+				modified = true
+			}
 		}
 	}
 

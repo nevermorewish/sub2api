@@ -568,6 +568,56 @@ func TestNormalizeOpenAIResponsesImageGenerationTools_Normalizes4KSize(t *testin
 	require.NotContains(t, first, "resolution")
 }
 
+func TestNormalizeOpenAIResponsesImageGenerationTools_Infer4KSizeFromInput(t *testing.T) {
+	reqBody := map[string]any{
+		"model": "gpt-5.4",
+		"input": []any{
+			map[string]any{
+				"type": "message",
+				"role": "user",
+				"content": []any{
+					map[string]any{"type": "input_text", "text": "draw a 4k cinematic landscape image"},
+				},
+			},
+		},
+		"tools": []any{
+			map[string]any{
+				"type":  "image_generation",
+				"model": "gpt-image-2",
+			},
+		},
+	}
+
+	modified := normalizeOpenAIResponsesImageGenerationTools(reqBody)
+	require.True(t, modified)
+
+	tools, ok := reqBody["tools"].([]any)
+	require.True(t, ok)
+	first, ok := tools[0].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "3840x2160", first["size"])
+	require.NotContains(t, first, "resolution")
+}
+
+func TestNormalizeOpenAIResponsesImageOnlyModel_Infer4KSizeFromPrompt(t *testing.T) {
+	reqBody := map[string]any{
+		"model":  "gpt-image-2",
+		"prompt": "draw a 4k cinematic landscape image",
+	}
+
+	modified := normalizeOpenAIResponsesImageOnlyModel(reqBody)
+	require.True(t, modified)
+
+	tools, ok := reqBody["tools"].([]any)
+	require.True(t, ok)
+	first, ok := tools[0].(map[string]any)
+	require.True(t, ok)
+	require.Equal(t, "3840x2160", first["size"])
+	require.NotContains(t, first, "resolution")
+	require.Equal(t, "draw a 4k cinematic landscape image", reqBody["input"])
+	require.NotContains(t, reqBody, "prompt")
+}
+
 func TestEnsureOpenAIResponsesImageGenerationTool_NoTools(t *testing.T) {
 	reqBody := map[string]any{
 		"model": "gpt-5.4",
