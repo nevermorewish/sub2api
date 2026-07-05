@@ -153,6 +153,21 @@ const doubaoModels = [
   'doubao-1.5-pro-vision-32k', 'doubao-1.5-thinking-pro'
 ]
 
+// 火山引擎 Coding Plan
+const volcengineModels = [
+  'doubao-seed-2.0-code',
+  'doubao-seed-2.0-pro',
+  'doubao-seed-2.0-lite',
+  'doubao-seed-code',
+  'minimax-m2.7',
+  'minimax-m3',
+  'glm-5.2',
+  'deepseek-v4-flash',
+  'deepseek-v4-pro',
+  'kimi-k2.6',
+  'kimi-k2.7-code'
+]
+
 // MiniMax
 const minimaxModels = [
   'minimax-m2.7', 'minimax-m2.5'
@@ -214,6 +229,7 @@ const allModelsList: string[] = [
   ...moonshotModels,
   ...mimoModels,
   ...doubaoModels,
+  ...volcengineModels,
   ...minimaxModels,
   ...opencodeModels,
   ...baiduModels,
@@ -357,7 +373,7 @@ export function getModelsByPlatform(platform: string): string[] {
     case 'ali': return qwenModels
     case 'qwen': return qwenModels
     case 'deepseek': return deepseekModels
-    case 'volcengine': return doubaoModels
+    case 'volcengine': return volcengineModels
     case 'mistral': return mistralModels
     case 'meta': return metaModels
     case 'xai': return xaiModels

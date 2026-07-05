@@ -18,7 +18,7 @@ func TestVolcengineCompatibleProviderPreset(t *testing.T) {
 	if preset.DefaultBaseURL != "https://ark.cn-beijing.volces.com" {
 		t.Fatalf("DefaultBaseURL = %q", preset.DefaultBaseURL)
 	}
-	if preset.DefaultTestModel != "Doubao-lite-32k" {
+	if preset.DefaultTestModel != "glm-5.2" {
 		t.Fatalf("DefaultTestModel = %q", preset.DefaultTestModel)
 	}
 	if preset.AuthMode != CompatibleAuthBearer {
@@ -42,14 +42,22 @@ func TestVolcengineCompatibleProviderPreset(t *testing.T) {
 	if preset.PatchChatBody == nil {
 		t.Fatal("PatchChatBody should not be nil")
 	}
-	if len(preset.DefaultModels) != 3 {
-		t.Fatalf("len(DefaultModels) = %d, want 3", len(preset.DefaultModels))
+	if len(preset.DefaultModels) != 11 {
+		t.Fatalf("len(DefaultModels) = %d, want 11", len(preset.DefaultModels))
 	}
 
 	wantModels := []string{
-		"doubao-seed-1-6-thinking-250715",
-		"Doubao-pro-128k",
-		"Doubao-lite-32k",
+		"doubao-seed-2.0-code",
+		"doubao-seed-2.0-pro",
+		"doubao-seed-2.0-lite",
+		"doubao-seed-code",
+		"minimax-m2.7",
+		"minimax-m3",
+		"glm-5.2",
+		"deepseek-v4-flash",
+		"deepseek-v4-pro",
+		"kimi-k2.6",
+		"kimi-k2.7-code",
 	}
 	for i, want := range wantModels {
 		if preset.DefaultModels[i].ID != want {
