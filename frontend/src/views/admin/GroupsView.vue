@@ -2955,10 +2955,34 @@ const invalidRequestFallbackOptionsForEdit = computed(() => {
   return options;
 });
 
-// 复制账号的源分组选项（创建时）- 仅包含相同平台且有账号的分组
+const compatibleAccountSharingPlatforms: GroupPlatform[] = [
+  "zhipu",
+  "deepseek",
+  "volcengine",
+  "ali",
+  "moonshot",
+  "mimo",
+  "minimax",
+  "opencode",
+];
+
+const canShareAccountsBetweenPlatforms = (
+  targetPlatform: GroupPlatform,
+  sourcePlatform: GroupPlatform,
+) => {
+  if (targetPlatform === sourcePlatform) return true;
+  return (
+    compatibleAccountSharingPlatforms.includes(targetPlatform) &&
+    compatibleAccountSharingPlatforms.includes(sourcePlatform)
+  );
+};
+
+// 复制账号的源分组选项（创建时）- 同平台或 compatible 国产平台且有账号的分组
 const copyAccountsGroupOptions = computed(() => {
   const eligibleGroups = groups.value.filter(
-    (g) => g.platform === createForm.platform && (g.account_count || 0) > 0,
+    (g) =>
+      canShareAccountsBetweenPlatforms(createForm.platform, g.platform) &&
+      (g.account_count || 0) > 0,
   );
   return eligibleGroups.map((g) => ({
     value: g.id,
@@ -2966,12 +2990,12 @@ const copyAccountsGroupOptions = computed(() => {
   }));
 });
 
-// 复制账号的源分组选项（编辑时）- 仅包含相同平台且有账号的分组，排除自身
+// 复制账号的源分组选项（编辑时）- 同平台或 compatible 国产平台且有账号的分组，排除自身
 const copyAccountsGroupOptionsForEdit = computed(() => {
   const currentId = editingGroup.value?.id;
   const eligibleGroups = groups.value.filter(
     (g) =>
-      g.platform === editForm.platform &&
+      canShareAccountsBetweenPlatforms(editForm.platform, g.platform) &&
       (g.account_count || 0) > 0 &&
       g.id !== currentId,
   );

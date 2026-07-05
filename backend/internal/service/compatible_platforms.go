@@ -24,30 +24,30 @@ const (
 )
 
 type CompatibleProviderPreset struct {
-	Platform              string
-	DisplayName           string
-	DefaultBaseURL        string
-	DefaultModels         []claude.Model
-	DefaultTestModel      string
-	AuthMode              CompatibleAuthMode
-	SupportsChat          bool
-	SupportsResponses     bool
-	SupportsMessages      func(model string) bool
+	Platform          string
+	DisplayName       string
+	DefaultBaseURL    string
+	DefaultModels     []claude.Model
+	DefaultTestModel  string
+	AuthMode          CompatibleAuthMode
+	SupportsChat      bool
+	SupportsResponses bool
+	SupportsMessages  func(model string) bool
 	// RequiresNativeMessages reports models that can ONLY be served via the
 	// Anthropic-native /v1/messages endpoint — the oa-compat chat/completions
 	// format rejects them. Unlike SupportsMessages (which is also true for
 	// platforms where chat works fine), this gates probes/tests that must avoid
 	// the chat endpoint entirely. Optional; nil means no model is messages-only.
 	RequiresNativeMessages func(model string) bool
-	BuildChatURL          func(baseURL, upstreamModel string) string
-	BuildResponsesURL     func(baseURL, upstreamModel string) string
-	BuildMessagesURL      func(baseURL, upstreamModel string) string
-	PatchMessagesHeaders  func(req *http.Request, account *Account, upstreamModel string)
-	PatchChatHeaders      func(req *http.Request, account *Account, upstreamModel string)
-	PatchResponsesHeaders func(req *http.Request, account *Account, upstreamModel string)
-	PatchMessagesBody     func(body []byte, account *Account, upstreamModel string) ([]byte, error)
-	PatchChatBody         func(body []byte, account *Account, upstreamModel string) ([]byte, error)
-	PatchResponsesBody    func(body []byte, account *Account, upstreamModel string) ([]byte, error)
+	BuildChatURL           func(baseURL, upstreamModel string) string
+	BuildResponsesURL      func(baseURL, upstreamModel string) string
+	BuildMessagesURL       func(baseURL, upstreamModel string) string
+	PatchMessagesHeaders   func(req *http.Request, account *Account, upstreamModel string)
+	PatchChatHeaders       func(req *http.Request, account *Account, upstreamModel string)
+	PatchResponsesHeaders  func(req *http.Request, account *Account, upstreamModel string)
+	PatchMessagesBody      func(body []byte, account *Account, upstreamModel string) ([]byte, error)
+	PatchChatBody          func(body []byte, account *Account, upstreamModel string) ([]byte, error)
+	PatchResponsesBody     func(body []byte, account *Account, upstreamModel string) ([]byte, error)
 }
 
 var compatiblePlatformOrder = []string{
@@ -74,6 +74,15 @@ func IsCompatiblePlatform(platform string) bool {
 	default:
 		return false
 	}
+}
+
+func groupPlatformsCompatibleForAccountSharing(targetPlatform, sourcePlatform string) bool {
+	targetPlatform = strings.TrimSpace(targetPlatform)
+	sourcePlatform = strings.TrimSpace(sourcePlatform)
+	if targetPlatform == sourcePlatform {
+		return true
+	}
+	return IsCompatiblePlatform(targetPlatform) && IsCompatiblePlatform(sourcePlatform)
 }
 
 func compatiblePlatformDisplayName(platform string) string {

@@ -59,10 +59,19 @@ const emit = defineEmits<{
   'update:modelValue': [value: number[]]
 }>()
 
+const compatiblePlatforms: GroupPlatform[] = ['zhipu', 'deepseek', 'volcengine', 'ali', 'moonshot', 'mimo', 'minimax', 'opencode']
+
+const isCompatiblePlatform = (platform?: GroupPlatform) =>
+  !!platform && compatiblePlatforms.includes(platform)
+
 // Filter groups by platform if specified
 const filteredGroups = computed(() => {
   if (!props.platform) {
     return props.groups
+  }
+  // 国产 OpenAI-compatible 平台和 OpenCode 可放在同一分组账号池中。
+  if (isCompatiblePlatform(props.platform)) {
+    return props.groups.filter((g) => isCompatiblePlatform(g.platform))
   }
   // antigravity 账户启用混合调度后，可选择 anthropic/gemini 分组
   if (props.platform === 'antigravity' && props.mixedScheduling) {

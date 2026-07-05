@@ -22,6 +22,11 @@ type groupRepoStubForAdmin struct {
 	getByID *Group // GetByID 返回值
 	getErr  error  // GetByID 返回的错误
 
+	groupsByID          map[int64]*Group
+	accountIDsByGroupID map[int64][]int64
+	boundGroupID        int64
+	boundAccountIDs     []int64
+
 	listWithFiltersCalls       int
 	listWithFiltersParams      pagination.PaginationParams
 	listWithFiltersPlatform    string
@@ -50,9 +55,15 @@ func (s *groupRepoStubForAdmin) GetByID(_ context.Context, _ int64) (*Group, err
 	return s.getByID, nil
 }
 
-func (s *groupRepoStubForAdmin) GetByIDLite(_ context.Context, _ int64) (*Group, error) {
+func (s *groupRepoStubForAdmin) GetByIDLite(_ context.Context, id int64) (*Group, error) {
 	if s.getErr != nil {
 		return nil, s.getErr
+	}
+	if s.groupsByID != nil {
+		if group, ok := s.groupsByID[id]; ok {
+			return group, nil
+		}
+		return nil, ErrGroupNotFound
 	}
 	return s.getByID, nil
 }
@@ -113,12 +124,25 @@ func (s *groupRepoStubForAdmin) DeleteAccountGroupsByGroupID(_ context.Context, 
 	panic("unexpected DeleteAccountGroupsByGroupID call")
 }
 
-func (s *groupRepoStubForAdmin) BindAccountsToGroup(_ context.Context, _ int64, _ []int64) error {
-	panic("unexpected BindAccountsToGroup call")
+func (s *groupRepoStubForAdmin) BindAccountsToGroup(_ context.Context, groupID int64, accountIDs []int64) error {
+	s.boundGroupID = groupID
+	s.boundAccountIDs = append([]int64(nil), accountIDs...)
+	return nil
 }
 
-func (s *groupRepoStubForAdmin) GetAccountIDsByGroupIDs(_ context.Context, _ []int64) ([]int64, error) {
-	panic("unexpected GetAccountIDsByGroupIDs call")
+func (s *groupRepoStubForAdmin) GetAccountIDsByGroupIDs(_ context.Context, groupIDs []int64) ([]int64, error) {
+	seen := make(map[int64]struct{})
+	out := make([]int64, 0)
+	for _, groupID := range groupIDs {
+		for _, accountID := range s.accountIDsByGroupID[groupID] {
+			if _, ok := seen[accountID]; ok {
+				continue
+			}
+			seen[accountID] = struct{}{}
+			out = append(out, accountID)
+		}
+	}
+	return out, nil
 }
 
 func (s *groupRepoStubForAdmin) UpdateSortOrders(_ context.Context, _ []GroupSortOrderUpdate) error {
@@ -188,6 +212,31 @@ func TestAdminService_CreateGroup_AllowsZeroRateMultiplier(t *testing.T) {
 	require.NotNil(t, group)
 	require.NotNil(t, repo.created)
 	require.Equal(t, 0.0, repo.created.RateMultiplier)
+}
+
+func TestAdminService_CreateGroup_AllowsCopyAccountsAcrossCompatiblePlatforms(t *testing.T) {
+	repo := &groupRepoStubForAdmin{
+		groupsByID: map[int64]*Group{
+			10: {ID: 10, Name: "volc", Platform: PlatformVolcEngine, Status: StatusActive},
+		},
+		accountIDsByGroupID: map[int64][]int64{
+			10: {101, 102},
+		},
+	}
+	svc := &adminServiceImpl{groupRepo: repo}
+
+	group, err := svc.CreateGroup(context.Background(), &CreateGroupInput{
+		Name:                     "opencode",
+		Description:              "compatible shared group",
+		Platform:                 PlatformOpenCode,
+		RateMultiplier:           1.0,
+		CopyAccountsFromGroupIDs: []int64{10},
+	})
+	require.NoError(t, err)
+	require.NotNil(t, group)
+	require.NotNil(t, repo.created)
+	require.Equal(t, PlatformOpenCode, repo.created.Platform)
+	require.Equal(t, []int64{101, 102}, repo.boundAccountIDs)
 }
 
 func TestAdminService_CreateGroup_RejectsNegativeRateMultiplier(t *testing.T) {
