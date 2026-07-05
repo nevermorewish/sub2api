@@ -33,11 +33,11 @@ func TestVolcengineCompatibleProviderPreset(t *testing.T) {
 	if preset.SupportsMessages == nil {
 		t.Fatal("SupportsMessages should not be nil")
 	}
-	if preset.SupportsMessages("Doubao-lite-32k") {
-		t.Fatal("SupportsMessages(Doubao-lite-32k) = true, want false")
+	if !preset.SupportsMessages("Doubao-lite-32k") {
+		t.Fatal("SupportsMessages(Doubao-lite-32k) = false, want true")
 	}
-	if preset.SupportsMessages("bot-ep-20250421") {
-		t.Fatal("SupportsMessages(bot-ep-20250421) = true, want false")
+	if !preset.SupportsMessages("bot-ep-20250421") {
+		t.Fatal("SupportsMessages(bot-ep-20250421) = false, want true")
 	}
 	if preset.PatchChatBody == nil {
 		t.Fatal("PatchChatBody should not be nil")
@@ -79,6 +79,26 @@ func TestVolcengineCompatibleProviderPreset_Routes(t *testing.T) {
 	}
 }
 
+func TestVolcengineCompatibleProviderPreset_CodingPlanRoutes(t *testing.T) {
+	preset := volcengineCompatibleProviderPreset()
+
+	if got := preset.BuildChatURL("https://ark.cn-beijing.volces.com/api/coding", "glm-5.2"); got != "https://ark.cn-beijing.volces.com/api/coding/v3/chat/completions" {
+		t.Fatalf("BuildChatURL(coding) = %q", got)
+	}
+	if got := preset.BuildChatURL("https://ark.cn-beijing.volces.com/api/coding/v3", "glm-5.2"); got != "https://ark.cn-beijing.volces.com/api/coding/v3/chat/completions" {
+		t.Fatalf("BuildChatURL(coding v3) = %q", got)
+	}
+	if got := preset.BuildResponsesURL("https://ark.cn-beijing.volces.com/api/coding", "glm-5.2"); got != "https://ark.cn-beijing.volces.com/api/coding/v3/responses" {
+		t.Fatalf("BuildResponsesURL(coding) = %q", got)
+	}
+	if got := preset.BuildMessagesURL("https://ark.cn-beijing.volces.com/api/coding", "glm-5.2"); got != "https://ark.cn-beijing.volces.com/api/coding/v1/messages" {
+		t.Fatalf("BuildMessagesURL(coding) = %q", got)
+	}
+	if got := preset.BuildMessagesURL("https://ark.cn-beijing.volces.com/api/coding/v3", "glm-5.2"); got != "https://ark.cn-beijing.volces.com/api/coding/v1/messages" {
+		t.Fatalf("BuildMessagesURL(coding v3) = %q", got)
+	}
+}
+
 func TestVolcengineCompatibleProviderPreset_MessagesFallback(t *testing.T) {
 	svc := &CompatibleGatewayService{}
 	account := newVolcengineCompatibleAccount()
@@ -116,6 +136,36 @@ func TestVolcengineCompatibleProviderPreset_MessagesFallback(t *testing.T) {
 		t.Fatalf("messages.0.content = %q, want %q", got, "hello from messages")
 	}
 	if got := svc.buildURLForPreparedRequest(account, prepared, account.GetCompatibleBaseURL()); got != "https://ark.cn-beijing.volces.com/api/v3/bots/chat/completions" {
+		t.Fatalf("buildURLForPreparedRequest() = %q", got)
+	}
+}
+
+func TestVolcengineCompatibleProviderPreset_CodingMessagesNative(t *testing.T) {
+	svc := &CompatibleGatewayService{}
+	account := newVolcengineCompatibleAccount()
+	account.Credentials["base_url"] = "https://ark.cn-beijing.volces.com/api/coding"
+	body := []byte(`{
+		"model": "glm-5.2",
+		"max_tokens": 32,
+		"messages": [
+			{
+				"role": "user",
+				"content": "hello from messages"
+			}
+		]
+	}`)
+
+	prepared, err := svc.prepareRequest(account, CompatibleRouteMessages, body)
+	if err != nil {
+		t.Fatalf("prepareRequest() error = %v", err)
+	}
+	if prepared.UpstreamKind != compatibleUpstreamMessages {
+		t.Fatalf("UpstreamKind = %q, want %q", prepared.UpstreamKind, compatibleUpstreamMessages)
+	}
+	if prepared.UpstreamEndpoint != "/v1/messages" {
+		t.Fatalf("UpstreamEndpoint = %q, want %q", prepared.UpstreamEndpoint, "/v1/messages")
+	}
+	if got := svc.buildURLForPreparedRequest(account, prepared, account.GetCompatibleBaseURL()); got != "https://ark.cn-beijing.volces.com/api/coding/v1/messages" {
 		t.Fatalf("buildURLForPreparedRequest() = %q", got)
 	}
 }

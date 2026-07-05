@@ -20,25 +20,61 @@ func volcengineCompatibleProviderPreset() CompatibleProviderPreset {
 		AuthMode:          CompatibleAuthBearer,
 		SupportsChat:      true,
 		SupportsResponses: true,
-		SupportsMessages:  func(string) bool { return false },
+		SupportsMessages:  func(string) bool { return true },
 		BuildChatURL: func(baseURL, upstreamModel string) string {
-			baseURL = strings.TrimRight(baseURL, "/")
+			baseURL = normalizeVolcengineChatBaseURL(baseURL)
 			if strings.HasPrefix(strings.TrimSpace(upstreamModel), "bot") {
-				return baseURL + "/api/v3/bots/chat/completions"
+				return baseURL + "/bots/chat/completions"
 			}
-			return baseURL + "/api/v3/chat/completions"
+			return baseURL + "/chat/completions"
 		},
 		BuildResponsesURL: func(baseURL, _ string) string {
-			return strings.TrimRight(baseURL, "/") + "/api/v3/responses"
+			return normalizeVolcengineChatBaseURL(baseURL) + "/responses"
 		},
 		BuildMessagesURL: func(baseURL, upstreamModel string) string {
-			baseURL = strings.TrimRight(baseURL, "/")
-			if strings.HasPrefix(strings.TrimSpace(upstreamModel), "bot") {
-				return baseURL + "/api/v3/bots/chat/completions"
+			if isVolcengineCodingBaseURL(baseURL) {
+				return normalizeVolcengineMessagesBaseURL(baseURL) + "/messages"
 			}
-			return baseURL + "/api/v3/chat/completions"
+			baseURL = normalizeVolcengineChatBaseURL(baseURL)
+			if strings.HasPrefix(strings.TrimSpace(upstreamModel), "bot") {
+				return baseURL + "/bots/chat/completions"
+			}
+			return baseURL + "/chat/completions"
 		},
 		PatchChatBody: patchVolcengineChatBody,
+	}
+}
+
+func isVolcengineCodingBaseURL(baseURL string) bool {
+	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	return strings.HasSuffix(baseURL, "/api/coding") || strings.HasSuffix(baseURL, "/api/coding/v1") || strings.HasSuffix(baseURL, "/api/coding/v3")
+}
+
+func normalizeVolcengineMessagesBaseURL(baseURL string) string {
+	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	switch {
+	case strings.HasSuffix(baseURL, "/api/coding/v1"):
+		return baseURL
+	case strings.HasSuffix(baseURL, "/api/coding/v3"):
+		return strings.TrimSuffix(baseURL, "/v3") + "/v1"
+	case strings.HasSuffix(baseURL, "/api/coding"):
+		return baseURL + "/v1"
+	default:
+		return baseURL + "/api/v3"
+	}
+}
+
+func normalizeVolcengineChatBaseURL(baseURL string) string {
+	baseURL = strings.TrimRight(strings.TrimSpace(baseURL), "/")
+	switch {
+	case strings.HasSuffix(baseURL, "/api/coding/v3"):
+		return baseURL
+	case strings.HasSuffix(baseURL, "/api/coding"):
+		return baseURL + "/v3"
+	case strings.HasSuffix(baseURL, "/api/v3"):
+		return baseURL
+	default:
+		return baseURL + "/api/v3"
 	}
 }
 

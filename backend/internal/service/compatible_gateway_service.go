@@ -332,6 +332,9 @@ func shouldUseCompatibleNativeMessages(account *Account, preset CompatibleProvid
 	if preset.SupportsMessages == nil || !preset.SupportsMessages(upstreamModel) {
 		return false
 	}
+	if account != nil && account.Platform == PlatformVolcEngine && !isVolcengineCodingBaseURL(account.GetCompatibleBaseURL()) {
+		return false
+	}
 	return account != nil
 }
 
