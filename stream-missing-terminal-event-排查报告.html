@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>sub2api 流式报错排查报告 · missing terminal event</title>
+<style>
+  :root{
+    --bg:#0f1115; --card:#171a21; --card2:#1d2129; --line:#2a2f3a;
+    --tx:#e6e9ef; --mut:#9aa4b2; --acc:#5b9dff; --ok:#3fbf7f; --warn:#f0a742; --bad:#f0605d;
+    --mono:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC','Microsoft YaHei',sans-serif;
+    line-height:1.7;font-size:15px}
+  .wrap{max-width:960px;margin:0 auto;padding:40px 22px 80px}
+  header{border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:8px}
+  h1{font-size:26px;margin:0 0 8px;letter-spacing:.3px}
+  .sub{color:var(--mut);font-size:14px}
+  .tag{display:inline-block;font-size:12px;padding:2px 9px;border-radius:20px;margin-right:6px;
+    border:1px solid var(--line);color:var(--mut);vertical-align:middle}
+  .tag.bad{color:var(--bad);border-color:#4a2a2c}
+  .tag.ok{color:var(--ok);border-color:#234a37}
+  h2{font-size:19px;margin:38px 0 14px;padding-left:11px;border-left:3px solid var(--acc)}
+  h3{font-size:15px;margin:22px 0 8px;color:var(--tx)}
+  p{margin:10px 0}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin:14px 0}
+  .verdict{background:linear-gradient(135deg,#1a2230,#171a21);border:1px solid #2c3a52}
+  .verdict .big{font-size:17px;font-weight:600;color:#cfe0ff}
+  code{font-family:var(--mono);background:var(--card2);padding:1px 6px;border-radius:5px;
+    font-size:13px;color:#ffd9a0}
+  pre{background:#0b0d11;border:1px solid var(--line);border-radius:10px;padding:14px 16px;
+    overflow-x:auto;font-family:var(--mono);font-size:12.5px;color:#c8d0dc;line-height:1.55}
+  table{width:100%;border-collapse:collapse;margin:12px 0;font-size:13.5px}
+  th,td{border:1px solid var(--line);padding:8px 11px;text-align:left}
+  th{background:var(--card2);color:var(--mut);font-weight:600}
+  td.mono,th.mono{font-family:var(--mono)}
+  .ok{color:var(--ok)} .bad{color:var(--bad)} .warn{color:var(--warn)} .mut{color:var(--mut)}
+  ul,ol{margin:10px 0;padding-left:22px} li{margin:6px 0}
+  .kv{display:grid;grid-template-columns:130px 1fr;gap:6px 14px;font-size:14px}
+  .kv .k{color:var(--mut)}
+  .steps{counter-reset:s;list-style:none;padding:0}
+  .steps li{counter-increment:s;position:relative;padding:10px 0 10px 42px;border-bottom:1px dashed var(--line)}
+  .steps li:last-child{border-bottom:0}
+  .steps li::before{content:counter(s);position:absolute;left:0;top:9px;width:26px;height:26px;
+    background:var(--acc);color:#0b0d11;font-weight:700;border-radius:50%;display:flex;
+    align-items:center;justify-content:center;font-size:13px}
+  .flow{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0;font-size:13px}
+  .node{background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:7px 12px}
+  .node.bad{border-color:#4a2a2c;color:#ffb0ae}
+  .node.ok{border-color:#234a37;color:#a7e9c6}
+  .arrow{color:var(--mut)}
+  .bar{height:18px;background:var(--card2);border-radius:4px;overflow:hidden;position:relative;min-width:60px}
+  .bar > span{display:block;height:100%}
+  .fail{background:var(--bad)} .pass{background:var(--ok)}
+  .hl{background:#3a2d10;border-left:3px solid var(--warn);padding:12px 15px;border-radius:0 8px 8px 0;margin:14px 0}
+  footer{margin-top:50px;padding-top:18px;border-top:1px solid var(--line);color:var(--mut);font-size:12.5px}
+  .badge{font-family:var(--mono);font-size:11px;background:#0b0d11;border:1px solid var(--line);
+    padding:1px 6px;border-radius:4px;color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>sub2api 流式报错排查报告</h1>
+  <div class="sub">
+    <span class="tag bad">stream usage incomplete: missing terminal event</span>
+    <span class="tag">claude-opus-4-8</span>
+    <span class="tag">/v1/messages · stream</span>
+  </div>
+  <div class="sub" style="margin-top:10px">
+    实例 <code>43.130.1.77</code> · 容器 <code>sub2api</code> · 排查时间 2026-07-07 · 数据窗口 近 48h
+  </div>
+</header>
+
+<div class="card verdict">
+  <div class="big">🎯 结论：不是 Huanxing 的「OpenAI&nbsp;Compatible&nbsp;→&nbsp;Claude&nbsp;Messages」转换引起的。</div>
+  <p style="margin-bottom:0">
+    真正原因是 <b>上游一道约 30 秒的服务端超时</b>：当 <code>claude-opus-4-8</code> 处理
+    <b>超大上下文（100KB–600KB）且 prompt 缓存未命中</b>时，"首个 token 之前"的 prefill 耗时超过 30 秒，
+    上游还没发出 <code>message_stop</code> 就把 SSE 连接干净关闭，sub2api 于是记为
+    <code>missing terminal event</code>。随后 Huanxing 自动重试、命中缓存、首 token 变快，请求就成功了 ——
+    所以当天最终只有 2 次 502，这批基本都被重试兜住了。
+  </p>
+</div>
+
+<h2>一、错误是什么</h2>
+<p>报错位置 <code>backend/internal/service/gateway_service.go:5623</code>，经
+<code>handler/gateway_handler.go:873</code> 记录为 <code>gateway.forward_failed</code>。</p>
+<p>sub2api 转发流式请求时，边把上游 SSE 逐行写给客户端，边扫描"终止事件"：</p>
+<pre>终止事件 = event: message_stop   或   data: [DONE]   或   data 里 type=="message_stop"</pre>
+<p>当<b>上游 SSE 流被 EOF 关闭（<code>scanner.Scan()</code> 返回 false 且无 error），却始终没收到 <code>message_stop</code></b> 时，
+就返回该错误。它发生在 <b>HTTP 200、响应头已发出、流已开始之后</b>，所以不是 5xx 状态码 —— 这解释了"为什么 502 只有 2 次却有 15 条错误"。</p>
+
+<h2>二、失败请求画像（15 次）</h2>
+<div class="card">
+  <div class="kv">
+    <span class="k">路径 / 协议</span><span><code>/v1/messages</code> · <code>protocol: anthropic_messages</code> · <code>stream: true</code></span>
+    <span class="k">模型</span><span><code>claude-opus-4-8</code>（全部）</span>
+    <span class="k">客户端</span><span><code>client_ip: 8.218.4.22</code> · <code>api_key_name: huaixing</code>（即 Huanxing）</span>
+    <span class="k">账号分布</span><span>14 号 ×8&nbsp;&nbsp;/&nbsp;&nbsp;20 号 ×4&nbsp;&nbsp;/&nbsp;&nbsp;21 号 ×3</span>
+    <span class="k">账号属性</span><span><code>type=apikey</code> · <code>platform=anthropic</code> · <b>无 proxy</b></span>
+    <span class="k">请求体大小</span><span>103KB ~ 629KB（超大上下文）</span>
+  </div>
+</div>
+
+<h2>三、决定性证据</h2>
+
+<h3>① 失败时刻高度集中在 ~31 秒</h3>
+<p>15 次里 <b class="bad">13 次卡在 30.9–33.1 秒</b> —— 典型的 <b>30 秒超时</b>特征。下表为"首次尝试耗时"与"重试耗时"对比：</p>
+<table>
+  <thead><tr><th class="mono">request_id</th><th>body</th><th>首次尝试</th><th>可视化</th><th>重试结果</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">93d4df8d</td><td>103KB</td><td class="bad">31.4s ✗</td><td><div class="bar"><span class="fail" style="width:31%"></span></div></td><td class="ok">65.3s ✓</td></tr>
+    <tr><td class="mono">2b17af34</td><td>132KB</td><td class="bad">31.1s ✗</td><td><div class="bar"><span class="fail" style="width:31%"></span></div></td><td class="ok">5.0s ✓</td></tr>
+    <tr><td class="mono">aa903f03</td><td>147KB</td><td class="bad">31.3s ✗</td><td><div class="bar"><span class="fail" style="width:31%"></span></div></td><td class="ok">84.6s ✓</td></tr>
+    <tr><td class="mono">d20ebf5b</td><td>223KB</td><td class="warn">326.6s ✗</td><td><div class="bar"><span class="fail" style="width:100%"></span></div></td><td class="ok">44.3s ✓</td></tr>
+    <tr><td class="mono">5055cd95</td><td>200KB</td><td class="bad">31.1s ✗</td><td><div class="bar"><span class="fail" style="width:31%"></span></div></td><td class="ok">368.5s ✓</td></tr>
+    <tr><td class="mono">2e57a0b5</td><td>206KB</td><td class="warn">122.6s ✗</td><td><div class="bar"><span class="fail" style="width:70%"></span></div></td><td class="ok">47.6s ✓</td></tr>
+    <tr><td class="mono">a7d3ad8c</td><td>184KB</td><td class="bad">33.1s ✗</td><td><div class="bar"><span class="fail" style="width:33%"></span></div></td><td class="ok">8.1s ✓</td></tr>
+    <tr><td class="mono">78dcf9be</td><td>629KB</td><td class="bad">31.9s ✗</td><td><div class="bar"><span class="fail" style="width:32%"></span></div></td><td class="ok">116.4s ✓</td></tr>
+    <tr><td class="mono">c3833f45</td><td>127KB</td><td class="bad">32.7s ✗</td><td><div class="bar"><span class="fail" style="width:33%"></span></div></td><td class="ok">5.9s ✓</td></tr>
+    <tr><td class="mono">f0ae937f</td><td>146KB</td><td class="bad">31.4s ✗</td><td><div class="bar"><span class="fail" style="width:31%"></span></div></td><td class="ok">19.6s ✓</td></tr>
+    <tr><td class="mono">a06475cd</td><td>115KB</td><td class="bad">30.9s ✗</td><td><div class="bar"><span class="fail" style="width:31%"></span></div></td><td class="ok">8.8s ✓</td></tr>
+    <tr><td class="mono">62a54c8c</td><td>125KB</td><td class="bad">30.9s ✗</td><td><div class="bar"><span class="fail" style="width:31%"></span></div></td><td class="ok">10.2s ✓</td></tr>
+    <tr><td class="mono">551e22ca</td><td>173KB</td><td class="bad">30.9s ✗</td><td><div class="bar"><span class="fail" style="width:31%"></span></div></td><td class="ok">21.3s ✓</td></tr>
+    <tr><td class="mono">e05a05d5</td><td>266KB</td><td class="bad">31.3s ✗</td><td><div class="bar"><span class="fail" style="width:31%"></span></div></td><td class="ok">12.7s ✓</td></tr>
+    <tr><td class="mono">91b471dd</td><td>276KB</td><td class="bad">31.1s ✗</td><td><div class="bar"><span class="fail" style="width:31%"></span></div></td><td class="ok">8.9s ✓</td></tr>
+  </tbody>
+</table>
+<p class="mut" style="font-size:13px">注：2 个离群值（326.6s / 122.6s）是"拿到首 token 后又在生成中途被 30s 空闲重置掐断"的子情形，机理相同。</p>
+
+<h3>② 是"干净断流"，不是 sub2api 自己超时</h3>
+<p>近 48h 内其它异常字符串统计全部为 0，排除了 sub2api 侧的超时与网络读错：</p>
+<pre>stream data interval timeout = 0    ← sub2api 自身流间隔超时【未触发】
+stream read error            = 0    ← 上游连接读取【未报错】
+after disconnect             = 0    ← 客户端断开【未发生】
+after timeout                = 0
+context deadline             = 0</pre>
+<div class="hl">
+  <code>stream read error = 0</code> + EOF 关闭 = <b>上游主动 FIN 干净关闭了连接</b>，
+  而非 sub2api 超时、也非网络异常。断点固定在 ~30s，与请求体大小无关（100KB 和 629KB 都在 ~31s 断），
+  说明是上游一道<b>固定的 30 秒服务端超时</b>。
+</div>
+
+<h3>③ 请求体巨大 + 重试即成功 → 指向"首 token 时间 vs 30s"</h3>
+<ul>
+  <li>失败请求 body 都在 <b>103KB–629KB</b>，超大上下文 → 首 token 前的 prefill 很慢。</li>
+  <li>每次失败后 <b>1–2 秒内自动重试同一账号</b>，重试几乎都成功 —— 因为命中 <b>prompt 缓存</b>，
+      prefill 变快、首 token 在 30s 内到达（哪怕总耗时 65s 也能跑完）。</li>
+</ul>
+
+<h3>④ 实测复现（用 Huanxing 真实 key 在服务器本地直发 sub2api）</h3>
+<table>
+  <thead><tr><th>测试</th><th>body</th><th>首字节 TTFT</th><th>终止事件</th><th>结果</th></tr></thead>
+  <tbody>
+    <tr><td>小请求 (say hi)</td><td>&lt;1KB</td><td>~1s</td><td class="ok">message_stop ✓</td><td class="ok">成功</td></tr>
+    <tr><td>唯一大 prompt</td><td>240KB</td><td>11.7s</td><td class="ok">message_stop ✓</td><td class="ok">成功</td></tr>
+    <tr><td>更大 prompt</td><td>573KB</td><td>20.4s</td><td class="ok">message_stop ✓</td><td class="ok">成功</td></tr>
+  </tbody>
+</table>
+<p>当前<b>非高峰</b>时段，即使 573KB 也只要 20s（&lt;30s）就成功。而出问题的时段是
+<b>13:49–18:24 高峰</b>，上游 prefill 更慢，<b>首 token 时间越过 30 秒</b>，于是被上游那道 30s 超时掐断。
+两者共同印证：<b>成败取决于"首 token 时间是否 &lt; 30s"</b>。</p>
+
+<h2>四、完整链路与时序</h2>
+<div class="flow">
+  <span class="node">客户端</span><span class="arrow">→</span>
+  <span class="node">Huanxing-api<br><span class="mut">OpenAI→Claude Messages 转换</span></span><span class="arrow">→</span>
+  <span class="node">sub2api<br><span class="mut">8.218.4.22 · key=huaixing</span></span><span class="arrow">→</span>
+  <span class="node bad">上游 Anthropic apikey<br><span class="mut">账号 14/20/21 · 30s 超时 ✗</span></span>
+</div>
+<ol class="steps">
+  <li>Huanxing 把请求（已是原生 <code>anthropic_messages</code> 格式）发给 sub2api，body 173KB。</li>
+  <li>sub2api 选中账号 20，向上游发起流式请求，返回 200、开始拉流。</li>
+  <li>超大 prompt 缓存未命中，上游 prefill &gt; 30s，首 token 迟迟不来。</li>
+  <li><b class="bad">~31s 时上游干净关闭连接</b>，未发 <code>message_stop</code> → sub2api 报 <code>missing terminal event</code>，写回兜底错误。</li>
+  <li>Huanxing <b>1.4s 后自动重试</b>，仍走账号 20（sticky）。</li>
+  <li><b class="ok">重试命中 prompt 缓存</b>，首 token 快速到达，流正常跑完（21.3s）→ 成功。</li>
+</ol>
+
+<h2>五、为什么和 Huanxing 的格式转换无关</h2>
+<ul>
+  <li>日志里协议已是 <code>protocol: anthropic_messages</code>，请求进 sub2api 时就是原生 Claude 格式，<b>转换正确</b>。</li>
+  <li>本错误发生在<b>上游返回的响应流</b>上（少了 <code>message_stop</code>），与 Huanxing 做的<b>请求格式转换</b>不在同一条链路。</li>
+  <li>Huanxing 只是客户端，而且它<b>自己重试恢复了</b> —— 是"受害者"，不是"元凶"。</li>
+</ul>
+
+<h2>六、建议（按性价比排序）</h2>
+<div class="card">
+<ol>
+  <li><b>病根｜放宽上游 30s 超时</b>：让供应商放宽这道服务端超时，或改用 prefill 更快的上游线路。
+      这几个 <code>9527codeclaude*</code> 是同批采购的 key，超时策略一致。</li>
+  <li><b>绕过｜控制 prompt 体积</b>：Huanxing 侧对超大上下文做裁剪/压缩，把首 token 时间压到 30s 以内即可规避。</li>
+  <li><b>兜底｜sub2api 自动重试</b>：对 <code>missing terminal event</code> 增加一次自动 failover/重试，
+      降低透传到客户端的报错（当前已靠 Huanxing 重试兜住，可再加一层）。</li>
+  <li><b>定位｜区分 30s 来源</b>：高峰期对这几个账号的上游端点单独 <code>curl -N</code> 大 prompt 复现，
+      确认是"上游 30s"还是"中间链路 30s"。</li>
+</ol>
+</div>
+
+<h2>七、关键代码位</h2>
+<table>
+  <thead><tr><th>位置</th><th>作用</th></tr></thead>
+  <tbody>
+    <tr><td class="mono">gateway_service.go:5623</td><td>events 通道 EOF 且未见终止事件 → 返回 <code>missing terminal event</code></td></tr>
+    <tr><td class="mono">gateway_service.go:180</td><td><code>anthropicStreamEventIsTerminal()</code> 判定终止事件</td></tr>
+    <tr><td class="mono">gateway_service.go:5579</td><td><code>StreamDataIntervalTimeout</code>（本次未触发，另一路径）</td></tr>
+    <tr><td class="mono">gateway_handler.go:873</td><td>记录 <code>gateway.forward_failed</code></td></tr>
+  </tbody>
+</table>
+
+<footer>
+  排查方法：SSH 登录 <span class="badge">43.130.1.77</span> → 分析 <span class="badge">docker logs sub2api --since 48h</span>
+  → 逐条追踪 15 次失败请求生命周期 → 用真实 API key 本地实发 3 个流式测试请求验证。<br>
+  报告生成于 2026-07-07。
+</footer>
+
+</div>
+</body>
+</html>
