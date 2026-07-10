@@ -1,4 +1,4 @@
-FROM golang:1.26.5-alpine
+FROM crpi-dzjyl2rfnlfugj1m.cn-shanghai.personal.cr.aliyuncs.com/frogclaw/base-golang:1.26.3-alpine
 
 WORKDIR /app
 
@@ -15,8 +15,7 @@ RUN go mod download
 COPY . .
 
 # 构建应用
-RUN VERSION_VALUE="$(./scripts/resolve-version.sh)" && \
-    go build -ldflags="-s -w -X main.Version=${VERSION_VALUE}" -o main ./cmd/server/
+RUN go build -o main ./cmd/server/
 
 # 暴露端口
 EXPOSE 8080
