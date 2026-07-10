@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<!-- saved from url=(0024)https://tls.sub2api.org/ -->
+<html lang="en"><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TLS Fingerprint Collector</title>
+    <script src="./TLS Fingerprint Collector_files/vue.global.prod.js.下载"></script>
+    <script src="./TLS Fingerprint Collector_files/saved_resource"></script>
+    <style>
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1a1a2e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4a4a6a;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #5a5a7a;
+        }
+
+        /* Glow effects */
+        .glow-border {
+            box-shadow: 0 0 15px rgba(99, 102, 241, 0.3),
+                        inset 0 0 15px rgba(99, 102, 241, 0.1);
+        }
+        .glow-text {
+            text-shadow: 0 0 10px rgba(99, 102, 241, 0.5);
+        }
+
+        /* Fade transition */
+        .fade-enter-active, .fade-leave-active {
+            transition: opacity 0.3s ease;
+        }
+        .fade-enter-from, .fade-leave-to {
+            opacity: 0;
+        }
+    </style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.container{width:100%}@media (min-width: 640px){.container{max-width:640px}}@media (min-width: 768px){.container{max-width:768px}}@media (min-width: 1024px){.container{max-width:1024px}}@media (min-width: 1280px){.container{max-width:1280px}}@media (min-width: 1536px){.container{max-width:1536px}}.fixed{position:fixed}.absolute{position:absolute}.relative{position:relative}.inset-0{inset:0px}.right-2{right:0.5rem}.top-2{top:0.5rem}.z-50{z-index:50}.mx-auto{margin-left:auto;margin-right:auto}.my-4{margin-top:1rem;margin-bottom:1rem}.mb-1{margin-bottom:0.25rem}.mb-2{margin-bottom:0.5rem}.mb-3{margin-bottom:0.75rem}.mb-4{margin-bottom:1rem}.mb-6{margin-bottom:1.5rem}.mb-8{margin-bottom:2rem}.mt-12{margin-top:3rem}.mt-2{margin-top:0.5rem}.mt-4{margin-top:1rem}.mt-6{margin-top:1.5rem}.flex{display:flex}.grid{display:grid}.max-h-\[80vh\]{max-height:80vh}.min-h-screen{min-height:100vh}.w-20{width:5rem}.w-32{width:8rem}.w-full{width:100%}.max-w-2xl{max-width:42rem}.max-w-4xl{max-width:56rem}.max-w-lg{max-width:32rem}.flex-1{flex:1 1 0%}.flex-shrink-0{flex-shrink:0}@keyframes spin{to{transform:rotate(360deg)}}.animate-spin{animation:spin 1s linear infinite}.cursor-pointer{cursor:pointer}.select-all{-webkit-user-select:all;user-select:all}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-6{gap:1.5rem}.space-y-2 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.5rem * var(--tw-space-y-reverse))}.space-y-3 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(0.75rem * var(--tw-space-y-reverse))}.space-y-4 > :not([hidden]) ~ :not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem * calc(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem * var(--tw-space-y-reverse))}.overflow-auto{overflow:auto}.overflow-x-auto{overflow-x:auto}.break-all{word-break:break-all}.rounded{border-radius:0.25rem}.rounded-lg{border-radius:0.5rem}.border{border-width:1px}.border-t{border-top-width:1px}.border-amber-500\/20{border-color:rgb(245 158 11 / 0.2)}.border-blue-500\/20{border-color:rgb(59 130 246 / 0.2)}.border-gray-700{--tw-border-opacity:1;border-color:rgb(55 65 81 / var(--tw-border-opacity, 1))}.border-green-500\/20{border-color:rgb(34 197 94 / 0.2)}.border-indigo-500\/20{border-color:rgb(99 102 241 / 0.2)}.border-indigo-500\/30{border-color:rgb(99 102 241 / 0.3)}.border-purple-500\/20{border-color:rgb(168 85 247 / 0.2)}.border-rose-500\/20{border-color:rgb(244 63 94 / 0.2)}.bg-amber-900\/30{background-color:rgb(120 53 15 / 0.3)}.bg-amber-900\/50{background-color:rgb(120 53 15 / 0.5)}.bg-black{--tw-bg-opacity:1;background-color:rgb(0 0 0 / var(--tw-bg-opacity, 1))}.bg-blue-900\/30{background-color:rgb(30 58 138 / 0.3)}.bg-blue-900\/50{background-color:rgb(30 58 138 / 0.5)}.bg-gray-700{--tw-bg-opacity:1;background-color:rgb(55 65 81 / var(--tw-bg-opacity, 1))}.bg-gray-800{--tw-bg-opacity:1;background-color:rgb(31 41 55 / var(--tw-bg-opacity, 1))}.bg-gray-900{--tw-bg-opacity:1;background-color:rgb(17 24 39 / var(--tw-bg-opacity, 1))}.bg-green-900\/30{background-color:rgb(20 83 45 / 0.3)}.bg-indigo-600{--tw-bg-opacity:1;background-color:rgb(79 70 229 / var(--tw-bg-opacity, 1))}.bg-indigo-900\/30{background-color:rgb(49 46 129 / 0.3)}.bg-purple-900\/30{background-color:rgb(88 28 135 / 0.3)}.bg-purple-900\/50{background-color:rgb(88 28 135 / 0.5)}.bg-rose-900\/30{background-color:rgb(136 19 55 / 0.3)}.bg-opacity-50{--tw-bg-opacity:0.5}.bg-gradient-to-br{background-image:linear-gradient(to bottom right, var(--tw-gradient-stops))}.bg-gradient-to-r{background-image:linear-gradient(to right, var(--tw-gradient-stops))}.from-amber-900\/30{--tw-gradient-from:rgb(120 53 15 / 0.3) var(--tw-gradient-from-position);--tw-gradient-to:rgb(120 53 15 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-blue-900\/30{--tw-gradient-from:rgb(30 58 138 / 0.3) var(--tw-gradient-from-position);--tw-gradient-to:rgb(30 58 138 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-green-900\/30{--tw-gradient-from:rgb(20 83 45 / 0.3) var(--tw-gradient-from-position);--tw-gradient-to:rgb(20 83 45 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-indigo-900\/30{--tw-gradient-from:rgb(49 46 129 / 0.3) var(--tw-gradient-from-position);--tw-gradient-to:rgb(49 46 129 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-indigo-900\/50{--tw-gradient-from:rgb(49 46 129 / 0.5) var(--tw-gradient-from-position);--tw-gradient-to:rgb(49 46 129 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-purple-900\/30{--tw-gradient-from:rgb(88 28 135 / 0.3) var(--tw-gradient-from-position);--tw-gradient-to:rgb(88 28 135 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.from-rose-900\/30{--tw-gradient-from:rgb(136 19 55 / 0.3) var(--tw-gradient-from-position);--tw-gradient-to:rgb(136 19 55 / 0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from), var(--tw-gradient-to)}.to-cyan-900\/30{--tw-gradient-to:rgb(22 78 99 / 0.3) var(--tw-gradient-to-position)}.to-emerald-900\/30{--tw-gradient-to:rgb(6 78 59 / 0.3) var(--tw-gradient-to-position)}.to-orange-900\/30{--tw-gradient-to:rgb(124 45 18 / 0.3) var(--tw-gradient-to-position)}.to-pink-900\/30{--tw-gradient-to:rgb(131 24 67 / 0.3) var(--tw-gradient-to-position)}.to-purple-900\/50{--tw-gradient-to:rgb(88 28 135 / 0.5) var(--tw-gradient-to-position)}.to-red-900\/30{--tw-gradient-to:rgb(127 29 29 / 0.3) var(--tw-gradient-to-position)}.to-violet-900\/30{--tw-gradient-to:rgb(76 29 149 / 0.3) var(--tw-gradient-to-position)}.p-12{padding:3rem}.p-2{padding:0.5rem}.p-3{padding:0.75rem}.p-4{padding:1rem}.p-6{padding:1.5rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-0\.5{padding-top:0.125rem;padding-bottom:0.125rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.py-3{padding-top:0.75rem;padding-bottom:0.75rem}.py-8{padding-top:2rem;padding-bottom:2rem}.pt-4{padding-top:1rem}.text-center{text-align:center}.font-mono{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-6xl{font-size:3.75rem;line-height:1}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-semibold{font-weight:600}.text-amber-300{--tw-text-opacity:1;color:rgb(252 211 77 / var(--tw-text-opacity, 1))}.text-amber-400{--tw-text-opacity:1;color:rgb(251 191 36 / var(--tw-text-opacity, 1))}.text-blue-300{--tw-text-opacity:1;color:rgb(147 197 253 / var(--tw-text-opacity, 1))}.text-cyan-400{--tw-text-opacity:1;color:rgb(34 211 238 / var(--tw-text-opacity, 1))}.text-emerald-400{--tw-text-opacity:1;color:rgb(52 211 153 / var(--tw-text-opacity, 1))}.text-gray-100{--tw-text-opacity:1;color:rgb(243 244 246 / var(--tw-text-opacity, 1))}.text-gray-300{--tw-text-opacity:1;color:rgb(209 213 219 / var(--tw-text-opacity, 1))}.text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175 / var(--tw-text-opacity, 1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity, 1))}.text-green-300{--tw-text-opacity:1;color:rgb(134 239 172 / var(--tw-text-opacity, 1))}.text-green-400{--tw-text-opacity:1;color:rgb(74 222 128 / var(--tw-text-opacity, 1))}.text-indigo-300{--tw-text-opacity:1;color:rgb(165 180 252 / var(--tw-text-opacity, 1))}.text-indigo-400{--tw-text-opacity:1;color:rgb(129 140 248 / var(--tw-text-opacity, 1))}.text-pink-400{--tw-text-opacity:1;color:rgb(244 114 182 / var(--tw-text-opacity, 1))}.text-purple-300{--tw-text-opacity:1;color:rgb(216 180 254 / var(--tw-text-opacity, 1))}.text-purple-400{--tw-text-opacity:1;color:rgb(192 132 252 / var(--tw-text-opacity, 1))}.text-rose-300{--tw-text-opacity:1;color:rgb(253 164 175 / var(--tw-text-opacity, 1))}.text-rose-400{--tw-text-opacity:1;color:rgb(251 113 133 / var(--tw-text-opacity, 1))}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.hover\:bg-gray-600:hover{--tw-bg-opacity:1;background-color:rgb(75 85 99 / var(--tw-bg-opacity, 1))}.hover\:bg-indigo-700:hover{--tw-bg-opacity:1;background-color:rgb(67 56 202 / var(--tw-bg-opacity, 1))}.hover\:text-indigo-400:hover{--tw-text-opacity:1;color:rgb(129 140 248 / var(--tw-text-opacity, 1))}.hover\:text-white:hover{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.disabled\:cursor-not-allowed:disabled{cursor:not-allowed}.disabled\:bg-indigo-800:disabled{--tw-bg-opacity:1;background-color:rgb(55 48 163 / var(--tw-bg-opacity, 1))}</style></head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <div id="app" class="container mx-auto px-4 py-8 max-w-4xl" data-v-app=""><header class="text-center mb-8"><h1 class="text-3xl font-bold text-indigo-400 glow-text mb-2"> 🔒 TLS Fingerprint Collector </h1><p class="text-gray-400">Capture and export TLS fingerprints for Claude Code</p></header><div class="bg-gradient-to-r from-indigo-900/50 to-purple-900/50 rounded-lg p-6 mb-6 border border-indigo-500/30"><div class="flex items-center justify-between mb-3"><h2 class="text-lg font-semibold text-indigo-300">🔑 你的专属 Token</h2><button class="px-3 py-1 text-sm bg-gray-700 hover:bg-gray-600 rounded transition-colors" title="生成新 Token"> 🔄 换一个 </button></div><div class="flex items-center gap-3"><code class="flex-1 bg-gray-900 px-4 py-3 rounded font-mono text-lg text-amber-400 select-all">bf098c56e626bf6ec2a6e217b73c8860</code><button class="p-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors" title="复制 Token"><span>📋</span></button></div><p class="text-gray-500 text-sm mt-2">此 Token 用于隔离你的指纹数据，请妥善保存。刷新页面后仍可使用。</p></div><div class="bg-gray-800 rounded-lg p-6 mb-6 glow-border"><h2 class="text-lg font-semibold text-indigo-300 mb-4">📋 使用说明</h2><p class="text-gray-400 mb-4">在 Claude Code 终端执行以下命令，然后刷新此页面查看捕获的指纹：</p><div class="bg-gray-900 rounded-lg p-4 font-mono text-sm relative"><button class="absolute top-2 right-2 p-2 text-gray-400 hover:text-indigo-400 transition-colors" title="复制命令"><span>📋</span></button><pre class="text-green-400 overflow-x-auto">export ANTHROPIC_BASE_URL=https://tls.sub2api.org:8090
+export ANTHROPIC_AUTH_TOKEN=bf098c56e626bf6ec2a6e217b73c8860
+export NODE_TLS_REJECT_UNAUTHORIZED=0
+claude "test"</pre></div></div><div class="flex items-center justify-between mb-6"><div class="flex gap-3"><button class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:bg-indigo-800 disabled:cursor-not-allowed rounded-lg font-medium transition-colors flex items-center gap-2"><span class="">🔄</span> 刷新 </button></div><div class="text-gray-400"> 已捕获 <span class="text-indigo-400 font-bold">2</span> 条指纹 </div></div><div class="bg-gray-800 rounded-lg p-6 mb-6 glow-border"><div class="flex items-center justify-between mb-4"><h2 class="text-lg font-semibold text-indigo-300">🎯 最新捕获</h2><span class="text-gray-500 text-sm">22:56:44</span></div><div class="space-y-3"><div class="flex items-start gap-3"><span class="text-gray-500 w-20 flex-shrink-0">Model:</span><code class="flex-1 bg-gray-900 px-3 py-2 rounded font-mono text-sm text-emerald-400 break-all">claude-opus-4-8</code><button class="p-2 text-gray-400 hover:text-indigo-400 transition-colors flex-shrink-0" title="复制"><span>📋</span></button></div><div class="flex items-start gap-3"><span class="text-gray-500 w-20 flex-shrink-0">JA3 Raw:</span><code class="flex-1 bg-gray-900 px-3 py-2 rounded font-mono text-sm text-amber-400 break-all">771,4865-4866-4867-49195-49199-49196-49200-52393-52392-49161-49171-49162-49172-156-157-47-53,0-23-65281-10-11-35-16-5-13-18-51-45-43-21,29-23-24,0</code><button class="p-2 text-gray-400 hover:text-indigo-400 transition-colors flex-shrink-0" title="复制"><span>📋</span></button></div><div class="flex items-start gap-3"><span class="text-gray-500 w-20 flex-shrink-0">JA3 Hash:</span><code class="flex-1 bg-gray-900 px-3 py-2 rounded font-mono text-sm text-cyan-400 break-all">d871d02cecbde59abbf8f4806134addf</code><button class="p-2 text-gray-400 hover:text-indigo-400 transition-colors flex-shrink-0" title="复制"><span>📋</span></button></div><div class="flex items-start gap-3"><span class="text-gray-500 w-20 flex-shrink-0">JA4:</span><code class="flex-1 bg-gray-900 px-3 py-2 rounded font-mono text-sm text-purple-400 break-all">t13d1714h1_5b57614c22b0_43ade6aba3df</code><button class="p-2 text-gray-400 hover:text-indigo-400 transition-colors flex-shrink-0" title="复制"><span>📋</span></button></div><div class="flex items-start gap-3"><span class="text-gray-500 w-20 flex-shrink-0">HTTP2:</span><code class="flex-1 bg-gray-900 px-3 py-2 rounded font-mono text-sm text-pink-400 break-all">|00|0|</code><button class="p-2 text-gray-400 hover:text-indigo-400 transition-colors flex-shrink-0" title="复制"><span>📋</span></button></div><hr class="border-gray-700 my-4"><div class="text-sm"><h3 class="text-indigo-300 font-medium mb-3">🖥️ 平台信息</h3><div class="grid grid-cols-2 gap-3"><div class="bg-gradient-to-br from-blue-900/30 to-cyan-900/30 rounded-lg p-3 border border-blue-500/20"><div class="text-gray-500 text-xs mb-1">操作系统</div><div class="text-blue-300 font-medium">Windows</div></div><div class="bg-gradient-to-br from-purple-900/30 to-pink-900/30 rounded-lg p-3 border border-purple-500/20"><div class="text-gray-500 text-xs mb-1">架构</div><div class="text-purple-300 font-medium">x64</div></div><div class="bg-gradient-to-br from-green-900/30 to-emerald-900/30 rounded-lg p-3 border border-green-500/20"><div class="text-gray-500 text-xs mb-1">运行时</div><div class="text-green-300 font-medium">node</div></div><div class="bg-gradient-to-br from-amber-900/30 to-orange-900/30 rounded-lg p-3 border border-amber-500/20"><div class="text-gray-500 text-xs mb-1">运行时版本</div><div class="text-amber-300 font-medium">v24.3.0</div></div><div class="bg-gradient-to-br from-rose-900/30 to-red-900/30 rounded-lg p-3 border border-rose-500/20"><div class="text-gray-500 text-xs mb-1">语言</div><div class="text-rose-300 font-medium">js</div></div><div class="bg-gradient-to-br from-indigo-900/30 to-violet-900/30 rounded-lg p-3 border border-indigo-500/20"><div class="text-gray-500 text-xs mb-1">SDK 版本</div><div class="text-indigo-300 font-medium">0.94.0</div></div></div></div><hr class="border-gray-700 my-4"><div class="text-sm"><h3 class="text-indigo-300 font-medium mb-2">📦 解析后的 TLS 参数 (用于配置)</h3><div class="space-y-2"><div class="flex items-start gap-3"><span class="text-gray-500 w-32 flex-shrink-0">Cipher Suites:</span><code class="flex-1 bg-gray-900 px-3 py-2 rounded font-mono text-xs text-green-400 break-all">17 项</code></div><div class="flex items-start gap-3"><span class="text-gray-500 w-32 flex-shrink-0">Curves:</span><code class="flex-1 bg-gray-900 px-3 py-2 rounded font-mono text-xs text-green-400 break-all">3 项</code></div><div class="flex items-start gap-3"><span class="text-gray-500 w-32 flex-shrink-0">Point Formats:</span><code class="flex-1 bg-gray-900 px-3 py-2 rounded font-mono text-xs text-green-400 break-all">0</code></div><div class="flex items-start gap-3"><span class="text-gray-500 w-32 flex-shrink-0">Sig Algorithms:</span><code class="flex-1 bg-gray-900 px-3 py-2 rounded font-mono text-xs text-green-400 break-all">9 项</code></div><div class="flex items-start gap-3"><span class="text-gray-500 w-32 flex-shrink-0">Extensions:</span><code class="flex-1 bg-gray-900 px-3 py-2 rounded font-mono text-xs text-green-400 break-all">14 项</code></div><div class="flex items-start gap-3"><span class="text-gray-500 w-32 flex-shrink-0">ALPN:</span><code class="flex-1 bg-gray-900 px-3 py-2 rounded font-mono text-xs text-cyan-400 break-all">http/1.1</code></div><div class="flex items-start gap-3"><span class="text-gray-500 w-32 flex-shrink-0">TLS Versions:</span><code class="flex-1 bg-gray-900 px-3 py-2 rounded font-mono text-xs text-cyan-400 break-all">TLS 1.3, TLS 1.2</code></div><div class="flex items-start gap-3"><span class="text-gray-500 w-32 flex-shrink-0">Key Share:</span><code class="flex-1 bg-gray-900 px-3 py-2 rounded font-mono text-xs text-cyan-400 break-all">X25519</code></div><div class="flex items-start gap-3"><span class="text-gray-500 w-32 flex-shrink-0">PSK Modes:</span><code class="flex-1 bg-gray-900 px-3 py-2 rounded font-mono text-xs text-cyan-400 break-all">psk_dhe_ke</code></div><!----></div></div><hr class="border-gray-700 my-4"><div class="flex items-center gap-6 text-sm text-gray-400"><span>User-Agent: <code class="text-gray-300">claude-cli/2.1.158 (external, cli)</code></span><span>Client IP: <code class="text-gray-300">114.86.90.27</code></span></div><hr class="border-gray-700 my-4"><button class="w-full py-3 bg-indigo-600 hover:bg-indigo-700 rounded-lg font-medium transition-colors flex items-center justify-center gap-2"><span>📋 复制 YAML 配置</span></button></div></div><div class="mt-6"><h2 class="text-lg font-semibold text-gray-400 mb-4">📜 历史记录 (最近 1 条)</h2><div class="space-y-2"><div class="bg-gray-800 rounded-lg p-4 hover:bg-gray-750 transition-colors cursor-pointer"><div class="flex items-center justify-between"><div class="flex items-center gap-3 flex-wrap"><span class="text-gray-500 font-mono">#64745</span><span class="text-emerald-400 font-mono text-sm">claude-opus-4-8</span><span class="text-gray-400">22:56:43</span><code class="text-cyan-400 font-mono text-sm">JA3: d871d02cecbde59a...</code></div><div class="flex items-center gap-2"><span class="px-2 py-0.5 bg-blue-900/50 text-blue-300 text-xs rounded">Windows</span><span class="px-2 py-0.5 bg-purple-900/50 text-purple-300 text-xs rounded">x64</span><span class="px-2 py-0.5 bg-amber-900/50 text-amber-300 text-xs rounded">node v24.3.0</span></div></div></div></div></div><!----><!----><footer class="mt-12 text-center text-gray-600 text-sm"><p>TLS Fingerprint Collector for Sub2API</p></footer></div>
+
+    <script>
+        const { createApp, ref, computed, onMounted } = Vue;
+
+        // Generate a random token
+        function generateToken() {
+            const array = new Uint8Array(16);
+            crypto.getRandomValues(array);
+            return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
+        }
+
+        // Get or create token from localStorage
+        function getOrCreateToken() {
+            const storageKey = 'tls_fingerprint_token';
+            let token = localStorage.getItem(storageKey);
+            if (!token) {
+                token = generateToken();
+                localStorage.setItem(storageKey, token);
+            }
+            return token;
+        }
+
+        createApp({
+            setup() {
+                const fingerprints = ref([]);
+                const loading = ref(false);
+                const copied = ref(null);
+                const copiedInstructions = ref(false);
+                const selectedFingerprint = ref(null);
+                const showYamlHelp = ref(false);
+                const hostname = ref(window.location.hostname || 'localhost');
+                const token = ref(getOrCreateToken());
+                const capturePort = ref('8443'); // Default, will be fetched from API
+
+                const fetchConfig = async () => {
+                    try {
+                        const response = await fetch('/api/config');
+                        const data = await response.json();
+                        if (data.capture_port) {
+                            capturePort.value = data.capture_port;
+                        }
+                    } catch (error) {
+                        console.error('Failed to fetch config:', error);
+                    }
+                };
+
+                const refresh = async () => {
+                    loading.value = true;
+                    try {
+                        const response = await fetch(`/api/latest?token=${encodeURIComponent(token.value)}`);
+                        const data = await response.json();
+                        fingerprints.value = data.fingerprints || [];
+                    } catch (error) {
+                        console.error('Failed to fetch fingerprints:', error);
+                    } finally {
+                        loading.value = false;
+                    }
+                };
+
+                const regenerateToken = () => {
+                    if (!confirm('生成新 Token 后，之前的指纹数据将无法再查看。确定继续？')) return;
+                    const newToken = generateToken();
+                    localStorage.setItem('tls_fingerprint_token', newToken);
+                    token.value = newToken;
+                    fingerprints.value = [];
+                };
+
+                const copyText = async (text, id) => {
+                    if (!text) return;
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        copied.value = id;
+                        setTimeout(() => { copied.value = null; }, 2000);
+                    } catch (error) {
+                        console.error('Failed to copy:', error);
+                    }
+                };
+
+                const copyInstructions = async () => {
+                    const text = `export ANTHROPIC_BASE_URL=https://${hostname.value}:${capturePort.value}\nexport ANTHROPIC_AUTH_TOKEN=${token.value}\nexport NODE_TLS_REJECT_UNAUTHORIZED=0\nclaude "test"`;
+                    try {
+                        await navigator.clipboard.writeText(text);
+                        copiedInstructions.value = true;
+                        setTimeout(() => { copiedInstructions.value = false; }, 2000);
+                    } catch (error) {
+                        console.error('Failed to copy:', error);
+                    }
+                };
+
+                // Human-readable label maps
+                const versionNames = { 0x0304: 'TLS 1.3', 0x0303: 'TLS 1.2', 0x0302: 'TLS 1.1', 0x0301: 'TLS 1.0', 0x0300: 'SSL 3.0' };
+                const curveNames = { 29: 'X25519', 23: 'secp256r1', 30: 'X448', 25: 'secp521r1', 24: 'secp384r1', 256: 'ffdhe2048', 257: 'ffdhe3072', 258: 'ffdhe4096', 259: 'ffdhe6144', 260: 'ffdhe8192' };
+                const pskModeNames = { 0: 'psk_ke', 1: 'psk_dhe_ke' };
+                const compressCertNames = { 1: 'zlib', 2: 'brotli', 3: 'zstd' };
+
+                const formatVersions = (versions) => {
+                    if (!versions || versions.length === 0) return '-';
+                    return versions.map(v => versionNames[v] || `0x${v.toString(16).padStart(4, '0')}`).join(', ');
+                };
+                const formatCurveNames = (groups) => {
+                    if (!groups || groups.length === 0) return '-';
+                    return groups.map(g => curveNames[g] || `0x${g.toString(16).padStart(4, '0')}`).join(', ');
+                };
+                const formatPSKModes = (modes) => {
+                    if (!modes || modes.length === 0) return '-';
+                    return modes.map(m => pskModeNames[m] || `${m}`).join(', ');
+                };
+                const formatCompressCert = (algos) => {
+                    if (!algos || algos.length === 0) return '-';
+                    return algos.map(a => compressCertNames[a] || `${a}`).join(', ');
+                };
+
+                // Format array as decimal values
+                const formatDecArray = (arr) => {
+                    if (!arr || arr.length === 0) return '[]';
+                    return '[' + arr.join(', ') + ']';
+                };
+                const formatStringArray = (arr) => {
+                    if (!arr || arr.length === 0) return '[]';
+                    return '[' + arr.map(s => `"${s}"`).join(', ') + ']';
+                };
+
+                const copyYAML = async (fp) => {
+                    // Generate YAML in the format expected by config.yaml
+                    // Uses decimal format for all values, under gateway.tls_fingerprint.profiles
+
+                    // Build profile name from platform info: OS_Arch_Runtime_Version
+                    const nameParts = [];
+                    if (fp.stainless_os) nameParts.push(fp.stainless_os);
+                    if (fp.stainless_arch) nameParts.push(fp.stainless_arch);
+                    if (fp.stainless_runtime) nameParts.push(fp.stainless_runtime);
+                    if (fp.stainless_runtime_version) nameParts.push(fp.stainless_runtime_version);
+                    // Remove dots from name for cleaner format
+                    const profileName = nameParts.length > 0 ? nameParts.join('_').replace(/\./g, '') : (fp.model || 'Claude Code');
+                    const profileKey = nameParts.length > 0
+                        ? nameParts.join('_').toLowerCase().replace(/[^a-z0-9_]/g, '')
+                        : 'claude_code';
+
+                    // Build platform info comment
+                    const platformParts = [];
+                    if (fp.stainless_os) platformParts.push(`OS: ${fp.stainless_os}`);
+                    if (fp.stainless_arch) platformParts.push(`Arch: ${fp.stainless_arch}`);
+                    if (fp.stainless_runtime) platformParts.push(`Runtime: ${fp.stainless_runtime}`);
+                    if (fp.stainless_runtime_version) platformParts.push(`Runtime Version: ${fp.stainless_runtime_version}`);
+                    if (fp.stainless_lang) platformParts.push(`Lang: ${fp.stainless_lang}`);
+                    if (fp.stainless_package_version) platformParts.push(`SDK Version: ${fp.stainless_package_version}`);
+                    const platformComment = platformParts.length > 0 ? `# Platform: ${platformParts.join(', ')}\n` : '';
+
+                    // Build YAML with all captured fields — all fields are configurable in dialer
+                    let yaml = `# TLS Fingerprint Profile for Sub2API
+# JA3 Hash: ${fp.ja3_hash || 'N/A'}
+# JA4: ${fp.ja4 || 'N/A'}
+# Model: ${fp.model || 'N/A'}
+${platformComment}${profileKey}:
+  name: "${profileName}"
+  enable_grease: ${fp.enable_grease ? 'true' : 'false'}
+  cipher_suites: ${formatDecArray(fp.cipher_suites)}
+  curves: ${formatDecArray(fp.curves)}
+  point_formats: ${formatDecArray(fp.point_formats)}
+  signature_algorithms: ${formatDecArray(fp.signature_algorithms)}
+  alpn_protocols: ${formatStringArray(fp.alpn_protocols)}
+  supported_versions: ${formatDecArray(fp.supported_versions)}
+  key_share_groups: ${formatDecArray(fp.key_share_groups)}
+  psk_modes: ${formatDecArray(fp.psk_modes)}`;
+
+                    // Reference-only fields (not consumed by dialer, for debugging)
+                    yaml += `\n  # -- Reference (extension order, cert compression) --`;
+                    yaml += `\n  # extensions: ${formatDecArray(fp.extensions)}`;
+                    if (fp.compress_cert_algos?.length) {
+                        yaml += `\n  # compress_cert_algos: ${formatDecArray(fp.compress_cert_algos)}`;
+                    }
+
+                    try {
+                        await navigator.clipboard.writeText(yaml);
+                        copied.value = 'yaml';
+                        showYamlHelp.value = true;
+                        setTimeout(() => { copied.value = null; }, 2000);
+                    } catch (error) {
+                        console.error('Failed to copy YAML:', error);
+                    }
+                };
+
+                const formatTime = (timestamp) => {
+                    if (!timestamp) return '-';
+                    const date = new Date(timestamp);
+                    return date.toLocaleTimeString('zh-CN', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit'
+                    });
+                };
+
+                const truncate = (str, len) => {
+                    if (!str) return '-';
+                    return str.length > len ? str.slice(0, len) + '...' : str;
+                };
+
+                const showDetail = (fp) => {
+                    selectedFingerprint.value = fp;
+                };
+
+                onMounted(() => {
+                    fetchConfig();
+                    refresh();
+                });
+
+                return {
+                    fingerprints,
+                    loading,
+                    copied,
+                    copiedInstructions,
+                    selectedFingerprint,
+                    showYamlHelp,
+                    hostname,
+                    token,
+                    capturePort,
+                    refresh,
+                    regenerateToken,
+                    copyText,
+                    copyInstructions,
+                    copyYAML,
+                    formatTime,
+                    formatVersions,
+                    formatCurveNames,
+                    formatPSKModes,
+                    formatCompressCert,
+                    truncate,
+                    showDetail
+                };
+            }
+        }).mount('#app');
+    </script>
+
+
+</body></html>

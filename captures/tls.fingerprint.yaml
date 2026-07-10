@@ -1,0 +1,18 @@
+# TLS Fingerprint Profile for Sub2API
+# JA3 Hash: d871d02cecbde59abbf8f4806134addf
+# JA4: t13d1714h1_5b57614c22b0_43ade6aba3df
+# Model: claude-opus-4-8
+# Platform: OS: Windows, Arch: x64, Runtime: node, Runtime Version: v24.3.0, Lang: js, SDK Version: 0.94.0
+windows_x64_node_v2430:
+  name: "Windows_x64_node_v2430"
+  enable_grease: false
+  cipher_suites: [4865, 4866, 4867, 49195, 49199, 49196, 49200, 52393, 52392, 49161, 49171, 49162, 49172, 156, 157, 47, 53]
+  curves: [29, 23, 24]
+  point_formats: [0]
+  signature_algorithms: [1027, 2052, 1025, 1283, 2053, 1281, 2054, 1537, 513]
+  alpn_protocols: ["http/1.1"]
+  supported_versions: [772, 771]
+  key_share_groups: [29]
+  psk_modes: [1]
+  # -- Reference (extension order, cert compression) --
+  # extensions: [0, 23, 65281, 10, 11, 35, 16, 5, 13, 18, 51, 45, 43, 21]
