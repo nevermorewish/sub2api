@@ -11,6 +11,10 @@
 *.md
 !deploy/DOCKER.md
 docs/
+# admin-compliance gate (LegalDocumentView.vue) imports docs/legal/*.md?raw
+# at build time; keep this subtree in the Docker build context.
+!docs/legal/
+!docs/legal/*.md
 
 # IDE
 .idea/
