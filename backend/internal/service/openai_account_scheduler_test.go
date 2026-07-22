@@ -20,6 +20,30 @@ type openAISnapshotCacheStub struct {
 	accountsByID     map[int64]*Account
 }
 
+func TestOpenAIAccountCredentialPreferencePreservesPrioritySlots(t *testing.T) {
+	candidates := []openAIAccountCandidateScore{
+		{account: &Account{ID: 1, Priority: 1, Type: AccountTypeAPIKey}},
+		{account: &Account{ID: 2, Priority: 2, Type: AccountTypeOAuth}},
+		{account: &Account{ID: 3, Priority: 1, Type: AccountTypeOAuth}},
+	}
+
+	ordered := prioritizeOpenAIAccountCredentialsWithinPriority(candidates)
+	require.Equal(t, []int64{3, 2, 1}, []int64{ordered[0].account.ID, ordered[1].account.ID, ordered[2].account.ID})
+}
+
+func TestEnsureOpenAIAccountCredentialCoverageReplacesSamePriorityAPIKey(t *testing.T) {
+	apiKey := openAIAccountCandidateScore{account: &Account{ID: 1, Priority: 1, Type: AccountTypeAPIKey}, score: 10}
+	oauth := openAIAccountCandidateScore{account: &Account{ID: 2, Priority: 1, Type: AccountTypeOAuth}, score: 1}
+	otherPriority := openAIAccountCandidateScore{account: &Account{ID: 3, Priority: 2, Type: AccountTypeOAuth}, score: 20}
+
+	ranked := ensureOpenAIAccountCredentialCoverage(
+		[]openAIAccountCandidateScore{apiKey, otherPriority},
+		[]openAIAccountCandidateScore{apiKey, oauth, otherPriority},
+	)
+	require.Equal(t, int64(2), ranked[0].account.ID)
+	require.Equal(t, int64(3), ranked[1].account.ID)
+}
+
 type schedulerTestOpenAIAccountRepo struct {
 	AccountRepository
 	accounts []Account

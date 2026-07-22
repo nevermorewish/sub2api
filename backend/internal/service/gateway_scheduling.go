@@ -428,6 +428,9 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 					if a.account.Priority != b.account.Priority {
 						return a.account.Priority < b.account.Priority
 					}
+					if accountWithLoadCredentialRank(a) != accountWithLoadCredentialRank(b) {
+						return accountWithLoadCredentialRank(a) < accountWithLoadCredentialRank(b)
+					}
 					if a.loadInfo.LoadRate != b.loadInfo.LoadRate {
 						return a.loadInfo.LoadRate < b.loadInfo.LoadRate
 					}
@@ -685,6 +688,8 @@ func (s *GatewayService) SelectAccountWithLoadAwareness(ctx context.Context, gro
 		for len(available) > 0 {
 			// 1. 取优先级最小的集合
 			candidates := filterByMinPriority(available)
+			// API keys are same-priority fallbacks after regular accounts are busy.
+			candidates = filterByPreferredCredential(candidates)
 			// 2. （可选）use-it-or-lose-it：优先选用会话窗口最早重置的账号
 			if cfg.PreferSoonestReset {
 				candidates = filterBySoonestReset(candidates)
@@ -1430,6 +1435,50 @@ func filterByMinPriority(accounts []accountWithLoad) []accountWithLoad {
 	return result
 }
 
+const apiKeyFallbackLoadThreshold = 80
+
+// accountCredentialRank keeps API-key accounts as same-priority fallbacks.
+// OAuth, setup-token, and other account credential types retain rank zero.
+func accountCredentialRank(account *Account) int {
+	if account != nil && account.Type == AccountTypeAPIKey {
+		return 1
+	}
+	return 0
+}
+
+func accountWithLoadCredentialRank(item accountWithLoad) int {
+	if accountCredentialRank(item.account) != 0 {
+		return 1
+	}
+	if item.loadInfo == nil || item.loadInfo.LoadRate < apiKeyFallbackLoadThreshold {
+		return 0
+	}
+	return 1
+}
+
+func filterByPreferredCredential(accounts []accountWithLoad) []accountWithLoad {
+	if len(accounts) == 0 {
+		return accounts
+	}
+	hasPreferredAccount := false
+	for _, item := range accounts {
+		if accountWithLoadCredentialRank(item) == 0 {
+			hasPreferredAccount = true
+			break
+		}
+	}
+	if !hasPreferredAccount {
+		return accounts
+	}
+	result := make([]accountWithLoad, 0, len(accounts))
+	for _, item := range accounts {
+		if accountWithLoadCredentialRank(item) == 0 {
+			result = append(result, item)
+		}
+	}
+	return result
+}
+
 // filterByMinLoadRate 过滤出负载率最低的账号集合
 func filterByMinLoadRate(accounts []accountWithLoad) []accountWithLoad {
 	if len(accounts) == 0 {
@@ -1549,6 +1598,9 @@ func sortAccountsByPriorityAndLastUsed(accounts []*Account, preferOAuth bool) {
 		if a.Priority != b.Priority {
 			return a.Priority < b.Priority
 		}
+		if accountCredentialRank(a) != accountCredentialRank(b) {
+			return accountCredentialRank(a) < accountCredentialRank(b)
+		}
 		switch {
 		case a.LastUsedAt == nil && b.LastUsedAt != nil:
 			return true
@@ -1648,6 +1700,9 @@ func sameAccountGroup(a, b *Account) bool {
 	if a.Priority != b.Priority {
 		return false
 	}
+	if accountCredentialRank(a) != accountCredentialRank(b) {
+		return false
+	}
 	return sameLastUsedAt(a.LastUsedAt, b.LastUsedAt)
 }
 
@@ -1669,7 +1724,7 @@ func (s *GatewayService) sortCandidatesForFallback(accounts []*Account, preferOA
 	if mode == "random" {
 		// 先按优先级排序，然后在同优先级内随机打乱
 		sortAccountsByPriorityOnly(accounts, preferOAuth)
-		shuffleWithinPriority(accounts)
+		shuffleWithinPriority(accounts, preferOAuth)
 	} else {
 		// 默认按最后使用时间排序
 		sortAccountsByPriorityAndLastUsed(accounts, preferOAuth)
@@ -1683,6 +1738,9 @@ func sortAccountsByPriorityOnly(accounts []*Account, preferOAuth bool) {
 		if a.Priority != b.Priority {
 			return a.Priority < b.Priority
 		}
+		if accountCredentialRank(a) != accountCredentialRank(b) {
+			return accountCredentialRank(a) < accountCredentialRank(b)
+		}
 		if preferOAuth && a.Type != b.Type {
 			return a.Type == AccountTypeOAuth
 		}
@@ -1691,7 +1749,7 @@ func sortAccountsByPriorityOnly(accounts []*Account, preferOAuth bool) {
 }
 
 // shuffleWithinPriority 在同优先级内随机打乱顺序
-func shuffleWithinPriority(accounts []*Account) {
+func shuffleWithinPriority(accounts []*Account, preferOAuth bool) {
 	if len(accounts) <= 1 {
 		return
 	}
@@ -1699,8 +1757,13 @@ func shuffleWithinPriority(accounts []*Account) {
 	start := 0
 	for start < len(accounts) {
 		priority := accounts[start].Priority
+		credentialRank := accountCredentialRank(accounts[start])
+		oauth := preferOAuth && accounts[start].Type == AccountTypeOAuth
 		end := start + 1
-		for end < len(accounts) && accounts[end].Priority == priority {
+		for end < len(accounts) &&
+			accounts[end].Priority == priority &&
+			accountCredentialRank(accounts[end]) == credentialRank &&
+			(!preferOAuth || (accounts[end].Type == AccountTypeOAuth) == oauth) {
 			end++
 		}
 		// 对 [start, end) 范围内的账户随机打乱
@@ -1823,6 +1886,12 @@ func (s *GatewayService) selectAccountForModelWithPlatform(ctx context.Context, 
 			if acc.Priority < selected.Priority {
 				selected = acc
 			} else if acc.Priority == selected.Priority {
+				if accountCredentialRank(acc) != accountCredentialRank(selected) {
+					if accountCredentialRank(acc) < accountCredentialRank(selected) {
+						selected = acc
+					}
+					continue
+				}
 				switch {
 				case acc.LastUsedAt == nil && selected.LastUsedAt != nil:
 					selected = acc
@@ -1937,6 +2006,12 @@ func (s *GatewayService) selectAccountForModelWithPlatform(ctx context.Context, 
 		if acc.Priority < selected.Priority {
 			selected = acc
 		} else if acc.Priority == selected.Priority {
+			if accountCredentialRank(acc) != accountCredentialRank(selected) {
+				if accountCredentialRank(acc) < accountCredentialRank(selected) {
+					selected = acc
+				}
+				continue
+			}
 			switch {
 			case acc.LastUsedAt == nil && selected.LastUsedAt != nil:
 				selected = acc
@@ -2083,6 +2158,12 @@ func (s *GatewayService) selectAccountWithMixedScheduling(ctx context.Context, g
 			if acc.Priority < selected.Priority {
 				selected = acc
 			} else if acc.Priority == selected.Priority {
+				if accountCredentialRank(acc) != accountCredentialRank(selected) {
+					if accountCredentialRank(acc) < accountCredentialRank(selected) {
+						selected = acc
+					}
+					continue
+				}
 				switch {
 				case acc.LastUsedAt == nil && selected.LastUsedAt != nil:
 					selected = acc
@@ -2198,6 +2279,12 @@ func (s *GatewayService) selectAccountWithMixedScheduling(ctx context.Context, g
 		if acc.Priority < selected.Priority {
 			selected = acc
 		} else if acc.Priority == selected.Priority {
+			if accountCredentialRank(acc) != accountCredentialRank(selected) {
+				if accountCredentialRank(acc) < accountCredentialRank(selected) {
+					selected = acc
+				}
+				continue
+			}
 			switch {
 			case acc.LastUsedAt == nil && selected.LastUsedAt != nil:
 				selected = acc

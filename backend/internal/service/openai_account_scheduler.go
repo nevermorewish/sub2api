@@ -596,6 +596,16 @@ type openAIAccountCandidateScore struct {
 	hasTTFT   bool
 }
 
+func openAIAccountCredentialRank(candidate openAIAccountCandidateScore) int {
+	if accountCredentialRank(candidate.account) != 0 {
+		return 1
+	}
+	if !candidate.loadKnown || candidate.loadInfo == nil || candidate.loadInfo.LoadRate < apiKeyFallbackLoadThreshold {
+		return 0
+	}
+	return 1
+}
+
 type openAIAccountCandidateHeap []openAIAccountCandidateScore
 
 func (h openAIAccountCandidateHeap) Len() int {
@@ -676,6 +686,68 @@ func selectTopKOpenAICandidates(candidates []openAIAccountCandidateScore, topK i
 		return isOpenAIAccountCandidateBetter(ranked[i], ranked[j])
 	})
 	return ranked
+}
+
+// ensureOpenAIAccountCredentialCoverage prevents a same-priority API key from
+// occupying a top-K slot while a regular account credential is excluded. This
+// still preserves the configured top-K size and never crosses priorities.
+func ensureOpenAIAccountCredentialCoverage(ranked, pool []openAIAccountCandidateScore) []openAIAccountCandidateScore {
+	if len(ranked) == 0 || len(pool) == 0 {
+		return ranked
+	}
+	result := append([]openAIAccountCandidateScore(nil), ranked...)
+	selected := make(map[int64]struct{}, len(result))
+	for _, candidate := range result {
+		if candidate.account != nil {
+			selected[candidate.account.ID] = struct{}{}
+		}
+	}
+	for i, candidate := range result {
+		if candidate.account == nil || accountCredentialRank(candidate.account) == 0 {
+			continue
+		}
+		best := -1
+		for j, replacement := range pool {
+			if replacement.account == nil ||
+				replacement.account.Priority != candidate.account.Priority ||
+				openAIAccountCredentialRank(replacement) != 0 {
+				continue
+			}
+			if _, exists := selected[replacement.account.ID]; exists {
+				continue
+			}
+			if best < 0 || isOpenAIAccountCandidateBetter(replacement, pool[best]) {
+				best = j
+			}
+		}
+		if best >= 0 {
+			delete(selected, candidate.account.ID)
+			result[i] = pool[best]
+			selected[pool[best].account.ID] = struct{}{}
+		}
+	}
+	return result
+}
+
+// prioritizeOpenAIAccountCredentialsWithinPriority stably partitions each
+// priority's positions so regular accounts are attempted before API keys.
+// Candidates at other priorities retain their relative positions.
+func prioritizeOpenAIAccountCredentialsWithinPriority(candidates []openAIAccountCandidateScore) []openAIAccountCandidateScore {
+	result := append([]openAIAccountCandidateScore(nil), candidates...)
+	for i := 0; i < len(result); i++ {
+		if result[i].account == nil || openAIAccountCredentialRank(result[i]) == 0 {
+			continue
+		}
+		for j := i + 1; j < len(result); j++ {
+			if result[j].account != nil &&
+				result[j].account.Priority == result[i].account.Priority &&
+				openAIAccountCredentialRank(result[j]) == 0 {
+				result[i], result[j] = result[j], result[i]
+				break
+			}
+		}
+	}
+	return result
 }
 
 type openAISelectionRNG struct {
@@ -996,6 +1068,9 @@ func (s *defaultOpenAIAccountScheduler) buildOpenAISelectionOrder(
 			groupTopK = len(pool)
 		}
 		ranked := selectTopKOpenAICandidates(pool, groupTopK)
+		if !req.StickyWeighted {
+			ranked = ensureOpenAIAccountCredentialCoverage(ranked, pool)
+		}
 		var primary []openAIAccountCandidateScore
 		if req.StickyWeighted {
 			for _, stickyID := range []int64{req.StickyPreviousAccountID, req.StickyAccountID} {
@@ -1016,6 +1091,7 @@ func (s *defaultOpenAIAccountScheduler) buildOpenAISelectionOrder(
 		}
 		if len(primary) == 0 {
 			primary = buildOpenAIWeightedSelectionOrder(ranked, req)
+			primary = prioritizeOpenAIAccountCredentialsWithinPriority(primary)
 		}
 		if !plan.includeOverflowFallback || groupTopK >= len(pool) {
 			return primary
@@ -1069,6 +1145,9 @@ func sortOpenAICompactRetryCandidates(pool []openAIAccountCandidateScore) []open
 		a, b := ordered[i], ordered[j]
 		if a.account.Priority != b.account.Priority {
 			return a.account.Priority < b.account.Priority
+		}
+		if openAIAccountCredentialRank(a) != openAIAccountCredentialRank(b) {
+			return openAIAccountCredentialRank(a) < openAIAccountCredentialRank(b)
 		}
 		if a.loadInfo.LoadRate != b.loadInfo.LoadRate {
 			return a.loadInfo.LoadRate < b.loadInfo.LoadRate

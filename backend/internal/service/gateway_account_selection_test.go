@@ -68,6 +68,19 @@ func TestSortAccountsByPriorityAndLastUsed_PreferOAuth(t *testing.T) {
 	require.Equal(t, int64(2), accounts[0].ID, "preferOAuth 时 OAuth 账号排前面")
 }
 
+func TestSortAccountsByPriorityAndLastUsed_APIKeyIsSamePriorityFallback(t *testing.T) {
+	now := time.Now()
+	accounts := []*Account{
+		{ID: 1, Priority: 1, LastUsedAt: nil, Type: AccountTypeAPIKey},
+		{ID: 2, Priority: 1, LastUsedAt: testTimePtr(now), Type: AccountTypeOAuth},
+		{ID: 3, Priority: 0, LastUsedAt: nil, Type: AccountTypeAPIKey},
+	}
+
+	sortAccountsByPriorityAndLastUsed(accounts, false)
+
+	require.Equal(t, []int64{3, 2, 1}, []int64{accounts[0].ID, accounts[1].ID, accounts[2].ID})
+}
+
 func TestSortAccountsByPriorityAndLastUsed_StableSort(t *testing.T) {
 	accounts := []*Account{
 		{ID: 1, Priority: 1, LastUsedAt: nil, Type: AccountTypeAPIKey},
@@ -129,6 +142,25 @@ func TestFilterByMinPriority_SelectsMinPriority(t *testing.T) {
 	require.Len(t, result, 2)
 	require.Equal(t, int64(2), result[0].account.ID)
 	require.Equal(t, int64(3), result[1].account.ID)
+}
+
+func TestFilterByPreferredCredential(t *testing.T) {
+	accounts := []accountWithLoad{
+		makeAccWithLoad(1, 1, 79, nil, AccountTypeOAuth),
+		makeAccWithLoad(2, 1, 10, nil, AccountTypeAPIKey),
+	}
+
+	preferred := filterByPreferredCredential(accounts)
+	require.Len(t, preferred, 1)
+	require.Equal(t, int64(1), preferred[0].account.ID)
+
+	apiKeysOnly := filterByPreferredCredential(accounts[1:])
+	require.Len(t, apiKeysOnly, 1)
+	require.Equal(t, int64(2), apiKeysOnly[0].account.ID)
+
+	accounts[0].loadInfo.LoadRate = apiKeyFallbackLoadThreshold
+	atThreshold := filterByPreferredCredential(accounts)
+	require.Len(t, atThreshold, 2)
 }
 
 // --- filterByMinLoadRate ---

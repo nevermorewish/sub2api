@@ -932,6 +932,78 @@ func TestOpenAISelectAccountWithLoadAwareness_PrefersLowerLoad(t *testing.T) {
 	}
 }
 
+func TestOpenAISelectAccountWithLoadAwareness_PrefersRegularAccountBeforeAPIKey(t *testing.T) {
+	groupID := int64(1)
+	repo := stubOpenAIAccountRepo{accounts: []Account{
+		{ID: 1, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Concurrency: 2, Priority: 1},
+		{ID: 2, Platform: PlatformOpenAI, Type: AccountTypeAPIKey, Status: StatusActive, Schedulable: true, Concurrency: 2, Priority: 1},
+	}}
+	concurrencyCache := stubConcurrencyCache{loadMap: map[int64]*AccountLoadInfo{
+		1: {AccountID: 1, LoadRate: 79},
+		2: {AccountID: 2, LoadRate: 10},
+	}}
+	svc := &OpenAIGatewayService{
+		accountRepo:        repo,
+		cache:              &stubGatewayCache{},
+		concurrencyService: NewConcurrencyService(concurrencyCache),
+	}
+
+	selection, err := svc.SelectAccountWithLoadAwareness(context.Background(), &groupID, "", "gpt-4", nil)
+	require.NoError(t, err)
+	require.NotNil(t, selection)
+	require.NotNil(t, selection.Account)
+	require.Equal(t, int64(1), selection.Account.ID)
+}
+
+func TestOpenAISelectAccountWithLoadAwareness_AllowsAPIKeyAtEightyPercentAccountLoad(t *testing.T) {
+	groupID := int64(1)
+	repo := stubOpenAIAccountRepo{accounts: []Account{
+		{ID: 1, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Concurrency: 5, Priority: 1},
+		{ID: 2, Platform: PlatformOpenAI, Type: AccountTypeAPIKey, Status: StatusActive, Schedulable: true, Concurrency: 5, Priority: 1},
+	}}
+	concurrencyCache := stubConcurrencyCache{loadMap: map[int64]*AccountLoadInfo{
+		1: {AccountID: 1, LoadRate: apiKeyFallbackLoadThreshold},
+		2: {AccountID: 2, LoadRate: 10},
+	}}
+	svc := &OpenAIGatewayService{
+		accountRepo:        repo,
+		cache:              &stubGatewayCache{},
+		concurrencyService: NewConcurrencyService(concurrencyCache),
+	}
+
+	selection, err := svc.SelectAccountWithLoadAwareness(context.Background(), &groupID, "", "gpt-4", nil)
+	require.NoError(t, err)
+	require.NotNil(t, selection)
+	require.NotNil(t, selection.Account)
+	require.Equal(t, int64(2), selection.Account.ID)
+}
+
+func TestOpenAISelectAccountWithLoadAwareness_FallsBackToAPIKeyWhenRegularAccountBusy(t *testing.T) {
+	groupID := int64(1)
+	repo := stubOpenAIAccountRepo{accounts: []Account{
+		{ID: 1, Platform: PlatformOpenAI, Type: AccountTypeOAuth, Status: StatusActive, Schedulable: true, Concurrency: 2, Priority: 1},
+		{ID: 2, Platform: PlatformOpenAI, Type: AccountTypeAPIKey, Status: StatusActive, Schedulable: true, Concurrency: 2, Priority: 1},
+	}}
+	concurrencyCache := stubConcurrencyCache{
+		loadMap: map[int64]*AccountLoadInfo{
+			1: {AccountID: 1, LoadRate: 70},
+			2: {AccountID: 2, LoadRate: 10},
+		},
+		acquireResults: map[int64]bool{1: false, 2: true},
+	}
+	svc := &OpenAIGatewayService{
+		accountRepo:        repo,
+		cache:              &stubGatewayCache{},
+		concurrencyService: NewConcurrencyService(concurrencyCache),
+	}
+
+	selection, err := svc.SelectAccountWithLoadAwareness(context.Background(), &groupID, "", "gpt-4", nil)
+	require.NoError(t, err)
+	require.NotNil(t, selection)
+	require.NotNil(t, selection.Account)
+	require.Equal(t, int64(2), selection.Account.ID)
+}
+
 func TestOpenAISelectAccountForModelWithExclusions_StickyExcludedFallback(t *testing.T) {
 	sessionHash := "excluded"
 	repo := stubOpenAIAccountRepo{

@@ -792,6 +792,9 @@ func (s *OpenAIGatewayService) isBetterAccount(candidate, current *Account) bool
 	if candidate.Priority > current.Priority {
 		return false
 	}
+	if accountCredentialRank(candidate) != accountCredentialRank(current) {
+		return accountCredentialRank(candidate) < accountCredentialRank(current)
+	}
 
 	// 同优先级，比较最后使用时间
 	// Same priority, compare last used time
@@ -1006,6 +1009,9 @@ func (s *OpenAIGatewayService) selectAccountWithLoadAwareness(ctx context.Contex
 			a, b := available[i], available[j]
 			if a.account.Priority != b.account.Priority {
 				return a.account.Priority < b.account.Priority
+			}
+			if accountWithLoadCredentialRank(a) != accountWithLoadCredentialRank(b) {
+				return accountWithLoadCredentialRank(a) < accountWithLoadCredentialRank(b)
 			}
 			if a.loadInfo.LoadRate != b.loadInfo.LoadRate {
 				return a.loadInfo.LoadRate < b.loadInfo.LoadRate
