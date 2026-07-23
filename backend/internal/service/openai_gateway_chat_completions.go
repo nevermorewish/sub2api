@@ -416,8 +416,19 @@ func (s *OpenAIGatewayService) handleChatBufferedStreamingResponse(
 	}
 
 	if finalResponse == nil {
-		writeChatCompletionsError(c, http.StatusBadGateway, "api_error", "Upstream stream ended without a terminal response event")
-		return nil, fmt.Errorf("upstream stream ended without terminal event")
+		// The buffered path has not written anything to the client yet, so an
+		// incomplete Responses stream is safe to replay on another account.
+		// Returning a failover error here lets the handler exclude the broken
+		// account for this request instead of committing a terminal 502 before
+		// the account-switch loop gets a chance to run.
+		return nil, s.newOpenAIStreamFailoverError(
+			c,
+			account,
+			false,
+			requestID,
+			nil,
+			"Upstream stream ended without a terminal response event",
+		)
 	}
 	if strings.TrimSpace(finalResponse.Status) == "failed" {
 		payload, _ := json.Marshal(gin.H{"type": "response.failed", "response": finalResponse})
