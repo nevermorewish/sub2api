@@ -590,6 +590,27 @@ func TestGetFallbackPricing_FamilyMatching(t *testing.T) {
 
 		// ---- 月之暗面 Kimi ----
 		{
+			name:              "kimi k3 flagship",
+			model:             "kimi-k3",
+			expectedInput:     2.80e-6,
+			expectedOutput:    floatPtr(14e-6),
+			expectedCacheRead: floatPtr(0.28e-6),
+		},
+		{
+			name:              "kimi k2.7 code",
+			model:             "kimi-k2.7-code",
+			expectedInput:     0.95e-6,
+			expectedOutput:    floatPtr(4e-6),
+			expectedCacheRead: floatPtr(0.19e-6),
+		},
+		{
+			name:              "kimi k2.7 code highspeed",
+			model:             "kimi-k2.7-code-highspeed",
+			expectedInput:     1.90e-6,
+			expectedOutput:    floatPtr(8e-6),
+			expectedCacheRead: floatPtr(0.38e-6),
+		},
+		{
 			name:              "kimi k2.6 flagship",
 			model:             "kimi-k2.6",
 			expectedInput:     0.95e-6,
@@ -624,7 +645,14 @@ func TestGetFallbackPricing_FamilyMatching(t *testing.T) {
 			expectedOutput:    floatPtr(2.24e-6),
 			expectedCacheRead: floatPtr(0.14e-6),
 		},
-		// 关键：k2.6 / k2.5 / k2-thinking 必须先于 k2 匹配
+		// 关键：k2.7-code / k2.6 / k2.5 / k2-thinking 必须先于 k2 匹配
+		{
+			name:              "kimi k2.7 code vs k2 ordering",
+			model:             "kimi-k2-7-code",
+			expectedInput:     0.95e-6,
+			expectedOutput:    floatPtr(4e-6),
+			expectedCacheRead: floatPtr(0.19e-6),
+		},
 		{
 			name:              "kimi k2.6 vs k2 ordering",
 			model:             "kimi-k2.6",
@@ -810,8 +838,8 @@ func TestComputeTokenBreakdown_GptImage2ImageEditIssue4386(t *testing.T) {
 
 	cost := svc.computeTokenBreakdown(pricing, tokens, 1.0, "", false)
 
-	wantTextInput := float64(19) * 5e-6    // 0.000095
-	wantImageInput := float64(352) * 8e-6  // 0.002816
+	wantTextInput := float64(19) * 5e-6     // 0.000095
+	wantImageInput := float64(352) * 8e-6   // 0.002816
 	wantImageOutput := float64(439) * 30e-6 // 0.013170
 	require.InDelta(t, wantTextInput, cost.InputCost, 1e-15, "InputCost 仅含文本输入")
 	require.InDelta(t, wantImageInput, cost.ImageInputCost, 1e-15, "图片输入按 $8/1M 独立计费")

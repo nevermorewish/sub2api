@@ -469,6 +469,27 @@ func (s *BillingService) initFallbackPricing() {
 	//       交叉验证：https://www.tmtpost.com/7961404.html (USD 口径)
 	// Moonshot V1 (¥2/¥5/¥10 多 tier) 公开页未直接标注 USD 价，本分支不覆盖，避免误计价。
 	// K2-0905 / K2-0711 官方页面未保留定价，不覆盖。
+	s.fallbackPrices["kimi-k3"] = &ModelPricing{
+		InputPricePerToken:     2.80e-6, // ¥20.00 per MTok (cache miss) ≈ $2.80
+		OutputPricePerToken:    14e-6,   // ¥100.00 per MTok ≈ $14.00
+		CacheReadPricePerToken: 0.28e-6, // ¥2.00 per MTok (cache hit) ≈ $0.28
+		SupportsCacheBreakdown: false,
+	}
+	// Source: https://platform.kimi.com/docs/pricing/chat-k27-code
+	// K2.7 Code 标准版沿用 K2.6 的输入/输出价，缓存命中价调整为 $0.19/MTok；
+	// HighSpeed 为同模型高速档，三项单价均为标准版的 2 倍。
+	s.fallbackPrices["kimi-k2.7-code"] = &ModelPricing{
+		InputPricePerToken:     0.95e-6,
+		OutputPricePerToken:    4e-6,
+		CacheReadPricePerToken: 0.19e-6,
+		SupportsCacheBreakdown: false,
+	}
+	s.fallbackPrices["kimi-k2.7-code-highspeed"] = &ModelPricing{
+		InputPricePerToken:     1.90e-6,
+		OutputPricePerToken:    8e-6,
+		CacheReadPricePerToken: 0.38e-6,
+		SupportsCacheBreakdown: false,
+	}
 	s.fallbackPrices["kimi-k2.6"] = &ModelPricing{
 		InputPricePerToken:     0.95e-6, // $0.95 per MTok (cache miss)
 		OutputPricePerToken:    4e-6,    // $4.00 per MTok
@@ -677,10 +698,19 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 		return s.fallbackPrices["glm-4-32b-0414-128k"]
 	}
 
-	// 月之暗面 Kimi（kimi-k2.6 / kimi-for-coding / kimi-k2.5 / kimi-k2-thinking / kimi-k2）
+	// 月之暗面 Kimi（kimi-k3 / kimi-k2.7-code / kimi-k2.6 / kimi-for-coding / kimi-k2.5 / kimi-k2-thinking / kimi-k2）
 	// K2-0905 / K2-0711 官方未保留定价，不进入 fallback。
+	if strings.Contains(modelLower, "kimi-k3") {
+		return s.fallbackPrices["kimi-k3"]
+	}
 	if strings.Contains(modelLower, "kimi-for-coding") {
 		return s.fallbackPrices["kimi-for-coding"]
+	}
+	if strings.Contains(modelLower, "kimi-k2.7-code-highspeed") || strings.Contains(modelLower, "kimi-k2-7-code-highspeed") {
+		return s.fallbackPrices["kimi-k2.7-code-highspeed"]
+	}
+	if strings.Contains(modelLower, "kimi-k2.7-code") || strings.Contains(modelLower, "kimi-k2-7-code") {
+		return s.fallbackPrices["kimi-k2.7-code"]
 	}
 	if strings.Contains(modelLower, "kimi-k2.6") || strings.Contains(modelLower, "kimi-k2-6") {
 		return s.fallbackPrices["kimi-k2.6"]
