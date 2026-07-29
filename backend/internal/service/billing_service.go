@@ -363,7 +363,7 @@ func (s *BillingService) initFallbackPricing() {
 
 	// ============================================================
 	// 国产 LLM 兜底定价（数据源：各家官方定价页/USD 口径）
-	// 顺序：DeepSeek → 智谱 GLM → 月之暗面 Kimi → MiniMax
+	// 顺序：DeepSeek → 智谱 GLM → 阿里云百炼 Qwen → 月之暗面 Kimi → MiniMax → 火山方舟 Doubao
 	// 覆盖逻辑见同文件 getFallbackPricing()
 	// ============================================================
 
@@ -387,6 +387,12 @@ func (s *BillingService) initFallbackPricing() {
 	// Source: https://docs.z.ai/guides/overview/pricing (USD per 1M tokens)
 	// 注意：CacheReadPricePerToken 即"缓存命中"价格，CacheCreationPricePerToken 留空（智谱未公开写入价，按 0 处理）。
 	// GLM-4.6 与 GLM-4.5 在 z.ai 国际版上定价一致；GLM-4.5 国内按 ¥0.8/¥2，汇率换算后约 $0.112/$0.28，与国际版 $0.6/$2.2 不同，本分支采用国际版 USD 口径与现有 Claude/GPT 一致。
+	s.fallbackPrices["glm-5.2"] = &ModelPricing{
+		InputPricePerToken:     1.4e-6, // $1.40 per MTok
+		OutputPricePerToken:    4.4e-6, // $4.40 per MTok
+		CacheReadPricePerToken: 0.26e-6,
+		SupportsCacheBreakdown: false,
+	}
 	s.fallbackPrices["glm-5.1"] = &ModelPricing{
 		InputPricePerToken:     1.4e-6, // $1.40 per MTok
 		OutputPricePerToken:    4.4e-6, // $4.40 per MTok
@@ -461,6 +467,35 @@ func (s *BillingService) initFallbackPricing() {
 	s.fallbackPrices["glm-4.7-flash"] = &ModelPricing{
 		InputPricePerToken:     0,
 		OutputPricePerToken:    0,
+		SupportsCacheBreakdown: false,
+	}
+
+	// ---- 阿里云百炼 Qwen（华北 2 / 北京）----
+	// Sources:
+	//   https://help.aliyun.com/zh/model-studio/model-pricing
+	//   https://help.aliyun.com/zh/model-studio/context-cache
+	// 百炼人民币价格按 ¥1 ≈ $0.14 换算；隐式缓存命中按 input_token 的 20% 计费。
+	// qwen3.8-max-preview 当前仅面向 Token Plan，官方没有按量单价。为避免订阅账号上的
+	// 该模型无法计费，临时采用当前 Max Preview 的公开标准价 ¥12/¥36 每 MTok 作为保守基准；
+	// 待百炼发布 3.8 按量价后应替换本条，不能把 Token Plan 套餐成本误写成零价。
+	s.fallbackPrices["qwen3.8-max-preview"] = &ModelPricing{
+		InputPricePerToken:     1.68e-6,  // ¥12/MTok ≈ $1.68
+		OutputPricePerToken:    5.04e-6,  // ¥36/MTok ≈ $5.04
+		CacheReadPricePerToken: 0.336e-6, // implicit cache: 20% of input
+		SupportsCacheBreakdown: false,
+	}
+	// qwen3.7-max 浮动别名当前享受限时 5 折（¥6/¥18）；带日期版本及 preview
+	// 不享受该别名折扣，使用公开标准价 ¥12/¥36。
+	s.fallbackPrices["qwen3.7-max"] = &ModelPricing{
+		InputPricePerToken:     0.84e-6,
+		OutputPricePerToken:    2.52e-6,
+		CacheReadPricePerToken: 0.168e-6,
+		SupportsCacheBreakdown: false,
+	}
+	s.fallbackPrices["qwen3.7-max-standard"] = &ModelPricing{
+		InputPricePerToken:     1.68e-6,
+		OutputPricePerToken:    5.04e-6,
+		CacheReadPricePerToken: 0.336e-6,
 		SupportsCacheBreakdown: false,
 	}
 
@@ -563,6 +598,23 @@ func (s *BillingService) initFallbackPricing() {
 		SupportsCacheBreakdown: false,
 	}
 
+	// ---- 火山方舟 Doubao Seed 2.1（在线推理）----
+	// Source: https://www.volcengine.com/docs/82379/1099320
+	// 官方价格为人民币/百万 token，按 ¥1 ≈ $0.14 换算。2.1 Pro 与 Turbo 的
+	// 上下文均覆盖 256K，因此不需要旧型号的分段输入价格。
+	s.fallbackPrices["doubao-seed-2.1-pro"] = &ModelPricing{
+		InputPricePerToken:     0.42e-6,  // ¥3.00/MTok ≈ $0.42
+		OutputPricePerToken:    2.10e-6,  // ¥15.00/MTok ≈ $2.10
+		CacheReadPricePerToken: 0.168e-6, // ¥1.20/MTok ≈ $0.168
+		SupportsCacheBreakdown: false,
+	}
+	s.fallbackPrices["doubao-seed-2.1-turbo"] = &ModelPricing{
+		InputPricePerToken:     0.21e-6,  // ¥1.50/MTok ≈ $0.21
+		OutputPricePerToken:    1.05e-6,  // ¥7.50/MTok ≈ $1.05
+		CacheReadPricePerToken: 0.084e-6, // ¥0.60/MTok ≈ $0.084
+		SupportsCacheBreakdown: false,
+	}
+
 	// ---- 火山方舟 豆包 Embedding（多模态向量化）----
 	// doubao-embedding-vision 图文向量化：上游 usage 回传 prompt_tokens_details.{text_tokens,image_tokens}，
 	// 按量付费官方价 文本 ¥0.7/MTok、图片 ¥1.8/MTok；汇率口径 ÷7.14（与本表其他国产模型一致，¥1≈$0.14）。
@@ -656,8 +708,11 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 	// 匹配策略：长 key 优先（具体模型 → 系列 / 厂商），未知型号不回退以避免误计价。
 	// 与 DeepSeek 一样采用"白名单"语义：未在本表命中的国产模型 alias 一律不返回兜底价。
 
-	// 智谱 GLM（z.ai 公开 SKU：glm-5.1 / glm-5 / glm-5-turbo / glm-4.7 / glm-4.6 / glm-4.5 等）
+	// 智谱 GLM（z.ai 公开 SKU：glm-5.2 / glm-5.1 / glm-5 / glm-5-turbo / glm-4.7 / glm-4.6 / glm-4.5 等）
 	// 匹配顺序：先判别最高 tier，再依次降级。
+	if strings.Contains(modelLower, "glm-5.2") {
+		return s.fallbackPrices["glm-5.2"]
+	}
 	if strings.Contains(modelLower, "glm-5.1") {
 		return s.fallbackPrices["glm-5.1"]
 	}
@@ -696,6 +751,21 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 	}
 	if strings.Contains(modelLower, "glm-4-32b") {
 		return s.fallbackPrices["glm-4-32b-0414-128k"]
+	}
+
+	// 阿里云百炼 Qwen。3.8 Preview 必须先于 3.7；3.7 的固定日期版本与
+	// preview 不享受浮动别名的限时折扣，因此先匹配标准价条目。
+	if strings.Contains(modelLower, "qwen3.8-max-preview") || strings.Contains(modelLower, "qwen3-8-max-preview") {
+		return s.fallbackPrices["qwen3.8-max-preview"]
+	}
+	if strings.Contains(modelLower, "qwen3.7-max-preview") ||
+		strings.Contains(modelLower, "qwen3.7-max-20") ||
+		strings.Contains(modelLower, "qwen3-7-max-preview") ||
+		strings.Contains(modelLower, "qwen3-7-max-20") {
+		return s.fallbackPrices["qwen3.7-max-standard"]
+	}
+	if strings.Contains(modelLower, "qwen3.7-max") || strings.Contains(modelLower, "qwen3-7-max") {
+		return s.fallbackPrices["qwen3.7-max"]
 	}
 
 	// 月之暗面 Kimi（kimi-k3 / kimi-k2.7-code / kimi-k2.6 / kimi-for-coding / kimi-k2.5 / kimi-k2-thinking / kimi-k2）
@@ -743,6 +813,14 @@ func (s *BillingService) getFallbackPricing(model string) *ModelPricing {
 	}
 	if strings.Contains(modelLower, "minimax-m2") || strings.Contains(modelLower, "minimax-m-2") {
 		return s.fallbackPrices["minimax-m2"]
+	}
+
+	// 火山方舟 Doubao Seed 2.1。具体型号优先，未知 doubao-* 仍不宽泛回退。
+	if strings.Contains(modelLower, "doubao-seed-2.1-pro") || strings.Contains(modelLower, "doubao-seed-2-1-pro") {
+		return s.fallbackPrices["doubao-seed-2.1-pro"]
+	}
+	if strings.Contains(modelLower, "doubao-seed-2.1-turbo") || strings.Contains(modelLower, "doubao-seed-2-1-turbo") {
+		return s.fallbackPrices["doubao-seed-2.1-turbo"]
 	}
 
 	// 火山方舟 豆包 Embedding（多模态向量化）。

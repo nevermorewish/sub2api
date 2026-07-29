@@ -130,7 +130,7 @@ func TestGetModelPricing_FallbackWarnLoggedOncePerModel(t *testing.T) {
 	svc := newTestBillingService()
 	buf := captureStdLog(t)
 
-	// glm-5.2 不在 LiteLLM,经 strings.Contains 命中 glm-5 兜底价 → 触发 fallback warn。
+	// glm-5.2 不在 LiteLLM 本地镜像，命中独立的官方兜底价 → 触发 fallback warn。
 	for i := 0; i < 5; i++ {
 		pricing, err := svc.GetModelPricing("glm-5.2")
 		require.NoError(t, err)
@@ -158,17 +158,17 @@ func TestGetModelPricing_FallbackWarnPerModelNotGlobal(t *testing.T) {
 	require.Equal(t, 0, strings.Count(out, "model: GLM-5.2"), out) // 大写经 ToLower 归一,不应单独成行
 }
 
-// 回归:glm-5.2 仍解析到 glm-5 兜底价(计费金额不变,防止日志改动掩盖未来计费回归)。
-func TestGetModelPricing_GLM52FallsBackToGLM5Price(t *testing.T) {
+// 回归：glm-5.2 必须解析到自己的官方价格，不能再被 glm-5 的宽匹配抢走。
+func TestGetModelPricing_GLM52UsesDedicatedOfficialPrice(t *testing.T) {
 	svc := newTestBillingService()
 
 	got, err := svc.GetModelPricing("glm-5.2")
 	require.NoError(t, err)
 	require.NotNil(t, got)
 
-	// glm-5 base：Input 1e-6 / Output 3.2e-6(见 TestGetFallbackPricing_FamilyMatching)。
-	require.InDelta(t, 1e-6, got.InputPricePerToken, 1e-12)
-	require.InDelta(t, 3.2e-6, got.OutputPricePerToken, 1e-12)
+	require.InDelta(t, 1.4e-6, got.InputPricePerToken, 1e-12)
+	require.InDelta(t, 4.4e-6, got.OutputPricePerToken, 1e-12)
+	require.InDelta(t, 0.26e-6, got.CacheReadPricePerToken, 1e-12)
 }
 
 func TestGetModelPricing_UnknownClaudeModelFallsBackToSonnet(t *testing.T) {
@@ -490,6 +490,13 @@ func TestGetFallbackPricing_FamilyMatching(t *testing.T) {
 
 		// ---- 智谱 GLM（z.ai USD 口径）----
 		{
+			name:              "glm 5.2 flagship",
+			model:             "glm-5.2",
+			expectedInput:     1.4e-6,
+			expectedOutput:    floatPtr(4.4e-6),
+			expectedCacheRead: floatPtr(0.26e-6),
+		},
+		{
 			name:              "glm 5.1 flagship",
 			model:             "glm-5.1",
 			expectedInput:     1.4e-6,
@@ -586,6 +593,29 @@ func TestGetFallbackPricing_FamilyMatching(t *testing.T) {
 			expectedInput:     0.2e-6, // = glm-4.5-air 价格（不是 glm-4.5 的 0.6e-6）
 			expectedOutput:    floatPtr(1.1e-6),
 			expectedCacheRead: floatPtr(0.03e-6),
+		},
+
+		// ---- 阿里云百炼 Qwen ----
+		{
+			name:              "qwen 3.8 max preview token plan benchmark",
+			model:             "qwen3.8-max-preview",
+			expectedInput:     1.68e-6,
+			expectedOutput:    floatPtr(5.04e-6),
+			expectedCacheRead: floatPtr(0.336e-6),
+		},
+		{
+			name:              "qwen 3.7 max promotional alias",
+			model:             "qwen3.7-max",
+			expectedInput:     0.84e-6,
+			expectedOutput:    floatPtr(2.52e-6),
+			expectedCacheRead: floatPtr(0.168e-6),
+		},
+		{
+			name:              "qwen 3.7 max dated standard price",
+			model:             "qwen3.7-max-2026-06-08",
+			expectedInput:     1.68e-6,
+			expectedOutput:    floatPtr(5.04e-6),
+			expectedCacheRead: floatPtr(0.336e-6),
 		},
 
 		// ---- 月之暗面 Kimi ----
@@ -712,7 +742,21 @@ func TestGetFallbackPricing_FamilyMatching(t *testing.T) {
 			expectedCacheRead: floatPtr(0.03e-6),
 		},
 
-		// ---- 火山方舟 豆包 Embedding（多模态向量化）----
+		// ---- 火山方舟 Doubao Seed 2.1 / 豆包 Embedding ----
+		{
+			name:              "doubao seed 2.1 pro",
+			model:             "doubao-seed-2.1-pro",
+			expectedInput:     0.42e-6,
+			expectedOutput:    floatPtr(2.10e-6),
+			expectedCacheRead: floatPtr(0.168e-6),
+		},
+		{
+			name:              "doubao seed 2.1 turbo versioned alias",
+			model:             "doubao-seed-2.1-turbo-260728",
+			expectedInput:     0.21e-6,
+			expectedOutput:    floatPtr(1.05e-6),
+			expectedCacheRead: floatPtr(0.084e-6),
+		},
 		{
 			name:           "doubao embedding vision text rate",
 			model:          "doubao-embedding-vision",
