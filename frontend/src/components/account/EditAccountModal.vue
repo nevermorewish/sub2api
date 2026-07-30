@@ -1562,6 +1562,25 @@
         </div>
       </div>
 
+      <div
+        v-if="account?.platform === 'openai' && account?.type === 'apikey'"
+        class="border-t border-gray-200 pt-4 dark:border-dark-600"
+      >
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <label class="input-label mb-0">{{ t('admin.accounts.openai.glmMultimodal') }}</label>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.accounts.openai.glmMultimodalDesc') }}
+            </p>
+          </div>
+          <Toggle
+            v-model="glmMultimodalSupported"
+            data-testid="glm-multimodal-toggle"
+            :aria-label="t('admin.accounts.openai.glmMultimodal')"
+          />
+        </div>
+      </div>
+
       <!-- OpenAI APIKey Responses API support mode -->
       <div
         v-if="account?.platform === 'openai' && account?.type === 'apikey'"
@@ -2830,6 +2849,7 @@ const customBaseUrl = ref('')
 // OpenAI 自动透传开关（OAuth/API Key）
 const openaiPassthroughEnabled = ref(false)
 const openAILongContextBillingEnabled = ref(false)
+const glmMultimodalSupported = ref(false)
 // OpenAI 订阅档位（Plus/Pro/Free）手动覆盖值,存于 credentials.plan_type;'' 表示清空/自动识别
 const editPlanType = ref<string>('')
 const openAICompactMode = ref<OpenAICompactMode>('auto')
@@ -3265,6 +3285,7 @@ const syncFormFromAccount = (newAccount: Account | null) => {
   // Load OpenAI passthrough toggle (OpenAI OAuth/SetupToken/API Key)
   openaiPassthroughEnabled.value = false
   openAILongContextBillingEnabled.value = false
+  glmMultimodalSupported.value = false
   editPlanType.value = ''
   openAICompactMode.value = 'auto'
   openAIResponsesMode.value = 'auto'
@@ -3282,6 +3303,7 @@ const syncFormFromAccount = (newAccount: Account | null) => {
     openaiPassthroughEnabled.value = extra?.openai_passthrough === true || extra?.openai_oauth_passthrough === true
     const longContextBillingValue = extra?.openai_long_context_billing_enabled
     openAILongContextBillingEnabled.value = longContextBillingValue === true
+    glmMultimodalSupported.value = newAccount.type === 'apikey' && extra?.glm_multimodal_supported === true
     // plan_type 手动覆盖仅 OAuth 有实际调度语义(IsOpenAIChatGPTSubscription 要求 oauth),故只对 oauth 回填
     editPlanType.value = newAccount.type === 'oauth'
       ? readPlanType(newAccount.credentials as Record<string, unknown> | undefined)
@@ -4518,6 +4540,11 @@ const handleSubmit = async () => {
         delete newExtra.openai_long_context_billing_enabled
       } else {
         newExtra.openai_long_context_billing_enabled = openAILongContextBillingEnabled.value
+      }
+      if (props.account.type === 'apikey' && glmMultimodalSupported.value) {
+        newExtra.glm_multimodal_supported = true
+      } else {
+        delete newExtra.glm_multimodal_supported
       }
       if (openAICompactMode.value === 'auto') {
         delete newExtra.openai_compact_mode

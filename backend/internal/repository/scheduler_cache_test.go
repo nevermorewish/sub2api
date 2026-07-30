@@ -37,6 +37,24 @@ func TestSchedulerMetadataAccountKeepsOpenAISubscriptionIdentity(t *testing.T) {
 	require.Empty(t, metadata.GetCredential("access_token"))
 }
 
+func TestSchedulerMetadataAccountKeepsGLMMultimodalSupport(t *testing.T) {
+	account := service.Account{
+		ID:       25,
+		Platform: service.PlatformOpenAI,
+		Type:     service.AccountTypeAPIKey,
+		Extra: map[string]any{
+			service.GLMMultimodalSupportedExtraKey: true,
+			"unused_large_field":                   "drop-me",
+		},
+	}
+
+	metadata := buildSchedulerMetadataAccount(account)
+
+	require.True(t, metadata.SupportsGLMMultimodal())
+	require.Equal(t, true, metadata.Extra[service.GLMMultimodalSupportedExtraKey])
+	require.NotContains(t, metadata.Extra, "unused_large_field")
+}
+
 func TestSchedulerMetadataAccountProjectsUpstreamBillingProbe(t *testing.T) {
 	lastError := strings.Repeat("upstream diagnostic ", 512)
 	probe := map[string]any{

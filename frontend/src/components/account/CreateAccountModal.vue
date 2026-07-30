@@ -2997,6 +2997,25 @@
         </div>
       </div>
 
+      <div
+        v-if="form.platform === 'openai' && accountCategory === 'apikey'"
+        class="border-t border-gray-200 pt-4 dark:border-dark-600"
+      >
+        <div class="flex items-center justify-between gap-4">
+          <div>
+            <label class="input-label mb-0">{{ t('admin.accounts.openai.glmMultimodal') }}</label>
+            <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              {{ t('admin.accounts.openai.glmMultimodalDesc') }}
+            </p>
+          </div>
+          <Toggle
+            v-model="glmMultimodalSupported"
+            data-testid="glm-multimodal-toggle"
+            :aria-label="t('admin.accounts.openai.glmMultimodal')"
+          />
+        </div>
+      </div>
+
       <!-- OpenAI APIKey Responses API support mode -->
       <div
         v-if="form.platform === 'openai' && accountCategory === 'apikey'"
@@ -3780,6 +3799,7 @@ const autoPauseOnExpired = ref(true)
 const openaiPassthroughEnabled = ref(false)
 const openAILongContextBillingEnabled = ref(false)
 const openAILongContextBillingTouched = ref(false)
+const glmMultimodalSupported = ref(false)
 const openAICompactMode = ref<OpenAICompactMode>('auto')
 const openAIResponsesMode = ref<OpenAIResponsesMode>('auto')
 const openAIEndpointCapabilities = ref<OpenAIEndpointCapability[]>(['chat_completions', 'embeddings'])
@@ -4658,6 +4678,7 @@ const resetForm = () => {
   openaiPassthroughEnabled.value = false
   openAILongContextBillingEnabled.value = false
   openAILongContextBillingTouched.value = false
+  glmMultimodalSupported.value = false
   openAICompactMode.value = 'auto'
   openAIResponsesMode.value = 'auto'
   openAIEndpointCapabilities.value = ['chat_completions', 'embeddings']
@@ -4741,6 +4762,12 @@ const buildOpenAIExtra = (base?: Record<string, unknown>): Record<string, unknow
     delete extra.openai_oauth_passthrough
   }
   extra.openai_long_context_billing_enabled = openAILongContextBillingEnabled.value
+
+  if (accountCategory.value === 'apikey' && glmMultimodalSupported.value) {
+    extra.glm_multimodal_supported = true
+  } else {
+    delete extra.glm_multimodal_supported
+  }
 
   if (accountCategory.value === 'oauth-based' && codexCLIOnlyEnabled.value) {
     extra.codex_cli_only = true
