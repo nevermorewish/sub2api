@@ -12,11 +12,41 @@ import (
 // ScheduledTestHandler handles admin scheduled-test-plan management.
 type ScheduledTestHandler struct {
 	scheduledTestSvc *service.ScheduledTestService
+	runner           *service.ScheduledTestRunnerService
 }
 
 // NewScheduledTestHandler creates a new ScheduledTestHandler.
-func NewScheduledTestHandler(scheduledTestSvc *service.ScheduledTestService) *ScheduledTestHandler {
-	return &ScheduledTestHandler{scheduledTestSvc: scheduledTestSvc}
+func NewScheduledTestHandler(scheduledTestSvc *service.ScheduledTestService, runner *service.ScheduledTestRunnerService) *ScheduledTestHandler {
+	return &ScheduledTestHandler{scheduledTestSvc: scheduledTestSvc, runner: runner}
+}
+
+type updateAccountAutoMonitorRequest struct {
+	Enabled *bool `json:"enabled" binding:"required"`
+}
+
+// GetAccountAutoMonitor GET /admin/accounts/auto-monitor
+func (h *ScheduledTestHandler) GetAccountAutoMonitor(c *gin.Context) {
+	settings, err := h.runner.GetAccountAutoMonitorSettings(c.Request.Context())
+	if err != nil {
+		response.InternalError(c, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, settings)
+}
+
+// UpdateAccountAutoMonitor PUT /admin/accounts/auto-monitor
+func (h *ScheduledTestHandler) UpdateAccountAutoMonitor(c *gin.Context) {
+	var req updateAccountAutoMonitorRequest
+	if err := c.ShouldBindJSON(&req); err != nil || req.Enabled == nil {
+		response.BadRequest(c, "enabled is required")
+		return
+	}
+	settings, err := h.runner.SetAccountAutoMonitorEnabled(c.Request.Context(), *req.Enabled)
+	if err != nil {
+		response.InternalError(c, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, settings)
 }
 
 type createScheduledTestPlanRequest struct {

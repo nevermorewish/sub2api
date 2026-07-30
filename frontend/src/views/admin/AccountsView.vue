@@ -17,6 +17,24 @@
             @create="showCreate = true"
           >
             <template #after>
+              <div
+                class="flex h-10 items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 shadow-sm dark:border-dark-600 dark:bg-dark-800 dark:text-gray-200"
+                :title="t('admin.accounts.autoMonitorHint')"
+              >
+                <Icon
+                  v-if="accountAutoMonitorLoading"
+                  name="refresh"
+                  size="sm"
+                  class="animate-spin text-primary-500"
+                />
+                <span class="hidden whitespace-nowrap md:inline">{{ t('admin.accounts.autoMonitor') }}</span>
+                <Toggle
+                  :model-value="accountAutoMonitorEnabled"
+                  :class="accountAutoMonitorLoading ? 'pointer-events-none opacity-60' : ''"
+                  @update:model-value="handleAccountAutoMonitorToggle"
+                />
+              </div>
+
               <!-- Auto Refresh Dropdown -->
               <div class="relative" ref="autoRefreshDropdownRef">
                 <button
@@ -479,6 +497,7 @@ import AppLayout from '@/components/layout/AppLayout.vue'
 import TablePageLayout from '@/components/layout/TablePageLayout.vue'
 import DataTable from '@/components/common/DataTable.vue'
 import HelpTooltip from '@/components/common/HelpTooltip.vue'
+import Toggle from '@/components/common/Toggle.vue'
 import Pagination from '@/components/common/Pagination.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import { CreateAccountModal, EditAccountModal, BulkEditAccountModal, SyncFromCrsModal, TempUnschedStatusModal } from '@/components/account'
@@ -657,6 +676,36 @@ const todayStatsError = ref<string | null>(null)
 const todayStatsReqSeq = ref(0)
 const pendingTodayStatsRefresh = ref(false)
 const usageManualRefreshToken = ref(0)
+const accountAutoMonitorEnabled = ref(false)
+const accountAutoMonitorLoading = ref(false)
+
+const loadAccountAutoMonitor = async () => {
+  accountAutoMonitorLoading.value = true
+  try {
+    const settings = await adminAPI.scheduledTests.getAccountAutoMonitor()
+    accountAutoMonitorEnabled.value = settings.enabled
+  } catch (error) {
+    console.error('Failed to load account auto monitor settings:', error)
+  } finally {
+    accountAutoMonitorLoading.value = false
+  }
+}
+
+const handleAccountAutoMonitorToggle = async (enabled: boolean) => {
+  if (accountAutoMonitorLoading.value) return
+  accountAutoMonitorLoading.value = true
+  try {
+    const settings = await adminAPI.scheduledTests.updateAccountAutoMonitor(enabled)
+    accountAutoMonitorEnabled.value = settings.enabled
+    appStore.showSuccess(
+      t(settings.enabled ? 'admin.accounts.autoMonitorEnabled' : 'admin.accounts.autoMonitorDisabled')
+    )
+  } catch (error) {
+    appStore.showError(extractApiErrorMessage(error, t('admin.accounts.autoMonitorUpdateFailed')))
+  } finally {
+    accountAutoMonitorLoading.value = false
+  }
+}
 
 const buildDefaultTodayStats = (): WindowStats => ({
   requests: 0,
@@ -2051,6 +2100,7 @@ const handleClickOutside = (event: MouseEvent) => {
 
 onMounted(async () => {
   load()
+  loadAccountAutoMonitor()
   loadUpstreamBillingProbeGlobalState()
   try {
     const [p, g] = await Promise.all([adminAPI.proxies.getAll(), adminAPI.groups.getAll()])

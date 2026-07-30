@@ -2118,6 +2118,14 @@ export interface ScheduledTestResult {
   created_at: string
 }
 
+export interface AccountAutoMonitorSettings {
+  enabled: boolean
+  interval_minutes: number
+  last_run_at?: string | null
+  next_run_at?: string | null
+  running: boolean
+}
+
 export interface CreateScheduledTestPlanRequest {
   account_id: number
   model_id: string

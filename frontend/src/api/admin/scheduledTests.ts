@@ -7,9 +7,20 @@ import { apiClient } from '../client'
 import type {
   ScheduledTestPlan,
   ScheduledTestResult,
+  AccountAutoMonitorSettings,
   CreateScheduledTestPlanRequest,
   UpdateScheduledTestPlanRequest
 } from '@/types'
+
+export async function getAccountAutoMonitor(): Promise<AccountAutoMonitorSettings> {
+  const { data } = await apiClient.get<AccountAutoMonitorSettings>('/admin/accounts/auto-monitor')
+  return data
+}
+
+export async function updateAccountAutoMonitor(enabled: boolean): Promise<AccountAutoMonitorSettings> {
+  const { data } = await apiClient.put<AccountAutoMonitorSettings>('/admin/accounts/auto-monitor', { enabled })
+  return data
+}
 
 /**
  * List all scheduled test plans for an account
@@ -75,6 +86,8 @@ export async function listResults(planId: number, limit?: number): Promise<Sched
 }
 
 export const scheduledTestsAPI = {
+  getAccountAutoMonitor,
+  updateAccountAutoMonitor,
   listByAccount,
   create,
   update,
