@@ -433,6 +433,9 @@ export default {
       apiKeyRequired: 'API Key *',
       apiKeyPlaceholder: 'sk-ant-api03-...',
       apiKeyHint: 'Your Claude Console API Key',
+      glmMultimodal: 'GLM multimodal support',
+      glmMultimodalDesc:
+        'Enable when this account accepts image input for GLM models. Text-only GLM requests are unaffected.',
       // OpenAI specific hints
       openai: {
         baseUrlHint: 'Leave default for official OpenAI API',
@@ -443,9 +446,6 @@ export default {
         longContextBilling: 'API long-context pricing',
         longContextBillingDesc:
           'Disabled by default. Enable only when this account\'s upstream charges OpenAI API long-context rates above the model threshold.',
-        glmMultimodal: 'GLM multimodal support',
-        glmMultimodalDesc:
-          'Enable when this upstream accepts image input for GLM models. Text-only GLM requests are unaffected.',
         responsesWebsocketsV2: 'Responses WebSocket v2',
         responsesWebsocketsV2Desc:
           'Disabled by default. Enable to allow responses_websockets_v2 capability (still gated by global and account-type switches).',

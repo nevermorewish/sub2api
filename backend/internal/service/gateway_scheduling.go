@@ -1049,6 +1049,9 @@ func (s *GatewayService) isAccountSchedulableForModelSelection(ctx context.Conte
 	if account == nil {
 		return false
 	}
+	if requiresGLMMultimodalRouting(ctx) && !account.SupportsGLMMultimodal() {
+		return false
+	}
 	return account.IsSchedulableForModelWithContext(ctx, requestedModel)
 }
 

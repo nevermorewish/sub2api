@@ -32,7 +32,10 @@ func requiresGLMMultimodalRouting(ctx context.Context) bool {
 // SupportsGLMMultimodal reports whether this account is explicitly enabled
 // for GLM requests containing image input. Missing values default to false.
 func (a *Account) SupportsGLMMultimodal() bool {
-	if a == nil || a.Platform != PlatformOpenAI || a.Extra == nil {
+	if a == nil || a.Type != AccountTypeAPIKey || a.Extra == nil {
+		return false
+	}
+	if a.Platform != PlatformOpenAI && a.Platform != PlatformAnthropic {
 		return false
 	}
 	supported, _ := a.Extra[GLMMultimodalSupportedExtraKey].(bool)

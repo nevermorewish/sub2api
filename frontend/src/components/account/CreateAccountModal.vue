@@ -2998,20 +2998,20 @@
       </div>
 
       <div
-        v-if="form.platform === 'openai' && accountCategory === 'apikey'"
+        v-if="(form.platform === 'openai' || form.platform === 'anthropic') && accountCategory === 'apikey'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="flex items-center justify-between gap-4">
           <div>
-            <label class="input-label mb-0">{{ t('admin.accounts.openai.glmMultimodal') }}</label>
+            <label class="input-label mb-0">{{ t('admin.accounts.glmMultimodal') }}</label>
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {{ t('admin.accounts.openai.glmMultimodalDesc') }}
+              {{ t('admin.accounts.glmMultimodalDesc') }}
             </p>
           </div>
           <Toggle
             v-model="glmMultimodalSupported"
             data-testid="glm-multimodal-toggle"
-            :aria-label="t('admin.accounts.openai.glmMultimodal')"
+            :aria-label="t('admin.accounts.glmMultimodal')"
           />
         </div>
       </div>
@@ -4834,6 +4834,11 @@ const buildAnthropicExtra = (base?: Record<string, unknown>): Record<string, unk
     delete extra.web_search_emulation
   } else {
     extra.web_search_emulation = webSearchEmulationMode.value
+  }
+  if (glmMultimodalSupported.value) {
+    extra.glm_multimodal_supported = true
+  } else {
+    delete extra.glm_multimodal_supported
   }
 
   return Object.keys(extra).length > 0 ? extra : undefined

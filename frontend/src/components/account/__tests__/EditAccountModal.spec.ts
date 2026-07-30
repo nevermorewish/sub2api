@@ -435,6 +435,27 @@ describe('EditAccountModal', () => {
     expect(updateAccountMock.mock.calls[0]?.[1]?.extra).not.toHaveProperty('glm_multimodal_supported')
   })
 
+  it('loads and submits GLM multimodal support for Anthropic API key accounts', async () => {
+    const account = buildAccount()
+    account.platform = 'anthropic'
+    account.name = 'Anthropic Key'
+    account.extra = {
+      glm_multimodal_supported: true
+    }
+    updateAccountMock.mockReset().mockResolvedValue(account)
+    checkMixedChannelRiskMock.mockReset().mockResolvedValue({ has_risk: false })
+
+    const wrapper = mountModal(account)
+    const toggle = wrapper.get('[data-testid="glm-multimodal-toggle"]')
+    expect(toggle.attributes('aria-checked')).toBe('true')
+
+    await toggle.trigger('click')
+    await wrapper.get('form#edit-account-form').trigger('submit.prevent')
+
+    expect(updateAccountMock).toHaveBeenCalledTimes(1)
+    expect(updateAccountMock.mock.calls[0]?.[1]?.extra).not.toHaveProperty('glm_multimodal_supported')
+  })
+
   it('defaults legacy OpenAI accounts to long-context billing disabled', async () => {
     const account = buildAccount()
     updateAccountMock.mockReset()

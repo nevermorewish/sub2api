@@ -1563,20 +1563,20 @@
       </div>
 
       <div
-        v-if="account?.platform === 'openai' && account?.type === 'apikey'"
+        v-if="(account?.platform === 'openai' || account?.platform === 'anthropic') && account?.type === 'apikey'"
         class="border-t border-gray-200 pt-4 dark:border-dark-600"
       >
         <div class="flex items-center justify-between gap-4">
           <div>
-            <label class="input-label mb-0">{{ t('admin.accounts.openai.glmMultimodal') }}</label>
+            <label class="input-label mb-0">{{ t('admin.accounts.glmMultimodal') }}</label>
             <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
-              {{ t('admin.accounts.openai.glmMultimodalDesc') }}
+              {{ t('admin.accounts.glmMultimodalDesc') }}
             </p>
           </div>
           <Toggle
             v-model="glmMultimodalSupported"
             data-testid="glm-multimodal-toggle"
-            :aria-label="t('admin.accounts.openai.glmMultimodal')"
+            :aria-label="t('admin.accounts.glmMultimodal')"
           />
         </div>
       </div>
@@ -3299,11 +3299,14 @@ const syncFormFromAccount = (newAccount: Account | null) => {
   anthropicPassthroughEnabled.value = false
   anthropicAPIKeyAuthScheme.value = 'x_api_key'
   webSearchEmulationMode.value = 'default'
+  glmMultimodalSupported.value =
+    newAccount.type === 'apikey' &&
+    (newAccount.platform === 'openai' || newAccount.platform === 'anthropic') &&
+    extra?.glm_multimodal_supported === true
   if (newAccount.platform === 'openai' && (newAccount.type === 'oauth' || newAccount.type === 'setup-token' || newAccount.type === 'apikey')) {
     openaiPassthroughEnabled.value = extra?.openai_passthrough === true || extra?.openai_oauth_passthrough === true
     const longContextBillingValue = extra?.openai_long_context_billing_enabled
     openAILongContextBillingEnabled.value = longContextBillingValue === true
-    glmMultimodalSupported.value = newAccount.type === 'apikey' && extra?.glm_multimodal_supported === true
     // plan_type 手动覆盖仅 OAuth 有实际调度语义(IsOpenAIChatGPTSubscription 要求 oauth),故只对 oauth 回填
     editPlanType.value = newAccount.type === 'oauth'
       ? readPlanType(newAccount.credentials as Record<string, unknown> | undefined)
@@ -4512,6 +4515,11 @@ const handleSubmit = async () => {
         delete newExtra.web_search_emulation
       } else {
         newExtra.web_search_emulation = webSearchEmulationMode.value
+      }
+      if (glmMultimodalSupported.value) {
+        newExtra.glm_multimodal_supported = true
+      } else {
+        delete newExtra.glm_multimodal_supported
       }
       updatePayload.extra = newExtra
     }

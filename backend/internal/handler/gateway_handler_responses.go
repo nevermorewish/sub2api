@@ -85,6 +85,9 @@ func (h *GatewayHandler) Responses(c *gin.Context) {
 	setOpsRequestContext(c, reqModel, reqStream)
 	setOpsEndpointContext(c, "", int16(service.RequestTypeFromLegacy(reqStream, false)))
 	requestCtx := c.Request.Context()
+	if service.IsGLMMultimodalRequest(reqModel, body) {
+		requestCtx = service.WithGLMMultimodalRouting(requestCtx)
+	}
 	if service.IsImageGenerationIntentForPlatform("/v1/responses", reqModel, body, openAICompatibleRequestPlatform(apiKey)) {
 		requestCtx = service.WithOpenAIImageGenerationIntent(requestCtx)
 	}

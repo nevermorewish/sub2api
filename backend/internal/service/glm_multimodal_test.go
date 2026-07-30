@@ -80,6 +80,53 @@ func TestGLMMultimodalRoutingRequiresExplicitAccountSupport(t *testing.T) {
 	require.True(t, isOpenAICompatibleAccountEligibleForRequest(context.Background(), unsupported, PlatformOpenAI, "glm-4.6", false, ""))
 }
 
+func TestSupportsGLMMultimodalForAPIKeyProtocols(t *testing.T) {
+	t.Parallel()
+
+	for _, platform := range []string{PlatformOpenAI, PlatformAnthropic} {
+		account := &Account{
+			Platform: platform,
+			Type:     AccountTypeAPIKey,
+			Extra:    map[string]any{GLMMultimodalSupportedExtraKey: true},
+		}
+		require.True(t, account.SupportsGLMMultimodal(), platform)
+	}
+
+	require.False(t, (&Account{
+		Platform: PlatformAnthropic,
+		Type:     AccountTypeAPIKey,
+	}).SupportsGLMMultimodal())
+	require.False(t, (&Account{
+		Platform: PlatformAnthropic,
+		Type:     AccountTypeOAuth,
+		Extra:    map[string]any{GLMMultimodalSupportedExtraKey: true},
+	}).SupportsGLMMultimodal())
+}
+
+func TestAnthropicSchedulerFiltersGLMMultimodalCapability(t *testing.T) {
+	t.Parallel()
+
+	ctx := WithGLMMultimodalRouting(context.Background())
+	unsupported := &Account{
+		Platform:    PlatformAnthropic,
+		Type:        AccountTypeAPIKey,
+		Status:      StatusActive,
+		Schedulable: true,
+	}
+	supported := &Account{
+		Platform:    PlatformAnthropic,
+		Type:        AccountTypeAPIKey,
+		Status:      StatusActive,
+		Schedulable: true,
+		Extra:       map[string]any{GLMMultimodalSupportedExtraKey: true},
+	}
+	service := &GatewayService{}
+
+	require.False(t, service.isAccountSchedulableForModelSelection(ctx, unsupported, "glm-4.6"))
+	require.True(t, service.isAccountSchedulableForModelSelection(ctx, supported, "glm-4.6"))
+	require.True(t, service.isAccountSchedulableForModelSelection(context.Background(), unsupported, "glm-4.6"))
+}
+
 func TestAdvancedSchedulerFiltersGLMMultimodalCapability(t *testing.T) {
 	t.Parallel()
 

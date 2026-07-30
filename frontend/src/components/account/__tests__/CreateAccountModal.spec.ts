@@ -251,6 +251,23 @@ describe('CreateAccountModal OpenAI long-context billing', () => {
     expect(createAccountMock.mock.calls[0]?.[0]?.extra?.glm_multimodal_supported).toBe(true)
   })
 
+  it('submits GLM multimodal support for Anthropic API key accounts', async () => {
+    const wrapper = mountModal()
+    await selectButtonByText(wrapper, 'admin.accounts.claudeConsole')
+    await wrapper.get('form#create-account-form input[type="text"]').setValue('Anthropic GLM multimodal account')
+    await wrapper.get('form#create-account-form input[type="password"]').setValue('test-api-key')
+
+    const toggle = wrapper.get('[data-testid="glm-multimodal-toggle"]')
+    expect(toggle.attributes('aria-checked')).toBe('false')
+    await toggle.trigger('click')
+    await wrapper.get('form#create-account-form').trigger('submit.prevent')
+    await flushPromises()
+
+    expect(createAccountMock).toHaveBeenCalledTimes(1)
+    expect(createAccountMock.mock.calls[0]?.[0]?.platform).toBe('anthropic')
+    expect(createAccountMock.mock.calls[0]?.[0]?.extra?.glm_multimodal_supported).toBe(true)
+  })
+
   it('omits the OpenAI setting for non-OpenAI account creation', async () => {
     await submitApiKeyAccount('anthropic')
 
