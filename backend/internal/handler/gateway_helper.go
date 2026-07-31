@@ -275,6 +275,10 @@ func (h *ConcurrencyHelper) acquireUserSlotWithWaitTimeout(c *gin.Context, userI
 	if err != nil {
 		return nil, err
 	}
+	// The request entered the user wait queue and eventually acquired a slot.
+	// Preserve that fact in its context so OpenAI account scheduling can route
+	// this request through the API-key pool instead of a congested OAuth pool.
+	c.Request = c.Request.WithContext(service.WithQueuedUserAPIKeyRouting(c.Request.Context()))
 	return h.withAPIKeySlotFromGin(c, releaseFunc), nil
 }
 

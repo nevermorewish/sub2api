@@ -77,6 +77,7 @@ type OpenAIAccountScheduleRequest struct {
 	PreviousResponseID      string
 	PreviousResponseCanMove bool
 	UseUpstreamTokenCost    bool
+	RequireAPIKey           bool
 	RequestedModel          string
 	RequiredTransport       OpenAIUpstreamTransport
 	RequiredCapability      OpenAIEndpointCapability
@@ -390,6 +391,14 @@ func (s *defaultOpenAIAccountScheduler) Select(
 		)
 		if err != nil {
 			return nil, decision, err
+		}
+		if selection != nil && selection.Account != nil {
+			if req.RequireAPIKey && selection.Account.Type != AccountTypeAPIKey {
+				if selection.ReleaseFunc != nil {
+					selection.ReleaseFunc()
+				}
+				selection = nil
+			}
 		}
 		if selection != nil && selection.Account != nil {
 			if !s.isAccountTransportCompatible(selection.Account, req.RequiredTransport) {
@@ -1754,6 +1763,9 @@ func (s *defaultOpenAIAccountScheduler) isAccountRequestCompatibleReason(ctx con
 	if account == nil {
 		return false, "account_nil"
 	}
+	if req.RequireAPIKey && account.Type != AccountTypeAPIKey {
+		return false, "queued_user_requires_apikey"
+	}
 	if s != nil && s.service != nil && s.service.isOpenAIAccountRequestRuntimeBlocked(account, req.RequestedModel) {
 		return false, "runtime_blocked"
 	}
@@ -2042,6 +2054,13 @@ func (s *OpenAIGatewayService) getOpenAIAccountScheduler(ctx context.Context) Op
 	if !s.isOpenAIAdvancedSchedulerEnabled(ctx) {
 		return nil
 	}
+	return s.ensureOpenAIAccountScheduler()
+}
+
+func (s *OpenAIGatewayService) ensureOpenAIAccountScheduler() OpenAIAccountScheduler {
+	if s == nil {
+		return nil
+	}
 	s.openaiSchedulerOnce.Do(func() {
 		if s.openaiAccountStats == nil {
 			s.openaiAccountStats = newOpenAIAccountRuntimeStats()
@@ -2132,7 +2151,14 @@ func (s *OpenAIGatewayService) selectAccountWithScheduler(
 	ctx = s.withOpenAIQuotaAutoPauseContext(ctx)
 	platform = normalizeOpenAICompatiblePlatform(platform)
 	decision := OpenAIAccountScheduleDecision{}
+	requireAPIKey := QueuedUserAPIKeyRoutingFromContext(ctx)
 	scheduler := s.getOpenAIAccountScheduler(ctx)
+	if scheduler == nil && requireAPIKey {
+		// The normal scheduler may be disabled globally, but queued-user routing
+		// needs its layered filtering so OAuth sticky bindings and OAuth load
+		// candidates can both be excluded consistently for this request.
+		scheduler = s.ensureOpenAIAccountScheduler()
+	}
 	if scheduler == nil {
 		decision.Layer = openAIAccountScheduleLayerLoadBalance
 		if requiredTransport == OpenAIUpstreamTransportAny || requiredTransport == OpenAIUpstreamTransportHTTPSSE {
@@ -2218,6 +2244,7 @@ func (s *OpenAIGatewayService) selectAccountWithScheduler(
 		PreviousResponseID:      previousResponseID,
 		PreviousResponseCanMove: previousResponseCanMove,
 		UseUpstreamTokenCost:    useUpstreamTokenCost,
+		RequireAPIKey:           requireAPIKey,
 		RequestedModel:          requestedModel,
 		RequiredTransport:       requiredTransport,
 		RequiredCapability:      requiredCapability,

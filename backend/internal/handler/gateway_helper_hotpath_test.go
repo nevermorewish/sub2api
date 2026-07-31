@@ -295,6 +295,7 @@ func TestAcquireUserSlotWithWait_ImmediateAcquireSkipsWaitQueue(t *testing.T) {
 	require.Equal(t, 0, cache.waitIncrementCalls)
 	require.Equal(t, 0, cache.waitDecrementCalls)
 	require.Equal(t, 1, cache.userReleaseCalls)
+	require.False(t, service.QueuedUserAPIKeyRoutingFromContext(c.Request.Context()))
 }
 
 func TestAcquireUserSlotWithWait_TracksAPIKeySlot(t *testing.T) {
@@ -357,6 +358,7 @@ func TestAcquireUserSlotWithWait_WaitSuccessDecrementsBeforeReturn(t *testing.T)
 	require.Equal(t, 1, cache.waitIncrementCalls)
 	require.Equal(t, 20, cache.waitMaxWait)
 	require.Equal(t, 1, cache.waitDecrementCalls)
+	require.True(t, service.QueuedUserAPIKeyRoutingFromContext(c.Request.Context()))
 
 	release()
 	require.Equal(t, 1, cache.userReleaseCalls)
