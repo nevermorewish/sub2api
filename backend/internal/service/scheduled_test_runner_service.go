@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"sort"
 	"sync"
 	"time"
 
@@ -26,6 +27,19 @@ type AccountAutoMonitorSettings struct {
 	LastRunAt       *time.Time `json:"last_run_at,omitempty"`
 	NextRunAt       *time.Time `json:"next_run_at,omitempty"`
 	Running         bool       `json:"running"`
+}
+
+type accountAutoMonitorEnabledAccount struct {
+	ID   int64  `json:"id"`
+	Name string `json:"name"`
+}
+
+func formatAccountAutoMonitorEnabledAccounts(accounts []accountAutoMonitorEnabledAccount) string {
+	sort.Slice(accounts, func(i, j int) bool {
+		return accounts[i].ID < accounts[j].ID
+	})
+	encoded, _ := json.Marshal(accounts)
+	return string(encoded)
 }
 
 type scheduledAccountTester interface {
@@ -360,9 +374,11 @@ func (s *ScheduledTestRunnerService) runAutoMonitorIfDue(ctx context.Context, no
 	var resultMu sync.Mutex
 	succeeded := 0
 	failed := 0
+	enabledAccounts := make([]accountAutoMonitorEnabledAccount, 0, len(candidates))
 
 	for i := range candidates {
 		accountID := candidates[i].ID
+		accountName := candidates[i].Name
 		sem <- struct{}{}
 		wg.Add(1)
 		go func() {
@@ -396,9 +412,19 @@ func (s *ScheduledTestRunnerService) runAutoMonitorIfDue(ctx context.Context, no
 
 			resultMu.Lock()
 			succeeded++
+			enabledAccounts = append(enabledAccounts, accountAutoMonitorEnabledAccount{
+				ID:   accountID,
+				Name: accountName,
+			})
 			resultMu.Unlock()
 		}()
 	}
 	wg.Wait()
-	logger.LegacyPrintf("service.scheduled_test_runner", "[AccountAutoMonitor] completed: success=%d failed=%d", succeeded, failed)
+	logger.LegacyPrintf(
+		"service.scheduled_test_runner",
+		"[AccountAutoMonitor] completed: success=%d failed=%d enabled_accounts=%s",
+		succeeded,
+		failed,
+		formatAccountAutoMonitorEnabledAccounts(enabledAccounts),
+	)
 }

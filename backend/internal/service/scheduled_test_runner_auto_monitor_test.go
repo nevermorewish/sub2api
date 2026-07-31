@@ -150,3 +150,16 @@ func TestScheduledTestRunnerAccountAutoMonitorOnlyRecoversSuccessfulTests(t *tes
 	require.NotNil(t, stored.NextRunAt)
 	require.WithinDuration(t, now.Add(30*time.Minute), *stored.NextRunAt, time.Second)
 }
+
+func TestFormatAccountAutoMonitorEnabledAccounts(t *testing.T) {
+	formatted := formatAccountAutoMonitorEnabledAccounts([]accountAutoMonitorEnabledAccount{
+		{ID: 35, Name: "账号\nB"},
+		{ID: 12, Name: `账号"A`},
+	})
+
+	require.JSONEq(t, `[
+		{"id":12,"name":"账号\"A"},
+		{"id":35,"name":"账号\nB"}
+	]`, formatted)
+	require.NotContains(t, formatted, "\n")
+}
