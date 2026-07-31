@@ -6,9 +6,15 @@ import (
 	"strings"
 )
 
-// GLMMultimodalSupportedExtraKey marks OpenAI-compatible accounts whose
-// upstream accepts image input for GLM models.
+// GLMMultimodalSupportedExtraKey marks OpenAI-compatible accounts dedicated
+// to GLM requests containing image input. A true value both enables GLM
+// multimodal routing and excludes the account from text-only GLM routing.
 const GLMMultimodalSupportedExtraKey = "glm_multimodal_supported"
+
+// defaultGLMMultimodalSupported keeps GLM image routing opt-in. Accounts that
+// omit the capability flag, set it to false, or provide an invalid value must
+// not receive image-bearing GLM requests.
+const defaultGLMMultimodalSupported = false
 
 type glmMultimodalRoutingContextKey struct{}
 
@@ -38,8 +44,28 @@ func (a *Account) SupportsGLMMultimodal() bool {
 	if a.Platform != PlatformOpenAI && a.Platform != PlatformAnthropic {
 		return false
 	}
-	supported, _ := a.Extra[GLMMultimodalSupportedExtraKey].(bool)
+	supported, ok := a.Extra[GLMMultimodalSupportedExtraKey].(bool)
+	if !ok {
+		return defaultGLMMultimodalSupported
+	}
 	return supported
+}
+
+func glmMultimodalRoutingRejectionReason(ctx context.Context, account *Account, model string) string {
+	if account == nil || !isGLMModel(model) {
+		return ""
+	}
+
+	multimodalRequired := requiresGLMMultimodalRouting(ctx)
+	multimodalOnly := account.SupportsGLMMultimodal()
+	switch {
+	case multimodalRequired && !multimodalOnly:
+		return "glm_multimodal_unsupported"
+	case !multimodalRequired && multimodalOnly:
+		return "glm_multimodal_only"
+	default:
+		return ""
+	}
 }
 
 // IsGLMMultimodalRequest detects image-bearing GLM requests across OpenAI

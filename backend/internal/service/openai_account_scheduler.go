@@ -1787,8 +1787,8 @@ func (s *defaultOpenAIAccountScheduler) isAccountRequestCompatibleReason(ctx con
 	if !accountSupportsOpenAICapabilities(account, req.RequiredCapability, req.RequiredImageCapability) {
 		return false, "capability_mismatch"
 	}
-	if requiresGLMMultimodalRouting(ctx) && !account.SupportsGLMMultimodal() {
-		return false, "glm_multimodal_unsupported"
+	if reason := glmMultimodalRoutingRejectionReason(ctx, account, req.RequestedModel); reason != "" {
+		return false, reason
 	}
 	return true, ""
 }

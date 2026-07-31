@@ -78,6 +78,8 @@ func TestGLMMultimodalRoutingRequiresExplicitAccountSupport(t *testing.T) {
 	require.False(t, isOpenAICompatibleAccountEligibleForRequest(ctx, unsupported, PlatformOpenAI, "glm-4.6", false, ""))
 	require.True(t, isOpenAICompatibleAccountEligibleForRequest(ctx, supported, PlatformOpenAI, "glm-4.6", false, ""))
 	require.True(t, isOpenAICompatibleAccountEligibleForRequest(context.Background(), unsupported, PlatformOpenAI, "glm-4.6", false, ""))
+	require.False(t, isOpenAICompatibleAccountEligibleForRequest(context.Background(), supported, PlatformOpenAI, "glm-4.6", false, ""))
+	require.True(t, isOpenAICompatibleAccountEligibleForRequest(context.Background(), supported, PlatformOpenAI, "gpt-4.1", false, ""))
 }
 
 func TestSupportsGLMMultimodalForAPIKeyProtocols(t *testing.T) {
@@ -96,6 +98,21 @@ func TestSupportsGLMMultimodalForAPIKeyProtocols(t *testing.T) {
 		Platform: PlatformAnthropic,
 		Type:     AccountTypeAPIKey,
 	}).SupportsGLMMultimodal())
+	for name, extra := range map[string]map[string]any{
+		"missing flag":   {},
+		"explicit false": {GLMMultimodalSupportedExtraKey: false},
+		"invalid value":  {GLMMultimodalSupportedExtraKey: "true"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			account := &Account{
+				Platform: PlatformAnthropic,
+				Type:     AccountTypeAPIKey,
+				Extra:    extra,
+			}
+			require.False(t, account.SupportsGLMMultimodal())
+		})
+	}
 	require.False(t, (&Account{
 		Platform: PlatformAnthropic,
 		Type:     AccountTypeOAuth,
@@ -125,6 +142,8 @@ func TestAnthropicSchedulerFiltersGLMMultimodalCapability(t *testing.T) {
 	require.False(t, service.isAccountSchedulableForModelSelection(ctx, unsupported, "glm-4.6"))
 	require.True(t, service.isAccountSchedulableForModelSelection(ctx, supported, "glm-4.6"))
 	require.True(t, service.isAccountSchedulableForModelSelection(context.Background(), unsupported, "glm-4.6"))
+	require.False(t, service.isAccountSchedulableForModelSelection(context.Background(), supported, "glm-4.6"))
+	require.True(t, service.isAccountSchedulableForModelSelection(context.Background(), supported, "gpt-4.1"))
 }
 
 func TestAdvancedSchedulerFiltersGLMMultimodalCapability(t *testing.T) {
@@ -147,6 +166,14 @@ func TestAdvancedSchedulerFiltersGLMMultimodalCapability(t *testing.T) {
 	require.Equal(t, "glm_multimodal_unsupported", reason)
 
 	compatible, reason = scheduler.isAccountRequestCompatibleReason(ctx, supported, req)
+	require.True(t, compatible)
+	require.Empty(t, reason)
+
+	compatible, reason = scheduler.isAccountRequestCompatibleReason(context.Background(), supported, req)
+	require.False(t, compatible)
+	require.Equal(t, "glm_multimodal_only", reason)
+
+	compatible, reason = scheduler.isAccountRequestCompatibleReason(context.Background(), unsupported, req)
 	require.True(t, compatible)
 	require.Empty(t, reason)
 }

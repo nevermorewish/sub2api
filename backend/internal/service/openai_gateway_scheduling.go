@@ -271,7 +271,7 @@ func isOpenAICompatibleAccountEligibleForRequest(ctx context.Context, account *A
 	if requireCompact && openAICompactSupportTier(account) == 0 {
 		return false
 	}
-	if requiresGLMMultimodalRouting(ctx) && !account.SupportsGLMMultimodal() {
+	if glmMultimodalRoutingRejectionReason(ctx, account, requestedModel) != "" {
 		return false
 	}
 	return true
