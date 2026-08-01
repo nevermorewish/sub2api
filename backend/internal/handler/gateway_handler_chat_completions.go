@@ -85,7 +85,7 @@ func (h *GatewayHandler) ChatCompletions(c *gin.Context) {
 		return
 	}
 	reqLog = reqLog.With(zap.String("model", reqModel), zap.Bool("stream", reqStream))
-	if service.IsGLMMultimodalRequest(reqModel, body) {
+	if service.RequiresGLMMultimodalRouting(reqModel, body) {
 		c.Request = c.Request.WithContext(service.WithGLMMultimodalRouting(c.Request.Context()))
 	}
 

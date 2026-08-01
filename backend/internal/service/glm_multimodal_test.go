@@ -68,6 +68,67 @@ func TestIsGLMMultimodalRequest(t *testing.T) {
 	}
 }
 
+func TestRequiresGLMMultimodalRouting(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name  string
+		model string
+		body  string
+		want  bool
+	}{
+		{
+			name:  "glm max tokens 131072",
+			model: "glm-5.2",
+			body:  `{"max_tokens":131072,"messages":[{"role":"user","content":"hello"}]}`,
+			want:  true,
+		},
+		{
+			name:  "glm image input",
+			model: "glm-5.2",
+			body:  `{"max_tokens":4096,"messages":[{"role":"user","content":[{"type":"image_url","image_url":{"url":"https://example.com/a.png"}}]}]}`,
+			want:  true,
+		},
+		{
+			name:  "glm provider max tokens",
+			model: "glm-5.2",
+			body:  `{"max_tokens":128000,"messages":[{"role":"user","content":"hello"}]}`,
+			want:  false,
+		},
+		{
+			name:  "non glm max tokens 131072",
+			model: "gpt-5.4",
+			body:  `{"max_tokens":131072,"messages":[{"role":"user","content":"hello"}]}`,
+			want:  false,
+		},
+		{
+			name:  "string max tokens is ignored",
+			model: "glm-5.2",
+			body:  `{"max_tokens":"131072","messages":[{"role":"user","content":"hello"}]}`,
+			want:  false,
+		},
+		{
+			name:  "nested max tokens is ignored",
+			model: "glm-5.2",
+			body:  `{"metadata":{"max_tokens":131072},"messages":[{"role":"user","content":"hello"}]}`,
+			want:  false,
+		},
+		{
+			name:  "invalid json",
+			model: "glm-5.2",
+			body:  `{"max_tokens":131072`,
+			want:  false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			require.Equal(t, tt.want, RequiresGLMMultimodalRouting(tt.model, []byte(tt.body)))
+		})
+	}
+}
+
 func TestGLMMultimodalRoutingRequiresExplicitAccountSupport(t *testing.T) {
 	t.Parallel()
 

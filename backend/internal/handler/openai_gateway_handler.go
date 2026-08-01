@@ -260,7 +260,7 @@ func (h *OpenAIGatewayHandler) Responses(c *gin.Context) {
 		return
 	}
 	reqLog = reqLog.With(zap.String("model", reqModel), zap.Bool("stream", reqStream))
-	if service.IsGLMMultimodalRequest(reqModel, body) {
+	if service.RequiresGLMMultimodalRouting(reqModel, body) {
 		c.Request = c.Request.WithContext(service.WithGLMMultimodalRouting(c.Request.Context()))
 	}
 	previousResponseID := strings.TrimSpace(gjson.GetBytes(body, "previous_response_id").String())
@@ -864,7 +864,7 @@ func (h *OpenAIGatewayHandler) Messages(c *gin.Context) {
 	reqStream := gjson.GetBytes(body, "stream").Bool()
 
 	reqLog = reqLog.With(zap.String("model", reqModel), zap.Bool("stream", reqStream))
-	if service.IsGLMMultimodalRequest(reqModel, body) {
+	if service.RequiresGLMMultimodalRouting(reqModel, body) {
 		c.Request = c.Request.WithContext(service.WithGLMMultimodalRouting(c.Request.Context()))
 	}
 
@@ -1478,7 +1478,7 @@ func (h *OpenAIGatewayHandler) ResponsesWebSocket(c *gin.Context) {
 		closeOpenAIClientWS(wsConn, coderws.StatusPolicyViolation, "model is required in first response.create payload")
 		return
 	}
-	if service.IsGLMMultimodalRequest(reqModel, firstMessage) {
+	if service.RequiresGLMMultimodalRouting(reqModel, firstMessage) {
 		ctx = service.WithGLMMultimodalRouting(ctx)
 	}
 	previousResponseID := strings.TrimSpace(gjson.GetBytes(firstMessage, "previous_response_id").String())

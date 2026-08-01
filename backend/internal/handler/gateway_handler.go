@@ -170,7 +170,7 @@ func (h *GatewayHandler) Messages(c *gin.Context) {
 	reqModel := parsedReq.Model
 	reqStream := parsedReq.Stream
 	reqLog = reqLog.With(zap.String("model", reqModel), zap.Bool("stream", reqStream))
-	if service.IsGLMMultimodalRequest(reqModel, body) {
+	if service.RequiresGLMMultimodalRouting(reqModel, body) {
 		c.Request = c.Request.WithContext(service.WithGLMMultimodalRouting(c.Request.Context()))
 	}
 
@@ -1893,7 +1893,7 @@ func (h *GatewayHandler) CountTokens(c *gin.Context) {
 	// count_tokens 走 messages 严格校验时，复用已解析请求，避免二次反序列化。
 	SetClaudeCodeClientContext(c, body, parsedReq)
 	reqLog = reqLog.With(zap.String("model", parsedReq.Model), zap.Bool("stream", parsedReq.Stream))
-	if service.IsGLMMultimodalRequest(parsedReq.Model, body) {
+	if service.RequiresGLMMultimodalRouting(parsedReq.Model, body) {
 		c.Request = c.Request.WithContext(service.WithGLMMultimodalRouting(c.Request.Context()))
 	}
 	// 在请求上下文中记录 thinking 状态，供 Antigravity 最终模型 key 推导/模型维度限流使用

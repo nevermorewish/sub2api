@@ -7,19 +7,22 @@ import (
 )
 
 // GLMMultimodalSupportedExtraKey marks OpenAI-compatible accounts dedicated
-// to GLM requests containing image input. A true value both enables GLM
-// multimodal routing and excludes the account from text-only GLM routing.
+// to GLM requests that need multimodal-capable routing. A true value enables
+// image and 131072-token requests and excludes the account from ordinary GLM
+// routing.
 const GLMMultimodalSupportedExtraKey = "glm_multimodal_supported"
 
-// defaultGLMMultimodalSupported keeps GLM image routing opt-in. Accounts that
-// omit the capability flag, set it to false, or provide an invalid value must
-// not receive image-bearing GLM requests.
+// defaultGLMMultimodalSupported keeps specialized GLM routing opt-in. Accounts
+// that omit the capability flag, set it to false, or provide an invalid value
+// must not receive image-bearing or 131072-token GLM requests.
 const defaultGLMMultimodalSupported = false
+
+const glmMultimodalRoutingMaxTokens = 131072
 
 type glmMultimodalRoutingContextKey struct{}
 
-// WithGLMMultimodalRouting requires account selection to use a GLM
-// multimodal-capable account.
+// WithGLMMultimodalRouting requires account selection to use a GLM account
+// marked as multimodal-capable.
 func WithGLMMultimodalRouting(ctx context.Context) context.Context {
 	if ctx == nil {
 		ctx = context.Background()
@@ -36,7 +39,7 @@ func requiresGLMMultimodalRouting(ctx context.Context) bool {
 }
 
 // SupportsGLMMultimodal reports whether this account is explicitly enabled
-// for GLM requests containing image input. Missing values default to false.
+// for GLM multimodal-capable routing. Missing values default to false.
 func (a *Account) SupportsGLMMultimodal() bool {
 	if a == nil || a.Type != AccountTypeAPIKey || a.Extra == nil {
 		return false
@@ -68,18 +71,43 @@ func glmMultimodalRoutingRejectionReason(ctx context.Context, account *Account, 
 	}
 }
 
-// IsGLMMultimodalRequest detects image-bearing GLM requests across OpenAI
-// Chat Completions, Responses, and Anthropic Messages compatible payloads.
-func IsGLMMultimodalRequest(model string, body []byte) bool {
-	if !isGLMModel(model) || len(body) == 0 {
+// RequiresGLMMultimodalRouting detects GLM requests that must use accounts
+// marked as multimodal-capable. In addition to image input, max_tokens=131072
+// uses this route because some otherwise compatible providers cap it at 128000.
+func RequiresGLMMultimodalRouting(model string, body []byte) bool {
+	payload, ok := parseGLMRequestPayload(model, body)
+	if !ok {
 		return false
 	}
 
-	var payload any
-	if err := json.Unmarshal(body, &payload); err != nil {
+	if root, ok := payload.(map[string]any); ok {
+		maxTokens, isNumber := root["max_tokens"].(float64)
+		if isNumber && maxTokens == glmMultimodalRoutingMaxTokens {
+			return true
+		}
+	}
+	return containsImageInput(payload)
+}
+
+// IsGLMMultimodalRequest detects image-bearing GLM requests across OpenAI
+// Chat Completions, Responses, and Anthropic Messages compatible payloads.
+func IsGLMMultimodalRequest(model string, body []byte) bool {
+	payload, ok := parseGLMRequestPayload(model, body)
+	if !ok {
 		return false
 	}
 	return containsImageInput(payload)
+}
+
+func parseGLMRequestPayload(model string, body []byte) (any, bool) {
+	if !isGLMModel(model) || len(body) == 0 {
+		return nil, false
+	}
+	var payload any
+	if err := json.Unmarshal(body, &payload); err != nil {
+		return nil, false
+	}
+	return payload, true
 }
 
 func isGLMModel(model string) bool {
