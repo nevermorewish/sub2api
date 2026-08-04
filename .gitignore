@@ -143,3 +143,8 @@ docs/*
 frontend/coverage/
 aicodex
 output/
+
+# Local account exports (contain API credentials)
+sub2api-account-kimi.json
+sub2api-account-阿里.json
+sub2api-account-火山.json
