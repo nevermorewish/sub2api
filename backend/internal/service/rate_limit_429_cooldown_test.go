@@ -5,6 +5,7 @@ package service
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -79,6 +80,112 @@ func TestHandle429_FallbackUsesDBSeconds(t *testing.T) {
 	require.Equal(t, 1, accountRepo.rateLimitCalls)
 	require.Equal(t, int64(42), accountRepo.lastRateLimitID)
 	require.True(t, !accountRepo.lastRateLimitReset.Before(before.Add(12*time.Second)) && !accountRepo.lastRateLimitReset.After(after.Add(12*time.Second)))
+}
+
+func TestParseOpenAIRateLimitResetTime_AccountQuotaExceeded(t *testing.T) {
+	body := []byte(`{"error":{"code":"AccountQuotaExceeded","message":"You have exceeded the monthly usage quota. It will reset at 2026-08-25 23:59:59 +0800 CST. We recommend upgrading your plan for more quota, or waiting for the reset.","param":"","type":"TooManyRequests"}}`)
+
+	resetUnix := parseOpenAIRateLimitResetTime(body)
+	require.NotNil(t, resetUnix)
+	require.Equal(t, time.Date(2026, time.August, 25, 23, 59, 59, 0, time.FixedZone("CST", 8*60*60)).Unix(), *resetUnix)
+}
+
+func TestParseOpenAIRateLimitResetTime_AccountQuotaExceededMalformedReset(t *testing.T) {
+	body := []byte(`{"error":{"code":"AccountQuotaExceeded","message":"You have exceeded the monthly usage quota. It will reset sometime next month.","type":"TooManyRequests"}}`)
+
+	require.Nil(t, parseOpenAIRateLimitResetTime(body))
+}
+
+func TestParseOpenAIRateLimitResetTime_DoesNotParseOrdinary429MessageDate(t *testing.T) {
+	body := []byte(`{"error":{"code":"RateLimitExceeded","message":"Slow down. It will reset at 2026-08-25 23:59:59 +0800 CST.","type":"TooManyRequests"}}`)
+
+	require.Nil(t, parseOpenAIRateLimitResetTime(body))
+}
+
+func TestHandle429_AccountQuotaExceededUsesBodyReset(t *testing.T) {
+	accountRepo := &rateLimit429AccountRepoStub{}
+	svc := NewRateLimitService(accountRepo, nil, &config.Config{}, nil, nil)
+	account := &Account{ID: 47, Platform: PlatformOpenAI, Type: AccountTypeAPIKey}
+	body := []byte(`{"error":{"code":"AccountQuotaExceeded","message":"You have exceeded the monthly usage quota. It will reset at 2026-08-25 23:59:59 +0800 CST.","type":"TooManyRequests"}}`)
+
+	svc.handle429(context.Background(), account, http.Header{}, body)
+
+	require.Equal(t, 1, accountRepo.rateLimitCalls)
+	require.Equal(t, int64(47), accountRepo.lastRateLimitID)
+	require.Equal(t, time.Date(2026, time.August, 25, 23, 59, 59, 0, time.FixedZone("CST", 8*60*60)).Unix(), accountRepo.lastRateLimitReset.Unix())
+}
+
+func TestParseAliyunTokenPlanQuotaResetTime_OpenAIEnvelope(t *testing.T) {
+	body := []byte(`{"error":{"message":"Your token-plan 1-week quota has been exhausted. The quota will reset at 08-12 14:52:00 UTC.","id":"567a856e-020c-436f-b31b-f8788b66c2f1","type":"insufficient_quota","code":"insufficient_quota"}}`)
+	now := time.Date(2026, time.August, 12, 9, 31, 52, 0, time.UTC)
+
+	resetAt := parseAliyunTokenPlanQuotaResetTime(body, now)
+	require.NotNil(t, resetAt)
+	require.Equal(t, time.Date(2026, time.August, 12, 14, 52, 0, 0, time.UTC), *resetAt)
+}
+
+func TestParseAliyunTokenPlanQuotaResetTime_AnthropicEnvelope(t *testing.T) {
+	body := []byte(`{"code":"Throttling.AllocationQuota","message":"Your token-plan 1-week quota has been exhausted. The quota will reset at 08-12 14:52:00 UTC.","request_id":"6d9552e4-9982-4e67-9dbe-532c342c3de6"}`)
+	now := time.Date(2026, time.August, 12, 9, 31, 52, 0, time.UTC)
+
+	resetAt := parseAliyunTokenPlanQuotaResetTime(body, now)
+	require.NotNil(t, resetAt)
+	require.Equal(t, time.Date(2026, time.August, 12, 14, 52, 0, 0, time.UTC), *resetAt)
+}
+
+func TestParseAliyunTokenPlanQuotaResetTime_YearRollover(t *testing.T) {
+	body := []byte(`{"error":{"message":"Your token-plan 1-week quota has been exhausted. The quota will reset at 01-03 14:52:00 UTC.","code":"insufficient_quota"}}`)
+	now := time.Date(2026, time.December, 29, 9, 0, 0, 0, time.UTC)
+
+	resetAt := parseAliyunTokenPlanQuotaResetTime(body, now)
+	require.NotNil(t, resetAt)
+	require.Equal(t, time.Date(2027, time.January, 3, 14, 52, 0, 0, time.UTC), *resetAt)
+}
+
+func TestParseAliyunTokenPlanQuotaResetTime_StaleResetDoesNotDisableForYear(t *testing.T) {
+	body := []byte(`{"error":{"message":"Your token-plan 1-week quota has been exhausted. The quota will reset at 08-12 14:52:00 UTC.","code":"insufficient_quota"}}`)
+	now := time.Date(2026, time.August, 12, 15, 0, 0, 0, time.UTC)
+
+	require.Nil(t, parseAliyunTokenPlanQuotaResetTime(body, now))
+}
+
+func TestParseAliyunTokenPlanQuotaResetTime_OrdinaryInsufficientQuotaIgnored(t *testing.T) {
+	body := []byte(`{"error":{"message":"Your prepaid balance is exhausted.","code":"insufficient_quota"}}`)
+
+	require.Nil(t, parseAliyunTokenPlanQuotaResetTime(body, time.Date(2026, time.August, 12, 9, 0, 0, 0, time.UTC)))
+}
+
+func TestHandle429_AnthropicAliyunTokenPlanUsesBodyReset(t *testing.T) {
+	accountRepo := &rateLimit429AccountRepoStub{}
+	svc := NewRateLimitService(accountRepo, nil, &config.Config{}, nil, nil)
+	account := &Account{ID: 48, Platform: PlatformAnthropic, Type: AccountTypeAPIKey}
+	body := []byte(`{"code":"Throttling.AllocationQuota","message":"Your token-plan 1-week quota has been exhausted. The quota will reset at 08-12 14:52:00 UTC."}`)
+
+	// Use a future reset independent of the wall clock while retaining the exact
+	// Alibaba response shape observed in production.
+	future := time.Now().UTC().Add(2 * time.Hour)
+	body = []byte(fmt.Sprintf(`{"code":"Throttling.AllocationQuota","message":"Your token-plan 1-week quota has been exhausted. The quota will reset at %s UTC."}`, future.Format("01-02 15:04:05")))
+	svc.handle429(context.Background(), account, http.Header{}, body)
+
+	require.Equal(t, 1, accountRepo.rateLimitCalls)
+	require.Equal(t, int64(48), accountRepo.lastRateLimitID)
+	require.Equal(t, future.Unix(), accountRepo.lastRateLimitReset.Unix())
+}
+
+func TestAccountTestService_AnthropicAliyunTokenPlanPersistsRateLimit(t *testing.T) {
+	accountRepo := &rateLimit429AccountRepoStub{}
+	svc := &AccountTestService{accountRepo: accountRepo}
+	account := &Account{ID: 49, Platform: PlatformAnthropic, Type: AccountTypeAPIKey, Status: StatusActive, Schedulable: true}
+	future := time.Now().UTC().Add(2 * time.Hour)
+	body := []byte(fmt.Sprintf(`{"code":"Throttling.AllocationQuota","message":"Your token-plan 1-week quota has been exhausted. The quota will reset at %s UTC."}`, future.Format("01-02 15:04:05")))
+
+	svc.reconcileAliyunTokenPlan429State(context.Background(), account, body)
+
+	require.Equal(t, 1, accountRepo.rateLimitCalls)
+	require.Equal(t, int64(49), accountRepo.lastRateLimitID)
+	require.Equal(t, future.Unix(), accountRepo.lastRateLimitReset.Unix())
+	require.NotNil(t, account.RateLimitResetAt)
+	require.False(t, account.IsSchedulable())
 }
 
 func TestHandle429_FallbackDisabledSkipsLocalMark(t *testing.T) {

@@ -316,6 +316,9 @@ func (s *AccountTestService) testClaudeAccountConnection(c *gin.Context, account
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		errMsg := fmt.Sprintf("API returned %d: %s", resp.StatusCode, string(body))
+		if resp.StatusCode == http.StatusTooManyRequests {
+			s.reconcileAliyunTokenPlan429State(ctx, account, body)
+		}
 
 		// 403 表示账号被上游封禁，标记为 error 状态
 		if resp.StatusCode == http.StatusForbidden {
@@ -1025,14 +1028,26 @@ func (s *AccountTestService) reconcileOpenAI429State(ctx context.Context, accoun
 	if resetAt == nil {
 		return
 	}
+	s.persistAccountTestRateLimitState(ctx, account, *resetAt)
+}
 
-	if err := s.accountRepo.SetRateLimited(ctx, account.ID, *resetAt); err != nil {
+func (s *AccountTestService) reconcileAliyunTokenPlan429State(ctx context.Context, account *Account, body []byte) {
+	if s == nil || s.accountRepo == nil || account == nil {
+		return
+	}
+	if resetAt := parseAliyunTokenPlanQuotaResetTime(body, time.Now()); resetAt != nil {
+		s.persistAccountTestRateLimitState(ctx, account, *resetAt)
+	}
+}
+
+func (s *AccountTestService) persistAccountTestRateLimitState(ctx context.Context, account *Account, resetAt time.Time) {
+	if err := s.accountRepo.SetRateLimited(ctx, account.ID, resetAt); err != nil {
 		return
 	}
 
 	now := time.Now()
 	account.RateLimitedAt = &now
-	account.RateLimitResetAt = resetAt
+	account.RateLimitResetAt = &resetAt
 
 	if account.Status == StatusError {
 		if err := s.accountRepo.ClearError(ctx, account.ID); err != nil {

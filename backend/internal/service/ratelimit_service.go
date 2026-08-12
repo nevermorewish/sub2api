@@ -74,6 +74,12 @@ const (
 
 var openAIImageTryAgainPattern = regexp.MustCompile(`(?i)try again in\s+([0-9]+(?:\.[0-9]+)?)\s*(ms|s|sec|secs|second|seconds|m|min|mins|minute|minutes)`)
 
+var openAIAccountQuotaResetPattern = regexp.MustCompile(`(?i)\bit will reset at\s+([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2}\s+[+-][0-9]{4}(?:\s+[a-z]{2,5})?)`)
+
+var aliyunTokenPlanQuotaResetPattern = regexp.MustCompile(`(?i)\bthe quota will reset at\s+([0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2})\s+UTC\b`)
+
+const aliyunTokenPlanQuotaMaxResetDelay = 8 * 24 * time.Hour
+
 const (
 	openAI403CooldownMinutesDefault = 10
 	openAI403DisableThreshold       = 3
@@ -977,6 +983,19 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 
 	// 4. 如果响应头没有，尝试从响应体解析（OpenAI usage_limit_reached, Gemini）
 	if resetTimestamp == "" {
+		// 阿里云百炼 token-plan 的 OpenAI 兼容接口与 Anthropic 兼容接口会返回
+		// 不同 JSON 外壳，但共享同一种无年份 UTC 重置时间。先统一识别，避免
+		// Anthropic 路径因缺少标准限流头而只进入数秒级兜底冷却。
+		if resetAt := parseAliyunTokenPlanQuotaResetTime(responseBody, time.Now()); resetAt != nil {
+			s.notifyAccountSchedulingBlocked(account, *resetAt, "429")
+			if err := s.accountRepo.SetRateLimited(ctx, account.ID, *resetAt); err != nil {
+				slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
+				return
+			}
+			slog.Info("aliyun_token_plan_quota_exhausted", "account_id", account.ID, "platform", account.Platform, "reset_at", *resetAt, "reset_in", time.Until(*resetAt).Truncate(time.Second))
+			return
+		}
+
 		switch account.Platform {
 		case PlatformOpenAI:
 			// 尝试解析 OpenAI 的 usage_limit_reached 错误
@@ -1469,6 +1488,11 @@ func (s *RateLimitService) persistOpenAICodexSnapshot(ctx context.Context, accou
 //	  }
 //	}
 func parseOpenAIRateLimitResetTime(body []byte) *int64 {
+	if resetAt := parseAliyunTokenPlanQuotaResetTime(body, time.Now()); resetAt != nil {
+		ts := resetAt.Unix()
+		return &ts
+	}
+
 	var parsed map[string]any
 	if err := json.Unmarshal(body, &parsed); err != nil {
 		return nil
@@ -1479,9 +1503,13 @@ func parseOpenAIRateLimitResetTime(body []byte) *int64 {
 		return nil
 	}
 
-	// 检查是否为 usage_limit_reached 或 rate_limit_exceeded 类型
 	errType, _ := errObj["type"].(string)
-	if errType != "usage_limit_reached" && errType != "rate_limit_exceeded" {
+	errType = strings.ToLower(strings.TrimSpace(errType))
+	errCode, _ := errObj["code"].(string)
+	errMessage, _ := errObj["message"].(string)
+	isAccountQuotaExceeded := strings.EqualFold(strings.TrimSpace(errCode), "AccountQuotaExceeded") ||
+		strings.Contains(strings.ToLower(errMessage), "monthly usage quota")
+	if errType != "usage_limit_reached" && errType != "rate_limit_exceeded" && !isAccountQuotaExceeded {
 		return nil
 	}
 
@@ -1508,7 +1536,82 @@ func parseOpenAIRateLimitResetTime(body []byte) *int64 {
 		}
 	}
 
+	if isAccountQuotaExceeded {
+		if resetAt := parseOpenAIAccountQuotaResetTime(errMessage); resetAt != nil {
+			ts := resetAt.Unix()
+			return &ts
+		}
+	}
+
 	return nil
+}
+
+func parseOpenAIAccountQuotaResetTime(message string) *time.Time {
+	match := openAIAccountQuotaResetPattern.FindStringSubmatch(message)
+	if len(match) != 2 {
+		return nil
+	}
+
+	value := strings.TrimSpace(match[1])
+	for _, layout := range []string{
+		"2006-01-02 15:04:05 -0700 MST",
+		"2006-01-02 15:04:05 -0700",
+	} {
+		if resetAt, err := time.Parse(layout, value); err == nil {
+			return &resetAt
+		}
+	}
+	return nil
+}
+
+// parseAliyunTokenPlanQuotaResetTime parses Alibaba Cloud Model Studio's
+// token-plan quota error. Its reset timestamp omits the year, so the candidate
+// must be the next occurrence no more than one weekly window away. This bound
+// prevents a stale same-day response from disabling an account for a year.
+func parseAliyunTokenPlanQuotaResetTime(body []byte, now time.Time) *time.Time {
+	type quotaError struct {
+		Code    string `json:"code"`
+		Message string `json:"message"`
+	}
+	var envelope struct {
+		quotaError
+		Error *quotaError `json:"error"`
+	}
+	if err := json.Unmarshal(body, &envelope); err != nil {
+		return nil
+	}
+
+	quota := envelope.quotaError
+	if envelope.Error != nil {
+		quota = *envelope.Error
+	}
+	code := strings.TrimSpace(quota.Code)
+	if !strings.EqualFold(code, "insufficient_quota") && !strings.EqualFold(code, "Throttling.AllocationQuota") {
+		return nil
+	}
+	messageLower := strings.ToLower(quota.Message)
+	if !strings.Contains(messageLower, "token-plan") || !strings.Contains(messageLower, "quota has been exhausted") {
+		return nil
+	}
+
+	match := aliyunTokenPlanQuotaResetPattern.FindStringSubmatch(quota.Message)
+	if len(match) != 2 {
+		return nil
+	}
+
+	nowUTC := now.UTC()
+	value := strconv.Itoa(nowUTC.Year()) + "-" + strings.TrimSpace(match[1])
+	resetAt, err := time.ParseInLocation("2006-01-02 15:04:05", value, time.UTC)
+	if err != nil {
+		return nil
+	}
+	if resetAt.Before(nowUTC) {
+		resetAt = resetAt.AddDate(1, 0, 0)
+	}
+	if resetAt.Sub(nowUTC) > aliyunTokenPlanQuotaMaxResetDelay {
+		return nil
+	}
+	return &resetAt
 }
 
 func parseOpenAIRateLimitPlanType(body []byte) string {
