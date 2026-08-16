@@ -1,5 +1,7 @@
 FROM crpi-dzjyl2rfnlfugj1m.cn-shanghai.personal.cr.aliyuncs.com/frogclaw/base-golang:1.26.5-alpine
 
+ENV GOTOOLCHAIN=auto
+
 WORKDIR /app
 
 # 安装必要的工具
