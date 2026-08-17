@@ -375,9 +375,98 @@ func TestHandleUpstreamError_PoolModePolicies(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// TestApplyErrorPolicy — 4 table-driven cases for the wrapper method
+// TestHandleUpstreamError_CodingPlanInvalidSubscription verifies fatal CodingPlan errors.
 // ---------------------------------------------------------------------------
 
+func TestHandleUpstreamError_CodingPlanInvalidSubscription(t *testing.T) {
+	tests := []struct {
+		name       string
+		statusCode int
+		body       []byte
+		account    *Account
+		wantRule   bool
+	}{
+		{
+			name:       "structured_error_code",
+			statusCode: http.StatusBadRequest,
+			body:       []byte(`{"error":{"code":"InvalidSubscription","message":"Your account (2129964654) does not have a valid CodingPlan subscription, or your subscription has expired."}}`),
+			account:    &Account{ID: 133, Type: AccountTypeAPIKey, Platform: PlatformAnthropic},
+			wantRule:   true,
+		},
+		{
+			name:       "message_fallback",
+			statusCode: http.StatusBadRequest,
+			body:       []byte(`{"error":{"message":"The CodingPlan subscription has expired. Please renew it."}}`),
+			account:    &Account{ID: 132, Type: AccountTypeAPIKey, Platform: PlatformOpenAI},
+			wantRule:   true,
+		},
+		{
+			name:       "pool_mode_cannot_skip_fatal_subscription_error",
+			statusCode: http.StatusBadRequest,
+			body:       []byte(`{"error":{"code":"InvalidSubscription","message":"subscription expired"}}`),
+			account: &Account{ID: 134, Type: AccountTypeAPIKey, Platform: PlatformOpenAI, Credentials: map[string]any{
+				"pool_mode": true,
+			}},
+			wantRule: true,
+		},
+		{
+			name:       "custom_error_code_exclusion_cannot_skip_fatal_subscription_error",
+			statusCode: http.StatusBadRequest,
+			body:       []byte(`{"error":{"code":"InvalidSubscription","message":"subscription expired"}}`),
+			account: &Account{ID: 135, Type: AccountTypeAPIKey, Platform: PlatformOpenAI, Credentials: map[string]any{
+				"custom_error_codes_enabled": true,
+				"custom_error_codes":         []any{float64(http.StatusTooManyRequests)},
+			}},
+			wantRule: true,
+		},
+		{
+			name:       "same_code_on_other_status_does_not_match_rule",
+			statusCode: http.StatusForbidden,
+			body:       []byte(`{"error":{"code":"InvalidSubscription","message":"subscription expired"}}`),
+			account:    &Account{ID: 136, Type: AccountTypeAPIKey, Platform: PlatformOpenAI},
+			wantRule:   false,
+		},
+		{
+			name:       "unrelated_bad_request_is_not_account_error",
+			statusCode: http.StatusBadRequest,
+			body:       []byte(`{"error":{"code":"InvalidParameter","message":"request parameter is invalid"}}`),
+			account:    &Account{ID: 137, Type: AccountTypeAPIKey, Platform: PlatformAnthropic},
+			wantRule:   false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			repo := &errorPolicyRepoStub{}
+			svc := NewRateLimitService(repo, nil, &config.Config{}, nil, nil)
+
+			shouldDisable := svc.HandleUpstreamError(
+				context.Background(),
+				tt.account,
+				tt.statusCode,
+				http.Header{},
+				tt.body,
+			)
+
+			if tt.wantRule {
+				require.True(t, shouldDisable)
+				require.Equal(t, 1, repo.setErrCalls)
+				require.Contains(t, repo.lastErrorMsg, "CodingPlan subscription invalid (400)")
+				return
+			}
+			if tt.statusCode == http.StatusForbidden {
+				require.True(t, shouldDisable)
+				require.Equal(t, 1, repo.setErrCalls)
+				require.NotContains(t, repo.lastErrorMsg, "CodingPlan subscription invalid (400)")
+				return
+			}
+			require.False(t, shouldDisable)
+			require.Equal(t, 0, repo.setErrCalls)
+		})
+	}
+}
+
+// TestApplyErrorPolicy — 4 table-driven cases for the wrapper method
 func TestApplyErrorPolicy(t *testing.T) {
 	tests := []struct {
 		name              string

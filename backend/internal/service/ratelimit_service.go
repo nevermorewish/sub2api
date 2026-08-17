@@ -276,6 +276,17 @@ func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Acc
 	ctx = withTempUnschedulableModel(ctx, requestedModel)
 	customErrorCodesEnabled := account.IsCustomErrorCodesEnabled()
 
+	if isCodingPlanInvalidSubscription(statusCode, responseBody) {
+		upstreamMsg := strings.TrimSpace(extractUpstreamErrorMessage(responseBody))
+		upstreamMsg = sanitizeUpstreamErrorMessage(upstreamMsg)
+		msg := "CodingPlan subscription invalid (400)"
+		if upstreamMsg != "" {
+			msg += ": " + truncateForLog([]byte(upstreamMsg), 512)
+		}
+		s.handleAuthError(ctx, account, msg)
+		return true
+	}
+
 	// 池模式默认不标记本地账号状态；但管理员显式配置的临时不可调度规则优先。
 	// 401 保留现有认证错误语义，不在这里改变池模式的认证处理。
 	if account.IsPoolMode() && !customErrorCodesEnabled {
@@ -492,6 +503,19 @@ func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Acc
 	}
 
 	return shouldDisable
+}
+
+func isCodingPlanInvalidSubscription(statusCode int, responseBody []byte) bool {
+	if statusCode != http.StatusBadRequest {
+		return false
+	}
+	if strings.EqualFold(extractUpstreamErrorCode(responseBody), "InvalidSubscription") {
+		return true
+	}
+
+	msg := strings.ToLower(strings.TrimSpace(extractUpstreamErrorMessage(responseBody)))
+	return strings.Contains(msg, "does not have a valid codingplan subscription") ||
+		(strings.Contains(msg, "codingplan subscription") && strings.Contains(msg, "subscription has expired"))
 }
 
 // PreCheckUsage proactively checks local quota before dispatching a request.
