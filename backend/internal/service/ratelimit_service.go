@@ -76,9 +76,13 @@ var openAIImageTryAgainPattern = regexp.MustCompile(`(?i)try again in\s+([0-9]+(
 
 var openAIAccountQuotaResetPattern = regexp.MustCompile(`(?i)\bit will reset at\s+([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2}\s+[+-][0-9]{4}(?:\s+[a-z]{2,5})?)`)
 
+var anthropicQuotaResetWithZonePattern = regexp.MustCompile(`(?i)(?:it will reset at|reset at|将在)\s*([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2}\s+[+-][0-9]{4}(?:\s+[a-z]{2,5})?)`)
+var anthropicQuotaResetLocalPattern = regexp.MustCompile(`(?i)(?:it will reset at|reset at|将在)\s*([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2})`)
+
 var aliyunTokenPlanQuotaResetPattern = regexp.MustCompile(`(?i)\bthe quota will reset at\s+([0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2})\s+UTC\b`)
 
 const aliyunTokenPlanQuotaMaxResetDelay = 8 * 24 * time.Hour
+const anthropicBodyQuotaMaxResetDelay = 400 * 24 * time.Hour
 
 const (
 	openAI403CooldownMinutesDefault = 10
@@ -1120,6 +1124,18 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 
 	// 4. 如果响应头没有，尝试从响应体解析（OpenAI usage_limit_reached, Gemini）
 	if resetTimestamp == "" {
+		if account.Platform == PlatformAnthropic {
+			if resetAt := parseAnthropicQuotaResetTime(responseBody, time.Now()); resetAt != nil {
+				s.notifyAccountSchedulingBlocked(account, *resetAt, "429_body_reset")
+				if err := s.accountRepo.SetRateLimited(ctx, account.ID, *resetAt); err != nil {
+					slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
+					return
+				}
+				slog.Info("anthropic_account_rate_limited_from_body", "account_id", account.ID, "reset_at", *resetAt, "reset_in", time.Until(*resetAt).Truncate(time.Second))
+				return
+			}
+		}
+
 		// 阿里云百炼 token-plan 的 OpenAI 兼容接口与 Anthropic 兼容接口会返回
 		// 不同 JSON 外壳，但共享同一种无年份 UTC 重置时间。先统一识别，避免
 		// Anthropic 路径因缺少标准限流头而只进入数秒级兜底冷却。
@@ -1699,6 +1715,44 @@ func parseOpenAIAccountQuotaResetTime(message string) *time.Time {
 		}
 	}
 	return nil
+}
+
+func parseAnthropicQuotaResetTime(body []byte, now time.Time) *time.Time {
+	message := strings.TrimSpace(extractUpstreamErrorMessage(body))
+	if message == "" {
+		message = strings.TrimSpace(string(body))
+	}
+
+	lowerMessage := strings.ToLower(message)
+	if !strings.Contains(lowerMessage, "quota") &&
+		!strings.Contains(lowerMessage, "usage limit") &&
+		!strings.Contains(message, "限额") &&
+		!strings.Contains(message, "使用上限") {
+		return nil
+	}
+
+	if match := anthropicQuotaResetWithZonePattern.FindStringSubmatch(message); len(match) == 2 {
+		for _, layout := range []string{
+			"2006-01-02 15:04:05 -0700 MST",
+			"2006-01-02 15:04:05 -0700",
+		} {
+			if resetAt, err := time.Parse(layout, strings.TrimSpace(match[1])); err == nil && validAnthropicBodyReset(resetAt, now) {
+				return &resetAt
+			}
+		}
+	}
+
+	if match := anthropicQuotaResetLocalPattern.FindStringSubmatch(message); len(match) == 2 {
+		if resetAt, err := time.ParseInLocation("2006-01-02 15:04:05", strings.TrimSpace(match[1]), now.Location()); err == nil && validAnthropicBodyReset(resetAt, now) {
+			return &resetAt
+		}
+	}
+
+	return nil
+}
+
+func validAnthropicBodyReset(resetAt, now time.Time) bool {
+	return resetAt.After(now) && !resetAt.After(now.Add(anthropicBodyQuotaMaxResetDelay))
 }
 
 // parseAliyunTokenPlanQuotaResetTime parses Alibaba Cloud Model Studio's

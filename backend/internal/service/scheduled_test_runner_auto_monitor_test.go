@@ -151,6 +151,38 @@ func TestScheduledTestRunnerAccountAutoMonitorOnlyRecoversSuccessfulTests(t *tes
 	require.WithinDuration(t, now.Add(30*time.Minute), *stored.NextRunAt, time.Second)
 }
 
+func TestScheduledTestRunnerAccountAutoMonitorProcessesRuntimeBlocks(t *testing.T) {
+	now := time.Now()
+	due := now.Add(-time.Minute)
+	settingsJSON, err := json.Marshal(AccountAutoMonitorSettings{
+		Enabled: true, IntervalMinutes: 30, NextRunAt: &due,
+	})
+	require.NoError(t, err)
+
+	resetAt := now.Add(time.Hour)
+	settingRepo := &autoMonitorSettingRepoStub{value: string(settingsJSON)}
+	accountRepo := &autoMonitorAccountRepoStub{accounts: []Account{
+		{ID: 1, Status: StatusActive, RateLimitResetAt: &resetAt},
+		{ID: 2, Status: StatusActive, OverloadUntil: &resetAt},
+		{ID: 3, Status: StatusActive, TempUnschedulableUntil: &resetAt},
+		{ID: 4, Status: StatusActive},
+	}}
+	tester := &autoMonitorTesterStub{results: map[int64]string{2: "success", 3: "success", 4: "success"}, called: make(map[int64]string)}
+	recovery := &autoMonitorRecoveryStub{}
+	runner := &ScheduledTestRunnerService{
+		accountTestSvc: tester, rateLimitSvc: recovery, accountRepo: accountRepo, settingRepo: settingRepo,
+	}
+
+	runner.runAutoMonitorIfDue(context.Background(), now)
+
+	tester.mu.Lock()
+	require.Equal(t, map[int64]string{2: "", 3: "", 4: ""}, tester.called)
+	tester.mu.Unlock()
+	recovery.mu.Lock()
+	require.ElementsMatch(t, []int64{2, 3, 4}, recovery.called)
+	recovery.mu.Unlock()
+}
+
 func TestFormatAccountAutoMonitorEnabledAccounts(t *testing.T) {
 	formatted := formatAccountAutoMonitorEnabledAccounts([]accountAutoMonitorEnabledAccount{
 		{ID: 35, Name: "账号\nB"},

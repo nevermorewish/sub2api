@@ -243,6 +243,30 @@ func TestHandle429_AnthropicNoResetTimeFallbackDisabledSkipsMark(t *testing.T) {
 	require.Zero(t, accountRepo.rateLimitCalls)
 }
 
+func TestParseAnthropicQuotaResetTime_GLMChineseBody(t *testing.T) {
+	zone := time.FixedZone("CST", 8*60*60)
+	now := time.Date(2026, time.August, 20, 18, 20, 0, 0, zone)
+	body := []byte(`{"type":"error","error":{"type":"rate_limit_error","message":"[1308][已达到 5 小时的使用上限。您的限额将在 2026-08-20 18:43:45 重置。][request-id]"}}`)
+
+	resetAt := parseAnthropicQuotaResetTime(body, now)
+	require.NotNil(t, resetAt)
+	require.Equal(t, time.Date(2026, time.August, 20, 18, 43, 45, 0, zone), *resetAt)
+}
+
+func TestHandle429_AnthropicQuotaBodyUsesResetTime(t *testing.T) {
+	accountRepo := &rateLimit429AccountRepoStub{}
+	svc := NewRateLimitService(accountRepo, nil, &config.Config{}, nil, nil)
+	account := &Account{ID: 47, Platform: PlatformAnthropic, Type: AccountTypeAPIKey}
+	future := time.Now().Add(2 * time.Hour)
+	body := []byte(fmt.Sprintf(`{"error":{"code":"AccountQuotaExceeded","message":"You have exceeded the monthly usage quota. It will reset at %s."}}`, future.Format("2006-01-02 15:04:05 -0700 MST")))
+
+	svc.handle429(context.Background(), account, http.Header{}, body)
+
+	require.Equal(t, 1, accountRepo.rateLimitCalls)
+	require.Equal(t, int64(47), accountRepo.lastRateLimitID)
+	require.WithinDuration(t, future, accountRepo.lastRateLimitReset, time.Second)
+}
+
 func TestHandle429_FallbackUsesDefaultSecondsWhenSettingServiceMissing(t *testing.T) {
 	accountRepo := &rateLimit429AccountRepoStub{}
 	cfg := &config.Config{}

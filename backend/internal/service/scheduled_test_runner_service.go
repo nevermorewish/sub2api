@@ -364,6 +364,9 @@ func (s *ScheduledTestRunnerService) runAutoMonitorIfDue(ctx context.Context, no
 	candidates := make([]Account, 0, len(accounts))
 	for _, account := range accounts {
 		if account.Status == StatusActive || account.Status == StatusError {
+			if account.IsRateLimited() {
+				continue
+			}
 			candidates = append(candidates, account)
 		}
 	}
