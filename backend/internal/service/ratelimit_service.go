@@ -92,6 +92,11 @@ const (
 	openAI403CounterWindowMinutes   = 180
 )
 
+const (
+	kimiConcurrentRequestLimitMessage  = "You've reached your concurrent request limit"
+	kimiConcurrentRequestLimitCooldown = time.Minute
+)
+
 // NewRateLimitService 创建RateLimitService实例
 func NewRateLimitService(accountRepo AccountRepository, usageRepo UsageLogRepository, cfg *config.Config, geminiQuotaService *GeminiQuotaService, tempUnschedCache TempUnschedCache) *RateLimitService {
 	return &RateLimitService{
@@ -281,6 +286,14 @@ func (s *RateLimitService) CheckErrorPolicy(ctx context.Context, account *Accoun
 func (s *RateLimitService) HandleUpstreamError(ctx context.Context, account *Account, statusCode int, headers http.Header, responseBody []byte, requestedModel ...string) (shouldDisable bool) {
 	ctx = withTempUnschedulableModel(ctx, requestedModel)
 	customErrorCodesEnabled := account.IsCustomErrorCodesEnabled()
+
+	// Kimi reports exhausted in-flight capacity as 403. This is transient and
+	// must take precedence over generic/custom 403 handling, which may otherwise
+	// permanently mark a healthy credential as error.
+	if isKimiConcurrentRequestLimit403(statusCode, responseBody) {
+		s.handleKimiConcurrentRequestLimit(ctx, account)
+		return true
+	}
 
 	if isCodingPlanInvalidSubscription(statusCode, responseBody) {
 		upstreamMsg := strings.TrimSpace(extractUpstreamErrorMessage(responseBody))
@@ -902,6 +915,47 @@ func (s *RateLimitService) handleAuthError(ctx context.Context, account *Account
 		return
 	}
 	slog.Warn("account_disabled_auth_error", "account_id", account.ID, "error", errorMsg)
+}
+
+func isKimiConcurrentRequestLimit403(statusCode int, responseBody []byte) bool {
+	if statusCode != http.StatusForbidden {
+		return false
+	}
+	upstreamMsg := sanitizeUpstreamErrorMessage(strings.TrimSpace(extractUpstreamErrorMessage(responseBody)))
+	return strings.Contains(upstreamMsg, kimiConcurrentRequestLimitMessage)
+}
+
+func newKimiConcurrentRequestLimitCooldown(now time.Time) (time.Time, *TempUnschedState, string) {
+	until := now.Add(kimiConcurrentRequestLimitCooldown)
+	state := &TempUnschedState{
+		UntilUnix:       until.Unix(),
+		TriggeredAtUnix: now.Unix(),
+		StatusCode:      http.StatusForbidden,
+		MatchedKeyword:  kimiConcurrentRequestLimitMessage,
+		RuleIndex:       -1,
+		ErrorMessage:    kimiConcurrentRequestLimitMessage,
+	}
+	reasonBytes, err := json.Marshal(state)
+	if err != nil {
+		return until, state, kimiConcurrentRequestLimitMessage
+	}
+	return until, state, string(reasonBytes)
+}
+
+func (s *RateLimitService) handleKimiConcurrentRequestLimit(ctx context.Context, account *Account) {
+	now := time.Now()
+	until, state, reason := newKimiConcurrentRequestLimitCooldown(now)
+	s.notifyAccountSchedulingBlocked(account, until, "kimi_concurrent_request_limit")
+	if err := s.accountRepo.SetTempUnschedulable(ctx, account.ID, until, reason); err != nil {
+		slog.Warn("kimi_concurrent_limit_set_temp_unschedulable_failed", "account_id", account.ID, "error", err)
+		return
+	}
+	if s.tempUnschedCache != nil {
+		if err := s.tempUnschedCache.SetTempUnsched(ctx, account.ID, state); err != nil {
+			slog.Warn("kimi_concurrent_limit_cache_set_failed", "account_id", account.ID, "error", err)
+		}
+	}
+	slog.Warn("kimi_concurrent_limit_temp_unschedulable", "account_id", account.ID, "until", until)
 }
 
 func buildForbiddenErrorMessage(prefix string, upstreamMsg string, responseBody []byte, fallback string) string {

@@ -418,8 +418,10 @@ func (s *AccountTestService) testClaudeAccountConnection(c *gin.Context, account
 			s.reconcileAliyunTokenPlan429State(ctx, account, body)
 		}
 
-		// 403 表示账号被上游封禁，标记为 error 状态
-		if resp.StatusCode == http.StatusForbidden {
+		if s.handleKimiConcurrentRequestLimit(ctx, account, resp.StatusCode, body) {
+			// Kimi 并发 403 是临时容量不足，保持 active 并冷却一分钟。
+		} else if resp.StatusCode == http.StatusForbidden {
+			// 其他 403 仍表示账号被上游禁止，标记为 error 状态。
 			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
 		}
 
@@ -428,6 +430,19 @@ func (s *AccountTestService) testClaudeAccountConnection(c *gin.Context, account
 
 	// Process SSE stream
 	return s.processClaudeStream(c, resp.Body)
+}
+
+func (s *AccountTestService) handleKimiConcurrentRequestLimit(ctx context.Context, account *Account, statusCode int, responseBody []byte) bool {
+	if s == nil || s.accountRepo == nil || account == nil || !isKimiConcurrentRequestLimit403(statusCode, responseBody) {
+		return false
+	}
+	until, _, reason := newKimiConcurrentRequestLimitCooldown(time.Now())
+	if err := s.accountRepo.SetTempUnschedulable(ctx, account.ID, until, reason); err != nil {
+		log.Printf("[AccountTest] failed to set Kimi concurrent-limit cooldown: account=%d err=%v", account.ID, err)
+	} else {
+		log.Printf("[AccountTest] Kimi concurrent-limit cooldown set: account=%d until=%s", account.ID, until.Format(time.RFC3339))
+	}
+	return true
 }
 
 func (s *AccountTestService) testClaudeVertexServiceAccountConnection(c *gin.Context, ctx context.Context, account *Account, testModelID string) error {
@@ -782,6 +797,7 @@ func (s *AccountTestService) testOpenAIAccountConnection(c *gin.Context, account
 		if resp.StatusCode == http.StatusTooManyRequests {
 			s.reconcileOpenAI429State(ctx, account, resp.Header, body)
 		}
+		s.handleKimiConcurrentRequestLimit(ctx, account, resp.StatusCode, body)
 		// 401 Unauthorized: 标记账号为永久错误
 		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil {
 			errMsg := fmt.Sprintf("Authentication failed (401): %s", string(body))
@@ -1970,6 +1986,7 @@ func (s *AccountTestService) testOpenAIChatCompletionsConnection(
 		if resp.StatusCode == http.StatusTooManyRequests {
 			s.reconcileOpenAI429State(ctx, account, resp.Header, body)
 		}
+		s.handleKimiConcurrentRequestLimit(ctx, account, resp.StatusCode, body)
 		if resp.StatusCode == http.StatusUnauthorized && s.accountRepo != nil {
 			errMsg := fmt.Sprintf("Chat Completions authentication failed (401): %s", string(body))
 			_ = s.accountRepo.SetError(ctx, account.ID, errMsg)
