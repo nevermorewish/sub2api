@@ -2346,6 +2346,13 @@ export interface AccountAutoMonitorSettings {
   running: boolean
 }
 
+export interface AccountAutoMonitorRunResult {
+  total: number
+  succeeded: number
+  failed: number
+  settings: AccountAutoMonitorSettings
+}
+
 export interface CreateScheduledTestPlanRequest {
   account_id: number
   model_id: string

@@ -8,6 +8,7 @@ import type {
   ScheduledTestPlan,
   ScheduledTestResult,
   AccountAutoMonitorSettings,
+  AccountAutoMonitorRunResult,
   CreateScheduledTestPlanRequest,
   UpdateScheduledTestPlanRequest
 } from '@/types'
@@ -19,6 +20,15 @@ export async function getAccountAutoMonitor(): Promise<AccountAutoMonitorSetting
 
 export async function updateAccountAutoMonitor(enabled: boolean): Promise<AccountAutoMonitorSettings> {
   const { data } = await apiClient.put<AccountAutoMonitorSettings>('/admin/accounts/auto-monitor', { enabled })
+  return data
+}
+
+export async function runAccountAutoMonitorNow(): Promise<AccountAutoMonitorRunResult> {
+  const { data } = await apiClient.post<AccountAutoMonitorRunResult>(
+    '/admin/accounts/auto-monitor/run',
+    undefined,
+    { timeout: 300_000 }
+  )
   return data
 }
 
@@ -88,6 +98,7 @@ export async function listResults(planId: number, limit?: number): Promise<Sched
 export const scheduledTestsAPI = {
   getAccountAutoMonitor,
   updateAccountAutoMonitor,
+  runAccountAutoMonitorNow,
   listByAccount,
   create,
   update,

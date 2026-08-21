@@ -1,6 +1,7 @@
 package admin
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -13,6 +14,20 @@ import (
 type ScheduledTestHandler struct {
 	scheduledTestSvc *service.ScheduledTestService
 	runner           *service.ScheduledTestRunnerService
+}
+
+// RunAccountAutoMonitorNow POST /admin/accounts/auto-monitor/run
+func (h *ScheduledTestHandler) RunAccountAutoMonitorNow(c *gin.Context) {
+	result, err := h.runner.RunAccountAutoMonitorNow(c.Request.Context())
+	if err != nil {
+		if errors.Is(err, service.ErrAccountAutoMonitorAlreadyRunning) {
+			response.Error(c, http.StatusConflict, err.Error())
+			return
+		}
+		response.InternalError(c, err.Error())
+		return
+	}
+	c.JSON(http.StatusOK, result)
 }
 
 // NewScheduledTestHandler creates a new ScheduledTestHandler.

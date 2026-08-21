@@ -183,6 +183,55 @@ func TestScheduledTestRunnerAccountAutoMonitorProcessesRuntimeBlocks(t *testing.
 	recovery.mu.Unlock()
 }
 
+func TestScheduledTestRunnerRunAccountAutoMonitorNowPreservesSchedule(t *testing.T) {
+	nextRun := time.Now().Add(12 * time.Minute)
+	settingsJSON, err := json.Marshal(AccountAutoMonitorSettings{
+		Enabled: true, IntervalMinutes: 30, NextRunAt: &nextRun,
+	})
+	require.NoError(t, err)
+
+	settingRepo := &autoMonitorSettingRepoStub{value: string(settingsJSON)}
+	accountRepo := &autoMonitorAccountRepoStub{accounts: []Account{
+		{ID: 1, Status: StatusActive},
+		{ID: 2, Status: StatusError},
+		{ID: 3, Status: StatusDisabled},
+	}}
+	tester := &autoMonitorTesterStub{
+		results: map[int64]string{1: "success", 2: "failed"},
+		called:  make(map[int64]string),
+	}
+	runner := &ScheduledTestRunnerService{
+		accountTestSvc: tester,
+		rateLimitSvc:   &autoMonitorRecoveryStub{},
+		accountRepo:    accountRepo,
+		settingRepo:    settingRepo,
+	}
+
+	result, err := runner.RunAccountAutoMonitorNow(context.Background())
+	require.NoError(t, err)
+	require.Equal(t, 2, result.Total)
+	require.Equal(t, 1, result.Succeeded)
+	require.Equal(t, 1, result.Failed)
+	require.NotNil(t, result.Settings.LastRunAt)
+	require.NotNil(t, result.Settings.NextRunAt)
+	require.WithinDuration(t, nextRun, *result.Settings.NextRunAt, time.Second)
+	require.False(t, result.Settings.Running)
+}
+
+func TestScheduledTestRunnerRunAccountAutoMonitorNowRejectsConcurrentRun(t *testing.T) {
+	runner := &ScheduledTestRunnerService{
+		accountTestSvc:     &autoMonitorTesterStub{},
+		rateLimitSvc:       &autoMonitorRecoveryStub{},
+		accountRepo:        &autoMonitorAccountRepoStub{},
+		settingRepo:        &autoMonitorSettingRepoStub{},
+		autoMonitorRunning: true,
+	}
+
+	result, err := runner.RunAccountAutoMonitorNow(context.Background())
+	require.ErrorIs(t, err, ErrAccountAutoMonitorAlreadyRunning)
+	require.Nil(t, result)
+}
+
 func TestFormatAccountAutoMonitorEnabledAccounts(t *testing.T) {
 	formatted := formatAccountAutoMonitorEnabledAccounts([]accountAutoMonitorEnabledAccount{
 		{ID: 35, Name: "账号\nB"},

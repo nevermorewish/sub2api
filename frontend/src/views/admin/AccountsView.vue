@@ -30,9 +30,19 @@
                 <span class="hidden whitespace-nowrap md:inline">{{ t('admin.accounts.autoMonitor') }}</span>
                 <Toggle
                   :model-value="accountAutoMonitorEnabled"
-                  :class="accountAutoMonitorLoading ? 'pointer-events-none opacity-60' : ''"
+                  :class="(accountAutoMonitorLoading || accountAutoMonitorRunLoading) ? 'pointer-events-none opacity-60' : ''"
                   @update:model-value="handleAccountAutoMonitorToggle"
                 />
+                <button
+                  type="button"
+                  class="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-gray-500 hover:bg-gray-100 hover:text-primary-600 disabled:cursor-not-allowed disabled:opacity-50 dark:text-gray-400 dark:hover:bg-dark-700 dark:hover:text-primary-400"
+                  :disabled="accountAutoMonitorLoading || accountAutoMonitorRunLoading"
+                  :title="t('admin.accounts.autoMonitorRunNow')"
+                  :aria-label="t('admin.accounts.autoMonitorRunNow')"
+                  @click="handleAccountAutoMonitorRunNow"
+                >
+                  <Icon name="refresh" size="sm" :class="accountAutoMonitorRunLoading ? 'animate-spin' : ''" />
+                </button>
               </div>
 
               <!-- Auto Refresh Dropdown -->
@@ -717,6 +727,7 @@ const pendingTodayStatsRefresh = ref(false)
 const usageManualRefreshToken = ref(0)
 const accountAutoMonitorEnabled = ref(false)
 const accountAutoMonitorLoading = ref(false)
+const accountAutoMonitorRunLoading = ref(false)
 
 const loadAccountAutoMonitor = async () => {
   accountAutoMonitorLoading.value = true
@@ -731,7 +742,7 @@ const loadAccountAutoMonitor = async () => {
 }
 
 const handleAccountAutoMonitorToggle = async (enabled: boolean) => {
-  if (accountAutoMonitorLoading.value) return
+  if (accountAutoMonitorLoading.value || accountAutoMonitorRunLoading.value) return
   accountAutoMonitorLoading.value = true
   try {
     const settings = await adminAPI.scheduledTests.updateAccountAutoMonitor(enabled)
@@ -743,6 +754,25 @@ const handleAccountAutoMonitorToggle = async (enabled: boolean) => {
     appStore.showError(extractApiErrorMessage(error, t('admin.accounts.autoMonitorUpdateFailed')))
   } finally {
     accountAutoMonitorLoading.value = false
+  }
+}
+
+const handleAccountAutoMonitorRunNow = async () => {
+  if (accountAutoMonitorLoading.value || accountAutoMonitorRunLoading.value) return
+  accountAutoMonitorRunLoading.value = true
+  try {
+    const result = await adminAPI.scheduledTests.runAccountAutoMonitorNow()
+    accountAutoMonitorEnabled.value = result.settings.enabled
+    appStore.showSuccess(t('admin.accounts.autoMonitorRunSuccess', {
+      total: result.total,
+      succeeded: result.succeeded,
+      failed: result.failed
+    }))
+    await handleManualRefresh()
+  } catch (error) {
+    appStore.showError(extractApiErrorMessage(error, t('admin.accounts.autoMonitorRunFailed')))
+  } finally {
+    accountAutoMonitorRunLoading.value = false
   }
 }
 

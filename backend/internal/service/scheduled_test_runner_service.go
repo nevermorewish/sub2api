@@ -19,6 +19,8 @@ const (
 	accountAutoMonitorInterval     = 30 * time.Minute
 )
 
+var ErrAccountAutoMonitorAlreadyRunning = errors.New("account auto monitor is already running")
+
 // AccountAutoMonitorSettings is the persisted state of the global account
 // monitor exposed on the admin accounts page.
 type AccountAutoMonitorSettings struct {
@@ -27,6 +29,14 @@ type AccountAutoMonitorSettings struct {
 	LastRunAt       *time.Time `json:"last_run_at,omitempty"`
 	NextRunAt       *time.Time `json:"next_run_at,omitempty"`
 	Running         bool       `json:"running"`
+}
+
+// AccountAutoMonitorRunResult summarizes one manual monitor run.
+type AccountAutoMonitorRunResult struct {
+	Total     int                         `json:"total"`
+	Succeeded int                         `json:"succeeded"`
+	Failed    int                         `json:"failed"`
+	Settings  *AccountAutoMonitorSettings `json:"settings"`
 }
 
 type accountAutoMonitorEnabledAccount struct {
@@ -301,6 +311,50 @@ func (s *ScheduledTestRunnerService) SetAccountAutoMonitorEnabled(ctx context.Co
 	return settings, nil
 }
 
+// RunAccountAutoMonitorNow executes the account monitor immediately without
+// moving the next scheduled run. It may be used even when the timer is disabled.
+func (s *ScheduledTestRunnerService) RunAccountAutoMonitorNow(ctx context.Context) (*AccountAutoMonitorRunResult, error) {
+	if s == nil || s.accountRepo == nil || s.accountTestSvc == nil || s.rateLimitSvc == nil {
+		return nil, errors.New("account auto monitor is not configured")
+	}
+
+	s.autoMonitorMu.Lock()
+	if s.autoMonitorRunning {
+		s.autoMonitorMu.Unlock()
+		return nil, ErrAccountAutoMonitorAlreadyRunning
+	}
+	settings, err := s.loadAutoMonitorSettings(ctx)
+	if err != nil {
+		s.autoMonitorMu.Unlock()
+		return nil, err
+	}
+	startedAt := time.Now()
+	settings.LastRunAt = &startedAt
+	if err := s.saveAutoMonitorSettings(ctx, settings); err != nil {
+		s.autoMonitorMu.Unlock()
+		return nil, err
+	}
+	s.autoMonitorRunning = true
+	s.autoMonitorMu.Unlock()
+
+	result, runErr := s.executeAccountAutoMonitor(ctx)
+
+	s.autoMonitorMu.Lock()
+	s.autoMonitorRunning = false
+	if runErr != nil {
+		s.autoMonitorMu.Unlock()
+		return nil, runErr
+	}
+	settings, settingsErr := s.loadAutoMonitorSettings(ctx)
+	s.autoMonitorMu.Unlock()
+	if settingsErr != nil {
+		return nil, settingsErr
+	}
+	settings.Running = false
+	result.Settings = settings
+	return result, nil
+}
+
 func (s *ScheduledTestRunnerService) runAutoMonitorIfDue(ctx context.Context, now time.Time) {
 	if s == nil || s.accountRepo == nil || s.accountTestSvc == nil || s.rateLimitSvc == nil {
 		return
@@ -353,10 +407,15 @@ func (s *ScheduledTestRunnerService) runAutoMonitorIfDue(ctx context.Context, no
 		s.autoMonitorMu.Unlock()
 	}()
 
+	_, _ = s.executeAccountAutoMonitor(ctx)
+}
+
+func (s *ScheduledTestRunnerService) executeAccountAutoMonitor(ctx context.Context) (*AccountAutoMonitorRunResult, error) {
+	result := &AccountAutoMonitorRunResult{}
 	accounts, err := s.accountRepo.ListAllWithFilters(ctx, "", "", "", "", 0, "")
 	if err != nil {
 		logger.LegacyPrintf("service.scheduled_test_runner", "[AccountAutoMonitor] list accounts failed: %v", err)
-		return
+		return nil, err
 	}
 
 	// Disabled accounts represent an explicit administrator choice. Active and
@@ -370,6 +429,7 @@ func (s *ScheduledTestRunnerService) runAutoMonitorIfDue(ctx context.Context, no
 			candidates = append(candidates, account)
 		}
 	}
+	result.Total = len(candidates)
 
 	logger.LegacyPrintf("service.scheduled_test_runner", "[AccountAutoMonitor] probing %d accounts", len(candidates))
 	sem := make(chan struct{}, scheduledTestDefaultMaxWorkers)
@@ -423,6 +483,8 @@ func (s *ScheduledTestRunnerService) runAutoMonitorIfDue(ctx context.Context, no
 		}()
 	}
 	wg.Wait()
+	result.Succeeded = succeeded
+	result.Failed = failed
 	logger.LegacyPrintf(
 		"service.scheduled_test_runner",
 		"[AccountAutoMonitor] completed: success=%d failed=%d enabled_accounts=%s",
@@ -430,4 +492,5 @@ func (s *ScheduledTestRunnerService) runAutoMonitorIfDue(ctx context.Context, no
 		failed,
 		formatAccountAutoMonitorEnabledAccounts(enabledAccounts),
 	)
+	return result, nil
 }
