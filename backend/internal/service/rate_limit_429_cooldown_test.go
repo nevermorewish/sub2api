@@ -115,6 +115,55 @@ func TestHandle429_AccountQuotaExceededUsesBodyReset(t *testing.T) {
 	require.Equal(t, time.Date(2026, time.August, 25, 23, 59, 59, 0, time.FixedZone("CST", 8*60*60)).Unix(), accountRepo.lastRateLimitReset.Unix())
 }
 
+func TestParseAccountUsageLimitResetTime_Code1310(t *testing.T) {
+	location := time.FixedZone("CST", 8*60*60)
+	now := time.Date(2026, time.August, 21, 11, 0, 49, 0, location)
+	body := []byte(`{"type":"error","error":{"type":"rate_limit_error","code":"1310","message":"[1310][您已达到每周/每月使用上限，您的限额将在 2026-08-21 14:49:38 重置。][202608211100491d91d03396b4497d]"},"request_id":"202608211100491d91d03396b4497d"}`)
+
+	resetAt := parseAccountUsageLimitResetTime(body, now)
+
+	require.NotNil(t, resetAt)
+	require.Equal(t, time.Date(2026, time.August, 21, 14, 49, 38, 0, location), *resetAt)
+}
+
+func TestParseAccountUsageLimitResetTime_RejectsUnrelatedMessage(t *testing.T) {
+	location := time.FixedZone("CST", 8*60*60)
+	now := time.Date(2026, time.August, 21, 11, 0, 49, 0, location)
+	body := []byte(`{"error":{"type":"rate_limit_error","code":"other","message":"服务将在 2026-08-21 14:49:38 重置"}}`)
+
+	require.Nil(t, parseAccountUsageLimitResetTime(body, now))
+}
+
+func TestHandle429_Code1310UsesBodyReset(t *testing.T) {
+	accountRepo := &rateLimit429AccountRepoStub{}
+	svc := NewRateLimitService(accountRepo, nil, &config.Config{}, nil, nil)
+	account := &Account{ID: 50, Platform: PlatformOpenAI, Type: AccountTypeAPIKey}
+	future := time.Now().Add(2 * time.Hour).Truncate(time.Second)
+	body := []byte(fmt.Sprintf(`{"type":"error","error":{"type":"rate_limit_error","code":"1310","message":"[1310][您已达到每周/每月使用上限，您的限额将在 %s 重置。][request-id]"}}`, future.Format("2006-01-02 15:04:05")))
+
+	svc.handle429(context.Background(), account, http.Header{}, body)
+
+	require.Equal(t, 1, accountRepo.rateLimitCalls)
+	require.Equal(t, int64(50), accountRepo.lastRateLimitID)
+	require.True(t, future.Equal(accountRepo.lastRateLimitReset))
+}
+
+func TestAccountTestService_Code1310PersistsRateLimit(t *testing.T) {
+	accountRepo := &rateLimit429AccountRepoStub{}
+	svc := &AccountTestService{accountRepo: accountRepo}
+	account := &Account{ID: 51, Platform: PlatformAnthropic, Type: AccountTypeAPIKey, Status: StatusActive, Schedulable: true}
+	future := time.Now().Add(2 * time.Hour).Truncate(time.Second)
+	body := []byte(fmt.Sprintf(`{"type":"error","error":{"type":"rate_limit_error","code":"1310","message":"[1310][您已达到每周/每月使用上限，您的限额将在 %s 重置。][request-id]"}}`, future.Format("2006-01-02 15:04:05")))
+
+	svc.reconcileAliyunTokenPlan429State(context.Background(), account, body)
+
+	require.Equal(t, 1, accountRepo.rateLimitCalls)
+	require.Equal(t, int64(51), accountRepo.lastRateLimitID)
+	require.True(t, future.Equal(accountRepo.lastRateLimitReset))
+	require.NotNil(t, account.RateLimitResetAt)
+	require.False(t, account.IsSchedulable())
+}
+
 func TestParseAliyunTokenPlanQuotaResetTime_OpenAIEnvelope(t *testing.T) {
 	body := []byte(`{"error":{"message":"Your token-plan 1-week quota has been exhausted. The quota will reset at 08-12 14:52:00 UTC.","id":"567a856e-020c-436f-b31b-f8788b66c2f1","type":"insufficient_quota","code":"insufficient_quota"}}`)
 	now := time.Date(2026, time.August, 12, 9, 31, 52, 0, time.UTC)

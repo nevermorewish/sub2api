@@ -76,6 +76,8 @@ var openAIImageTryAgainPattern = regexp.MustCompile(`(?i)try again in\s+([0-9]+(
 
 var openAIAccountQuotaResetPattern = regexp.MustCompile(`(?i)\bit will reset at\s+([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2}\s+[+-][0-9]{4}(?:\s+[a-z]{2,5})?)`)
 
+var accountUsageLimitResetPattern = regexp.MustCompile(`限额将在\s*([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2})\s*重置`)
+
 var anthropicQuotaResetWithZonePattern = regexp.MustCompile(`(?i)(?:it will reset at|reset at|将在)\s*([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2}\s+[+-][0-9]{4}(?:\s+[a-z]{2,5})?)`)
 var anthropicQuotaResetLocalPattern = regexp.MustCompile(`(?i)(?:it will reset at|reset at|将在)\s*([0-9]{4}-[0-9]{2}-[0-9]{2}\s+[0-9]{2}:[0-9]{2}:[0-9]{2})`)
 
@@ -1124,6 +1126,16 @@ func (s *RateLimitService) handle429(ctx context.Context, account *Account, head
 
 	// 4. 如果响应头没有，尝试从响应体解析（OpenAI usage_limit_reached, Gemini）
 	if resetTimestamp == "" {
+		if resetAt := parseAccountUsageLimitResetTime(responseBody, time.Now()); resetAt != nil {
+			s.notifyAccountSchedulingBlocked(account, *resetAt, "429_body_reset")
+			if err := s.accountRepo.SetRateLimited(ctx, account.ID, *resetAt); err != nil {
+				slog.Warn("rate_limit_set_failed", "account_id", account.ID, "error", err)
+				return
+			}
+			slog.Info("account_usage_limit_reached", "account_id", account.ID, "platform", account.Platform, "reset_at", *resetAt, "reset_in", time.Until(*resetAt).Truncate(time.Second))
+			return
+		}
+
 		if account.Platform == PlatformAnthropic {
 			if resetAt := parseAnthropicQuotaResetTime(responseBody, time.Now()); resetAt != nil {
 				s.notifyAccountSchedulingBlocked(account, *resetAt, "429_body_reset")
@@ -1641,6 +1653,11 @@ func (s *RateLimitService) persistOpenAICodexSnapshot(ctx context.Context, accou
 //	  }
 //	}
 func parseOpenAIRateLimitResetTime(body []byte) *int64 {
+	if resetAt := parseAccountUsageLimitResetTime(body, time.Now()); resetAt != nil {
+		ts := resetAt.Unix()
+		return &ts
+	}
+
 	if resetAt := parseAliyunTokenPlanQuotaResetTime(body, time.Now()); resetAt != nil {
 		ts := resetAt.Unix()
 		return &ts
@@ -1715,6 +1732,34 @@ func parseOpenAIAccountQuotaResetTime(message string) *time.Time {
 		}
 	}
 	return nil
+}
+
+// parseAccountUsageLimitResetTime parses account-level weekly/monthly quota
+// errors whose reset timestamp is expressed in the service's local timezone.
+func parseAccountUsageLimitResetTime(body []byte, now time.Time) *time.Time {
+	code := strings.TrimSpace(gjson.GetBytes(body, "error.code").String())
+	message := strings.TrimSpace(gjson.GetBytes(body, "error.message").String())
+	if message == "" {
+		return nil
+	}
+
+	isKnownCode := code == "1310"
+	isKnownMessage := strings.Contains(message, "使用上限") &&
+		(strings.Contains(message, "每周") || strings.Contains(message, "每月"))
+	if !isKnownCode && !isKnownMessage {
+		return nil
+	}
+
+	match := accountUsageLimitResetPattern.FindStringSubmatch(message)
+	if len(match) != 2 {
+		return nil
+	}
+
+	resetAt, err := time.ParseInLocation("2006-01-02 15:04:05", strings.TrimSpace(match[1]), now.Location())
+	if err != nil || !validAnthropicBodyReset(resetAt, now) {
+		return nil
+	}
+	return &resetAt
 }
 
 func parseAnthropicQuotaResetTime(body []byte, now time.Time) *time.Time {

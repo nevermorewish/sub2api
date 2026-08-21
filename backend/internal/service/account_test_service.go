@@ -2168,6 +2168,10 @@ func (s *AccountTestService) reconcileAliyunTokenPlan429State(ctx context.Contex
 	if s == nil || s.accountRepo == nil || account == nil {
 		return
 	}
+	if resetAt := parseAccountUsageLimitResetTime(body, time.Now()); resetAt != nil {
+		s.persistAccountTestRateLimitState(ctx, account, *resetAt)
+		return
+	}
 	if resetAt := parseAliyunTokenPlanQuotaResetTime(body, time.Now()); resetAt != nil {
 		s.persistAccountTestRateLimitState(ctx, account, *resetAt)
 	}
