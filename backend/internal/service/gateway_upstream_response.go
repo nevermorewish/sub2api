@@ -285,6 +285,19 @@ func ExtractUpstreamErrorMessage(body []byte) string {
 	return extractUpstreamErrorMessage(body)
 }
 
+const kimiEngineOverloadedMessage = "The engine is currently overloaded, please try again later"
+
+// RateLimitClientMessage returns the client-safe message for an upstream 429.
+// Keep arbitrary upstream messages redacted, but preserve Kimi's well-known
+// engine-overload signal so callers can distinguish capacity incidents from
+// ordinary per-account rate limits.
+func RateLimitClientMessage(upstreamMessage string) string {
+	if strings.EqualFold(strings.TrimSpace(upstreamMessage), kimiEngineOverloadedMessage) {
+		return kimiEngineOverloadedMessage
+	}
+	return "Upstream rate limit exceeded, please retry later"
+}
+
 func extractUpstreamErrorMessage(body []byte) string {
 	// Claude 风格：{"type":"error","error":{"type":"...","message":"..."}}
 	if m := gjson.GetBytes(body, "error.message").String(); strings.TrimSpace(m) != "" {
@@ -488,7 +501,7 @@ func (s *GatewayService) handleErrorResponse(ctx context.Context, resp *http.Res
 	case 429:
 		statusCode = http.StatusTooManyRequests
 		errType = "rate_limit_error"
-		errMsg = "Upstream rate limit exceeded, please retry later"
+		errMsg = RateLimitClientMessage(upstreamMsg)
 	case 529:
 		statusCode = http.StatusServiceUnavailable
 		errType = "overloaded_error"
